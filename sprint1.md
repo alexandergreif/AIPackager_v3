@@ -1,5 +1,5 @@
 # Sprint 1 – UI Skeleton
-**Duration:** 1 week  
+**Duration:** 1 week
 **Goal:** Usable front‑end with navigation & placeholder flow.
 
 | ID | Task |

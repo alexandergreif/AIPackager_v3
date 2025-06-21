@@ -1,5 +1,5 @@
 # Sprint 5 – Polish & Resume
-**Duration:** 1 week  
+**Duration:** 1 week
 **Goal:** Production polish: resume logic, clipboard copy, guardrails, performance.
 
 | ID | Task |

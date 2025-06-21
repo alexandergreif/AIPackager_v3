@@ -1,5 +1,5 @@
 # Sprint 4 – AI Integration
-**Duration:** 1 week  
+**Duration:** 1 week
 **Goal:** GPT‑4o function‑call returns structured PSADT JSON and renders final script.
 
 | ID | Task |

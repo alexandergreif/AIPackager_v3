@@ -1,6 +1,5 @@
 """Test dependency management setup."""
 
-import os
 from pathlib import Path
 
 

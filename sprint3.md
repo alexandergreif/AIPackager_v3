@@ -1,5 +1,5 @@
 # Sprint 3 – Template & Prompt Layer
-**Duration:** 1 week  
+**Duration:** 1 week
 **Goal:** Deterministic PSADT template & prompt templates (no AI yet).
 
 | ID | Task |
