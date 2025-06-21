@@ -1,5 +1,5 @@
 # Sprint 2 – Backend Core
-**Duration:** 1 week  
+**Duration:** 1 week
 **Goal:** Persist uploads, extract metadata, CMTrace logging.
 
 | ID | Task |
