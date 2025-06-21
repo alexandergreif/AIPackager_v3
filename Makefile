@@ -1,10 +1,11 @@
-.PHONY: venv install test lint clean help
+.PHONY: venv install run test lint clean help
 
 # Default target
 help:
 	@echo "Available targets:"
 	@echo "  venv     - Create virtual environment"
 	@echo "  install  - Install dependencies in virtual environment"
+	@echo "  run      - Run the Flask development server"
 	@echo "  test     - Run tests"
 	@echo "  lint     - Run linting tools"
 	@echo "  clean    - Clean up generated files"
@@ -19,6 +20,10 @@ venv:
 install: venv
 	.venv/bin/pip install --upgrade pip
 	.venv/bin/pip install -r requirements.txt
+
+# Run the Flask development server
+run:
+	.venv/bin/python run.py
 
 # Run tests
 test:

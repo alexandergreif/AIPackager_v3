@@ -3,6 +3,7 @@
 from flask import render_template_string
 
 from src.app import create_app
+from src.app.progress import start_job
 
 
 def test_base_template_exists():
@@ -105,10 +106,11 @@ def test_routes_use_templates():
     app = create_app()
     client = app.test_client()
 
+    job_id = start_job("test.msi")
     routes_to_test = {
         "/upload": b"Upload Installer",
-        "/progress/test-id": b"Processing Progress",
-        "/detail/test-id": b"Job Details",
+        f"/progress/{job_id}": b"Processing Progress",
+        f"/detail/{job_id}": b"Job Details",
         "/history": b"Upload History",
     }
 

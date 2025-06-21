@@ -3,6 +3,7 @@
 from flask import Flask
 
 from src.app import create_app
+from src.app.progress import start_job
 
 
 def test_create_app_returns_flask_instance():
@@ -41,9 +42,10 @@ def test_progress_route_returns_200():
     app = create_app()
     client = app.test_client()
 
-    response = client.get("/progress/test-id")
+    job_id = start_job("test.msi")
+    response = client.get(f"/progress/{job_id}")
     assert response.status_code == 200
-    assert b"progress" in response.data.lower()
+    assert b"Processing Progress" in response.data
 
 
 def test_detail_route_returns_200():
@@ -51,9 +53,10 @@ def test_detail_route_returns_200():
     app = create_app()
     client = app.test_client()
 
-    response = client.get("/detail/test-id")
+    job_id = start_job("test.msi")
+    response = client.get(f"/detail/{job_id}")
     assert response.status_code == 200
-    assert b"detail" in response.data.lower()
+    assert b"Job Details" in response.data
 
 
 def test_history_route_returns_200():
@@ -77,7 +80,8 @@ def test_all_routes_return_html_content():
     app = create_app()
     client = app.test_client()
 
-    routes_to_test = ["/upload", "/progress/test-id", "/detail/test-id", "/history"]
+    job_id = start_job("test.msi")
+    routes_to_test = ["/upload", f"/progress/{job_id}", f"/detail/{job_id}", "/history"]
 
     for route in routes_to_test:
         response = client.get(route)
