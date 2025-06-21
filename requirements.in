@@ -1,0 +1,10 @@
+# Core dependencies
+# Development and testing tools
+pytest>=7.0.0
+ruff>=0.1.0
+mypy>=1.0.0
+black>=22.0.0
+pre-commit>=3.0.0
+
+# Documentation
+sphinx>=5.0.0
