@@ -101,12 +101,18 @@ def test_template_inheritance_structure():
 
 
 def test_routes_use_templates():
-    """Test that routes can render templates (will be updated in SP1-03)."""
+    """Test that routes can render templates."""
     app = create_app()
     client = app.test_client()
 
-    # For now, routes return HTML strings
-    # This test will be updated when we implement template rendering
-    response = client.get("/upload")
-    assert response.status_code == 200
-    assert b"<html>" in response.data
+    routes_to_test = {
+        "/upload": b"Upload Installer",
+        "/progress/test-id": b"Processing Progress",
+        "/detail/test-id": b"Job Details",
+        "/history": b"Upload History",
+    }
+
+    for route, expected_content in routes_to_test.items():
+        response = client.get(route)
+        assert response.status_code == 200
+        assert expected_content in response.data
