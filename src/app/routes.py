@@ -78,10 +78,15 @@ def register_routes(app: Flask) -> None:
     @app.route("/detail/<id>")
     def detail(id: str) -> Union[str, tuple[str, int]]:
         """Result details page."""
-        job = get_job(id)
-        if not job:
-            return "Job not found", 404
-        return render_template("detail.html", job_id=id)
+        package = get_package(id)
+        if not package:
+            return "Package not found", 404
+
+        metadata = {}
+        if package.package_metadata:
+            metadata = json.loads(package.package_metadata.metadata)
+
+        return render_template("detail.html", package=package, metadata=metadata)
 
     @app.route("/history")
     def history() -> str:
