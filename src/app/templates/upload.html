@@ -3,31 +3,82 @@
 {% block title %}Upload - {{ super() }}{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-semibold text-gray-800 dark:text-white">Upload Installer</h1>
-<p class="mt-2 text-gray-600 dark:text-gray-400">Upload your Windows installer file (MSI/EXE) to generate a PSADT script.</p>
+<div x-data="fileUpload()" class="w-full max-w-2xl p-8 space-y-8">
+    <div class="text-center">
+        <h1 class="text-4xl font-bold text-white">AIPackager</h1>
+        <p class="mt-2 text-lg text-gray-400">Create PowerShell scripts with AI</p>
+    </div>
 
-<div class="mt-8">
-    <form action="/upload" method="post" enctype="multipart/form-data" class="p-8 bg-white rounded-lg shadow-md dark:bg-gray-800">
-        <div class="flex items-center justify-center w-full">
-            <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
-                <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                    <svg class="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                    </svg>
-                    <p class="mb-2 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">MSI or EXE (MAX. 200MB)</p>
+    <div class="space-y-4">
+        <div id="file-list" class="space-y-2">
+            <template x-for="file in files" :key="file.name">
+                <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span x-text="file.name" class="text-white"></span>
+                    </div>
+                    <button @click="removeFile(file)" class="text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
                 </div>
-                <input id="dropzone-file" type="file" name="installer" class="hidden" accept=".msi,.exe" />
-            </label>
+            </template>
         </div>
-        <div class="mt-6">
-            <label for="custom-instructions" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Custom Instructions</label>
-            <textarea id="custom-instructions" name="custom_instructions" rows="4" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200"></textarea>
-            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Enter any custom instructions, such as silent install parameters.</p>
-        </div>
-        <div class="mt-6 text-right">
-            <button type="submit" class="px-6 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500 focus:outline-none focus:bg-indigo-700">Upload</button>
-        </div>
+
+    </div>
+
+    <form @submit.prevent="submitForm" class="relative flex items-center w-full p-4 text-white bg-gray-800 border-2 border-gray-700 rounded-lg shadow-inner">
+        <button @click.prevent="$refs.fileInput.click()" class="p-2 text-gray-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </button>
+        <textarea x-ref="textarea" x-model="instructions" @input="autoExpand" rows="1" class="flex-1 p-2 text-white bg-transparent border-none focus:outline-none focus:ring-0" placeholder="Enter your custom instructions here..."></textarea>
+        <button type="submit" class="p-2 text-gray-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+        </button>
     </form>
+
+    <input type="file" x-ref="fileInput" @change="handleFileSelect" class="hidden" multiple accept=".msi,.exe">
+
+    <div class="absolute top-4 right-4">
+        <button @click="document.documentElement.classList.toggle('dark')" class="p-2 text-gray-400 bg-gray-800 rounded-full hover:text-white focus:outline-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+    </div>
 </div>
+
+<script>
+    function fileUpload() {
+        return {
+            files: [],
+            instructions: '',
+            handleFileSelect(event) {
+                this.files = Array.from(event.target.files);
+            },
+            removeFile(file) {
+                this.files = this.files.filter(f => f !== file);
+            },
+            autoExpand(event) {
+                const textarea = this.$refs.textarea;
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            },
+            submitForm() {
+                const formData = new FormData();
+                this.files.forEach(file => {
+                    formData.append('installer', file);
+                });
+                formData.append('custom_instructions', this.instructions);
+
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    }
+                });
+            }
+        }
+    }
+</script>
 {% endblock %}
