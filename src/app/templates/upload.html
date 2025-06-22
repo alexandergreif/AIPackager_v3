@@ -1,84 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Upload - {{ super() }}{% endblock %}
+{% block title %}Upload Installer{% endblock %}
 
 {% block content %}
-<div x-data="fileUpload()" class="w-full max-w-2xl p-8 space-y-8">
-    <div class="text-center">
-        <h1 class="text-4xl font-bold text-white">AIPackager</h1>
-        <p class="mt-2 text-lg text-gray-400">Create PowerShell scripts with AI</p>
-    </div>
-
-    <div class="space-y-4">
-        <div id="file-list" class="space-y-2">
-            <template x-for="file in files" :key="file.name">
-                <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg shadow-md">
-                    <div class="flex items-center space-x-3">
-                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span x-text="file.name" class="text-white"></span>
-                    </div>
-                    <button @click="removeFile(file)" class="text-gray-400 hover:text-white">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
-            </template>
+<div class="bg-white p-8 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-6">Upload Installer File</h2>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <div class="mb-4">
+            <label for="file" class="block text-gray-700 text-sm font-bold mb-2">Select file (MSI or EXE):</label>
+            <input type="file" name="file" id="file" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
         </div>
-
-    </div>
-
-    <form @submit.prevent="submitForm" class="relative flex items-center w-full p-4 text-white bg-gray-800 border-2 border-gray-700 rounded-lg shadow-inner">
-        <button @click.prevent="$refs.fileInput.click()" class="p-2 text-gray-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        </button>
-        <textarea x-ref="textarea" x-model="instructions" @input="autoExpand" rows="1" class="flex-1 p-2 text-white bg-transparent border-none focus:outline-none focus:ring-0" placeholder="Enter your custom instructions here..."></textarea>
-        <button type="submit" class="p-2 text-gray-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-        </button>
+        <div class="flex items-center justify-between">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Upload and Generate Script
+            </button>
+        </div>
     </form>
-
-    <input type="file" x-ref="fileInput" @change="handleFileSelect" class="hidden" multiple accept=".msi,.exe">
-
-    <div class="absolute top-4 right-4">
-        <button @click="document.documentElement.classList.toggle('dark')" class="p-2 text-gray-400 bg-gray-800 rounded-full hover:text-white focus:outline-none">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-        </button>
-    </div>
 </div>
-
-<script>
-    function fileUpload() {
-        return {
-            files: [],
-            instructions: '',
-            handleFileSelect(event) {
-                this.files = Array.from(event.target.files);
-            },
-            removeFile(file) {
-                this.files = this.files.filter(f => f !== file);
-            },
-            autoExpand(event) {
-                const textarea = this.$refs.textarea;
-                textarea.style.height = 'auto';
-                textarea.style.height = textarea.scrollHeight + 'px';
-            },
-            submitForm() {
-                const formData = new FormData();
-                this.files.forEach(file => {
-                    formData.append('installer', file);
-                });
-                formData.append('custom_instructions', this.instructions);
-
-                fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                    }
-                });
-            }
-        }
-    }
-</script>
 {% endblock %}

@@ -1,30 +1,31 @@
 {% extends "base.html" %}
 
-{% block title %}Details - {{ super() }}{% endblock %}
+{% block title %}Script Details{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-semibold text-gray-800 dark:text-white">Job Details</h1>
-<p class="mt-2 text-gray-600 dark:text-gray-400">Job ID: <span class="font-mono text-indigo-600 dark:text-indigo-400">{{ job_id }}</span></p>
-
-<div class="mt-8 p-8 bg-white rounded-lg shadow-md dark:bg-gray-800">
-    <h2 class="text-2xl font-semibold text-gray-800 dark:text-white">Generated PSADT Script</h2>
-    <p class="mt-2 text-gray-600 dark:text-gray-400">Your PowerShell App Deployment Toolkit script is ready.</p>
-    <div class="mt-4">
-        <textarea rows="20" class="w-full p-4 font-mono text-sm text-gray-800 bg-gray-100 border border-gray-300 rounded-md dark:bg-gray-900 dark:text-gray-200 dark:border-gray-700">
-# Generated PSADT Script for Job {{ job_id }}
-# This is a placeholder script.
-#
-# --- METADATA ---
-# Application: Example App
-# Version: 1.2.3
-# Publisher: Example Corp
-#
-# --- INSTALLATION ---
-# Execute-Process -Path "setup.exe" -Parameters "/S"
-        </textarea>
+<div class="bg-white p-8 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-6">Generated PSADT Script</h2>
+    <div class="bg-gray-100 p-4 rounded-md mb-6">
+        <pre class="whitespace-pre-wrap text-sm font-mono">{{ script_content }}</pre>
     </div>
-    <div class="mt-6 text-right">
-        <button class="px-6 py-2 font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500 focus:outline-none focus:bg-indigo-700">Copy to Clipboard</button>
+    <div class="flex justify-end space-x-4">
+        <button onclick="copyToClipboard()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Copy to Clipboard
+        </button>
+        <a href="/" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Upload New File
+        </a>
     </div>
 </div>
+
+<script>
+function copyToClipboard() {
+    const scriptContent = document.querySelector('pre').innerText;
+    navigator.clipboard.writeText(scriptContent).then(() => {
+        alert('Script copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy script: ', err);
+    });
+}
+</script>
 {% endblock %}

@@ -1,35 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}History - {{ super() }}{% endblock %}
+{% block title %}Generation History{% endblock %}
 
 {% block content %}
-<h1 class="text-3xl font-semibold text-gray-800 dark:text-white">Upload History</h1>
-<p class="mt-2 text-gray-600 dark:text-gray-400">A list of your previous installer analysis jobs.</p>
-
-<div class="mt-8 overflow-hidden bg-white rounded-lg shadow-md dark:bg-gray-800">
-    <table class="min-w-full">
-        <thead class="bg-gray-50 dark:bg-gray-700">
-            <tr>
-                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">Job ID</th>
-                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">Filename</th>
-                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">Status</th>
-                <th class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">Created</th>
-                <th class="px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase dark:text-gray-300">Actions</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-500 dark:text-gray-400">sample-001</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">example.msi</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Complete</span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">2025-06-21</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
-                    <a href="/detail/sample-001" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">View</a>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+<div class="bg-white p-8 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-6">Generation History</h2>
+    {% if history %}
+    <ul class="space-y-4">
+        {% for item in history %}
+        <li class="border-b pb-2">
+            <a href="/detail/{{ item.id }}" class="text-blue-600 hover:underline">
+                {{ item.filename }} - Generated on {{ item.timestamp }}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-gray-600">No scripts have been generated yet.</p>
+    {% endif %}
+    <div class="mt-6">
+        <a href="/" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Upload New File
+        </a>
+    </div>
 </div>
 {% endblock %}

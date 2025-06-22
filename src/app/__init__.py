@@ -1,11 +1,12 @@
 """Flask application factory for AIPackager v3."""
 
+from typing import Optional
 from flask import Flask
 
 from .routes import register_routes
 
 
-def create_app(config=None):
+def create_app(config: Optional[dict] = None) -> Flask:
     """Create and configure Flask application instance.
 
     Args:

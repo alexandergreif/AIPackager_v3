@@ -1,21 +1,19 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}AIPackager v3{% endblock %}</title>
-    <!-- TODO: Replace with npm/tailwindcss build in Sprint 3 -->
+    <title>{% block title %}AIPackager{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        body {
-            background: linear-gradient(to bottom, #0f172a, #000000);
-        }
-    </style>
 </head>
-<body class="font-sans antialiased text-gray-200">
-    <div class="flex flex-col items-center justify-center min-h-screen">
-        {% block content %}{% endblock %}
+<body class="bg-gray-100 text-gray-800">
+    <div class="container mx-auto px-4">
+        <nav class="bg-blue-500 text-white p-4 rounded-b-lg">
+            <h1 class="text-3xl font-bold">AIPackager</h1>
+        </nav>
+        <main class="mt-8">
+            {% block content %}{% endblock %}
+        </main>
     </div>
 </body>
 </html>

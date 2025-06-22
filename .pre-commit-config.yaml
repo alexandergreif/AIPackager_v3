@@ -18,4 +18,4 @@ repos:
     rev: v1.16.1
     hooks:
       - id: mypy
-        exclude: ^tests/
+        exclude: ^(tests/|alembic/)

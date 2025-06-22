@@ -6,6 +6,8 @@
 #
 alabaster==1.0.0
     # via sphinx
+alembic==1.16.2
+    # via -r requirements.in
 babel==2.17.0
     # via sphinx
 black==25.1.0
@@ -45,10 +47,13 @@ jinja2==3.1.6
     #   -r requirements.in
     #   flask
     #   sphinx
+mako==1.3.10
+    # via alembic
 markupsafe==3.0.2
     # via
     #   flask
     #   jinja2
+    #   mako
     #   werkzeug
 mypy==1.16.1
     # via -r requirements.in
@@ -107,8 +112,15 @@ sphinxcontrib-qthelp==2.0.0
     # via sphinx
 sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
+sqlalchemy==2.0.41
+    # via
+    #   -r requirements.in
+    #   alembic
 typing-extensions==4.14.0
-    # via mypy
+    # via
+    #   alembic
+    #   mypy
+    #   sqlalchemy
 urllib3==2.5.0
     # via requests
 virtualenv==20.31.2

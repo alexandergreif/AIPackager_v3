@@ -1,6 +1,7 @@
 """Route handlers for AIPackager v3."""
 
-from flask import Flask, jsonify, redirect, render_template, request, url_for
+from typing import Union
+from flask import Flask, jsonify, redirect, render_template, request, url_for, Response
 
 from .progress import get_job, start_job
 
@@ -13,7 +14,7 @@ def register_routes(app: Flask) -> None:
     """
 
     @app.route("/upload", methods=["GET", "POST"])
-    def upload():
+    def upload() -> Union[str, Response, tuple[str, int]]:
         """File upload page."""
         if request.method == "POST":
             if "installer" not in request.files:
@@ -28,7 +29,7 @@ def register_routes(app: Flask) -> None:
         return render_template("upload.html")
 
     @app.route("/progress/<id>")
-    def progress(id: str):
+    def progress(id: str) -> Union[str, Response, tuple[str, int]]:
         """Progress tracking page."""
         job = get_job(id)
         if not job:
@@ -40,7 +41,7 @@ def register_routes(app: Flask) -> None:
         return render_template("progress.html", job_id=id)
 
     @app.route("/detail/<id>")
-    def detail(id: str):
+    def detail(id: str) -> Union[str, tuple[str, int]]:
         """Result details page."""
         job = get_job(id)
         if not job:
@@ -48,6 +49,6 @@ def register_routes(app: Flask) -> None:
         return render_template("detail.html", job_id=id)
 
     @app.route("/history")
-    def history():
+    def history() -> str:
         """Upload history page."""
         return render_template("history.html")
