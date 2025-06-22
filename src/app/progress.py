@@ -7,12 +7,13 @@ from typing import Dict, Any
 _jobs: Dict[str, Dict[str, Any]] = {}
 
 
-def start_job(filename: str) -> str:
+def start_job(filename: str, custom_instructions: str = "") -> str:
     """Create a new job and return its ID."""
     job_id = str(uuid.uuid4())
     _jobs[job_id] = {
         "job_id": job_id,
         "filename": filename,
+        "custom_instructions": custom_instructions,
         "status": "Uploading",
         "progress": 0,
     }

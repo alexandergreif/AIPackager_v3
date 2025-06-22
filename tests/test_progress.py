@@ -6,11 +6,12 @@ from src.app.progress import get_job, set_job_progress, start_job
 
 def test_start_job_creates_new_job():
     """Test that start_job creates a new job with initial state."""
-    job_id = start_job("test.msi")
+    job_id = start_job("test.msi", "/silent")
     job = get_job(job_id)
 
     assert job is not None
     assert job["filename"] == "test.msi"
+    assert job["custom_instructions"] == "/silent"
     assert job["status"] == "Uploading"
     assert job["progress"] == 0
 

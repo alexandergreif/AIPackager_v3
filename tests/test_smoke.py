@@ -6,7 +6,10 @@ from io import BytesIO
 def test_upload_flow(client):
     """Test the full upload flow, from upload to detail page."""
     # 1. Upload a dummy file
-    data = {"installer": (BytesIO(b"my file contents"), "test.msi")}
+    data = {
+        "installer": (BytesIO(b"my file contents"), "test.msi"),
+        "custom_instructions": "/silent",
+    }
     response = client.post("/upload", data=data, content_type="multipart/form-data")
 
     # 2. Follow the redirect to the progress page

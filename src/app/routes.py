@@ -22,7 +22,8 @@ def register_routes(app: Flask) -> None:
             if file.filename == "":
                 return "No selected file", 400
             if file:
-                job_id = start_job(file.filename)
+                custom_instructions = request.form.get("custom_instructions", "")
+                job_id = start_job(file.filename, custom_instructions)
                 return redirect(url_for("progress", id=job_id))
         return render_template("upload.html")
 
