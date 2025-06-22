@@ -41,6 +41,9 @@ def register_routes(app: Flask) -> None:
     @app.route("/detail/<id>")
     def detail(id: str):
         """Result details page."""
+        job = get_job(id)
+        if not job:
+            return "Job not found", 404
         return render_template("detail.html", job_id=id)
 
     @app.route("/history")
