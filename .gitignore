@@ -179,3 +179,4 @@ Thumbs.db
 *.log
 tmp/
 temp/
+*.msi
