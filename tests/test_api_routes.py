@@ -40,6 +40,12 @@ def sample_file():
 class TestAPIRoutes:
     """Test API route functionality."""
 
+    def test_index_redirects_to_upload(self, client):
+        """Test that the root URL redirects to the upload page."""
+        response = client.get("/")
+        assert response.status_code == 302
+        assert response.location == "/upload"
+
     def test_api_create_package_success(self, client, sample_file):
         """Test successful package creation via API."""
         data = {"installer": sample_file, "custom_instructions": "Test instructions"}

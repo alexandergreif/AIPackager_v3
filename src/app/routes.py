@@ -27,6 +27,11 @@ def register_routes(app: Flask) -> None:
         app: Flask application instance
     """
 
+    @app.route("/")
+    def index() -> Response:
+        """Redirect to the upload page."""
+        return redirect(url_for("upload"))
+
     @app.route("/upload", methods=["GET", "POST"])
     def upload() -> Union[str, Response, tuple[str, int]]:
         """File upload page."""
