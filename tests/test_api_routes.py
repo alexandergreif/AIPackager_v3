@@ -6,7 +6,7 @@ from io import BytesIO
 import pytest
 
 from src.app import create_app
-from src.app.database import get_database_service
+from src.app.database import get_database_service, get_package
 
 
 @pytest.fixture
@@ -193,3 +193,26 @@ class TestAPIRoutes:
         if package_id:
             response = client.get(f"/api/packages/{package_id}")
             assert response.content_type == "application/json"
+
+    def test_api_upload_extracts_metadata(self, client, sample_file):
+        """Test that metadata is extracted and stored on upload."""
+        data = {"installer": sample_file, "custom_instructions": "Test instructions"}
+
+        response = client.post("/api/packages", data=data)
+        assert response.status_code == 200
+        package_id = response.get_json()["package_id"]
+
+        # Retrieve the package from the database to check metadata
+        with client.application.app_context():
+            package = get_package(package_id)
+
+        assert package is not None
+        assert package.package_metadata is not None
+
+        # The metadata attribute of the Metadata object is already a dictionary
+        metadata = package.package_metadata
+
+        assert package.filename == "test_installer.msi"
+        assert (
+            metadata.product_name is None
+        )  # We don't have a real MSI, so this should be None

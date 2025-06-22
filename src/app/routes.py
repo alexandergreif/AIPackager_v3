@@ -13,9 +13,11 @@ from flask import (
     current_app,
 )
 
+import json
 from .file_persistence import save_uploaded_file
-from .database import create_package, get_package, get_all_packages
+from .database import create_package, get_package, get_all_packages, create_metadata
 from .progress import get_job, start_job
+from .metadata_extractor import extract_file_metadata
 
 
 def register_routes(app: Flask) -> None:
@@ -92,6 +94,10 @@ def register_routes(app: Flask) -> None:
                 file_path=file_path,
                 custom_instructions=custom_instructions,
             )
+
+            # Extract and store metadata
+            metadata_dict = extract_file_metadata(file_path)
+            create_metadata(package_id=package.id, metadata=json.dumps(metadata_dict))
 
             # Return package information
             return jsonify(
