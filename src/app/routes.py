@@ -54,8 +54,24 @@ def register_routes(app: Flask) -> None:
         if not job:
             return "Job not found", 404
 
+        if job["status"] == "Uploading":
+            # Simulate processing
+            from .progress import set_job_progress
+            import time
+
+            set_job_progress(id, 25, "Extracting metadata...")
+            time.sleep(1)
+            set_job_progress(id, 50, "Generating script...")
+            time.sleep(1)
+            set_job_progress(id, 75, "Finalizing script...")
+            time.sleep(1)
+            set_job_progress(id, 100, "Completed")
+
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify(job)
+
+        if job["status"] == "Completed":
+            return redirect(url_for("detail", id=id))
 
         return render_template("progress.html", job_id=id)
 
