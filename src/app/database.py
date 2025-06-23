@@ -118,11 +118,17 @@ def update_package_status(package_id: str, status: str) -> bool:
     Returns:
         True if updated successfully, False otherwise
     """
+    from uuid import UUID
+
     db_service = get_database_service()
 
     session = db_service.get_session()
     try:
-        package = session.query(Package).filter(Package.id == package_id).first()
+        try:
+            uuid_obj = UUID(package_id)
+        except ValueError:
+            return False
+        package = session.query(Package).filter(Package.id == uuid_obj).first()
         if package:
             package.status = status
             session.commit()

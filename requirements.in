@@ -19,3 +19,5 @@ pre-commit>=3.0.0
 
 # Documentation
 sphinx>=5.0.0
+
+# MSI parsing

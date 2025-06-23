@@ -215,6 +215,90 @@ class TestMetadataExtractor:
         finally:
             Path(temp_path).unlink()
 
+    def test_extract_msi_metadata_with_pymsi(self):
+        """Test MSI metadata extraction with real MSI file."""
+        # This test uses a real MSI file to verify the extraction flow
+        msi_path = "googlechromestandaloneenterprise_136.0.0_64bit.msi"
+        metadata = extract_file_metadata(msi_path)
+
+        # Verify basic file metadata is extracted
+        assert (
+            metadata["filename"] == "googlechromestandaloneenterprise_136.0.0_64bit.msi"
+        )
+        assert metadata["file_extension"] == ".msi"
+        assert metadata["file_size"] > 0
+
+        # Verify all expected metadata fields are present (even if None)
+        assert "product_name" in metadata
+        assert "version" in metadata
+        assert "publisher" in metadata
+        assert "product_code" in metadata
+
+    def test_extract_psadt_variables(self):
+        """Test extraction of PSADT-specific variables from MSI metadata."""
+        extractor = MetadataExtractor()
+
+        # Test with the real Chrome MSI file
+        msi_path = "googlechromestandaloneenterprise_136.0.0_64bit.msi"
+        metadata = extractor.extract_metadata(msi_path)
+
+        # Test that PSADT variables can be derived from metadata
+        psadt_vars = extractor.get_psadt_variables(metadata)
+
+        # Verify PSADT variables are present and correctly mapped
+        assert "appName" in psadt_vars
+        assert "appVersion" in psadt_vars
+        assert "appVendor" in psadt_vars
+        assert "productCode" in psadt_vars
+
+        # With the improved implementation using msitools, we can now extract real data
+        # from the Chrome MSI file using summary information as fallback
+        assert (
+            psadt_vars["appName"] == "Google Chrome Installer"
+        )  # From summary_subject
+        assert psadt_vars["appVersion"] == ""  # Version not available in summary
+        assert psadt_vars["appVendor"] == "Google LLC"  # From summary_author
+        assert psadt_vars["productCode"] == ""  # Product code not available in summary
+
+    def test_get_psadt_variables_with_basic_metadata(self):
+        """Test PSADT variables extraction with basic metadata."""
+        extractor = MetadataExtractor()
+
+        # Create test metadata
+        test_metadata = {
+            "product_name": "Test Application",
+            "version": "1.0.0",
+            "publisher": "Test Publisher",
+            "product_code": "{12345678-1234-1234-1234-123456789012}",
+            "architecture": "x64",
+        }
+
+        psadt_vars = extractor.get_psadt_variables(test_metadata)
+
+        assert psadt_vars["appName"] == "Test Application"
+        assert psadt_vars["appVersion"] == "1.0.0"
+        assert psadt_vars["appVendor"] == "Test Publisher"
+        assert psadt_vars["productCode"] == "{12345678-1234-1234-1234-123456789012}"
+
+    def test_get_psadt_variables_with_missing_fields(self):
+        """Test PSADT variables extraction with missing metadata fields."""
+        extractor = MetadataExtractor()
+
+        # Create metadata with missing fields
+        test_metadata = {
+            "product_name": "Test App",
+            "version": None,
+            "publisher": None,
+            "product_code": None,
+        }
+
+        psadt_vars = extractor.get_psadt_variables(test_metadata)
+
+        assert psadt_vars["appName"] == "Test App"
+        assert psadt_vars["appVersion"] == ""  # Should default to empty string
+        assert psadt_vars["appVendor"] == ""  # Should default to empty string
+        assert psadt_vars["productCode"] == ""  # Should default to empty string
+
     def test_metadata_structure_completeness(self):
         """Test that metadata contains all expected fields."""
         extractor = MetadataExtractor()
@@ -294,20 +378,13 @@ class TestMetadataExtractor:
         finally:
             Path(temp_path).unlink()
 
-    def test_extract_msi_with_msiexec(self):
-        """Test MSI extraction with msiexec."""
+    def test_is_msitools_available(self):
+        """Test msitools availability check."""
         extractor = MetadataExtractor()
 
-        with tempfile.NamedTemporaryFile(suffix=".msi", delete=False) as temp_file:
-            temp_file.write(b"Fake MSI content")
-            temp_path = temp_file.name
-
-        try:
-            metadata = extractor._extract_msi_with_msiexec(temp_path)
-            assert isinstance(metadata, dict)
-
-        finally:
-            Path(temp_path).unlink()
+        # This will return True if msitools is installed, False otherwise
+        result = extractor._is_msitools_available()
+        assert isinstance(result, bool)
 
     def test_file_size_calculation(self):
         """Test that file size is calculated correctly."""

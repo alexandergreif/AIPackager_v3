@@ -73,6 +73,21 @@ class TestPackageModel:
         assert "test.msi" in repr_str
         assert str(package.id) in repr_str
 
+    def test_package_workflow_columns(self, session):
+        """Test the new workflow columns."""
+        package = Package(
+            filename="test.msi",
+            file_path="/uploads/test.msi",
+            current_step="testing",
+            progress_pct=50,
+        )
+        session.add(package)
+        session.commit()
+
+        retrieved_package = session.get(Package, package.id)
+        assert retrieved_package.current_step == "testing"
+        assert retrieved_package.progress_pct == 50
+
 
 class TestMetadataModel:
     """Test Metadata model functionality."""

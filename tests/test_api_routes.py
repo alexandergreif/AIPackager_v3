@@ -40,11 +40,23 @@ def sample_file():
 class TestAPIRoutes:
     """Test API route functionality."""
 
-    def test_index_redirects_to_upload(self, client):
-        """Test that the root URL redirects to the upload page."""
+    def test_landing_page_loads(self, client):
+        """Test that the landing page loads correctly."""
         response = client.get("/")
-        assert response.status_code == 302
-        assert response.location == "/upload"
+        assert response.status_code == 200
+        assert b"Get Started" in response.data
+        assert b"Home" in response.data
+        assert b"Upload" in response.data
+        assert b"History" in response.data
+
+    def test_upload_page_loads(self, client):
+        """Test that the upload page loads correctly."""
+        response = client.get("/upload")
+        assert response.status_code == 200
+        assert b"Upload Installer" in response.data
+        assert b"Home" in response.data
+        assert b"Upload" in response.data
+        assert b"History" in response.data
 
     def test_api_create_package_success(self, client, sample_file):
         """Test successful package creation via API."""
@@ -78,6 +90,16 @@ class TestAPIRoutes:
         assert response.status_code == 400
         json_data = response.get_json()
         assert json_data["error"] == "No selected file"
+
+    def test_api_create_package_invalid_extension(self, client):
+        """Test package creation with an invalid file extension."""
+        data = {"installer": (BytesIO(b"content"), "test.zip")}
+
+        response = client.post("/api/packages", data=data)
+
+        assert response.status_code == 400
+        json_data = response.get_json()
+        assert json_data["error"] == "Invalid file type"
 
     def test_api_list_packages_empty(self, client):
         """Test listing packages when none exist."""
@@ -132,12 +154,37 @@ class TestAPIRoutes:
         json_data = response.get_json()
         assert json_data["error"] == "Package not found"
 
+    def test_detail_page_loads(self, client, sample_file):
+        """Test that the detail page loads correctly."""
+        # First create a package
+        data = {"installer": sample_file, "custom_instructions": "Test instructions"}
+        create_response = client.post("/api/packages", data=data)
+        package_id = create_response.get_json()["package_id"]
+
+        # Then get the detail page
+        response = client.get(f"/detail/{package_id}")
+
+        assert response.status_code == 200
+        assert b"test_installer.msi" in response.data
+        assert b"Test instructions" in response.data
+
+    def test_history_page_loads(self, client, sample_file):
+        """Test that the history page loads correctly."""
+        # First create a package
+        data = {"installer": sample_file, "custom_instructions": "Test instructions"}
+        client.post("/api/packages", data=data)
+
+        # Then get the history page
+        response = client.get("/history")
+
+        assert response.status_code == 200
+        assert b"test_installer.msi" in response.data
+
     def test_api_create_package_with_different_file_types(self, client):
         """Test creating packages with different file types."""
         test_files = [
             (BytesIO(b"EXE content"), "installer.exe"),
             (BytesIO(b"MSI content"), "setup.msi"),
-            (BytesIO(b"ZIP content"), "package.zip"),
         ]
 
         for file_content, filename in test_files:

@@ -1,44 +1,51 @@
 {% extends "base.html" %}
 
-{% block title %}Script Details{% endblock %}
+{% block title %}Package Details{% endblock %}
 
 {% block content %}
 <div class="bg-white p-8 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-6">Generated PSADT Script</h2>
-    <div class="bg-gray-100 p-4 rounded-md mb-6">
-        <h3 class="text-lg font-bold mb-2">Extracted Metadata</h3>
-        <table class="table-auto w-full mb-4">
-            <tbody>
-                {% for key, value in metadata.items() %}
-                <tr class="border-b">
-                    <td class="px-4 py-2 font-bold">{{ key }}</td>
-                    <td class="px-4 py-2">{{ value }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <h3 class="text-lg font-bold mb-2">Generated Script</h3>
-        <pre class="whitespace-pre-wrap text-sm font-mono">{{ script_content }}</pre>
+    <h2 class="text-2xl font-bold mb-6">Package Details</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <h3 class="text-lg font-bold mb-2">Summary</h3>
+            <dl>
+                <dt class="font-bold">Filename:</dt>
+                <dd>{{ package.filename }}</dd>
+                <dt class="font-bold">Status:</dt>
+                <dd>{{ package.status }}</dd>
+                <dt class="font-bold">Upload Time:</dt>
+                <dd>{{ package.upload_time }}</dd>
+                <dt class="font-bold">Notes:</dt>
+                <dd>{{ package.custom_instructions }}</dd>
+            </dl>
+        </div>
+        <div>
+            <h3 class="text-lg font-bold mb-2">Metadata</h3>
+            {% if metadata %}
+            <table class="table-auto w-full">
+                <tbody>
+                    {% for key, value in metadata.__dict__.items() %}
+                    {% if not key.startswith('_') %}
+                    <tr>
+                        <td class="font-bold pr-4">{{ key }}</td>
+                        <td>{{ value }}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No metadata available.</p>
+            {% endif %}
+        </div>
     </div>
-    <div class="flex justify-end space-x-4">
-        <button onclick="copyToClipboard()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-            Copy to Clipboard
-        </button>
-        <a href="/" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-            Upload New File
-        </a>
+    <div class="mt-6">
+        <h3 class="text-lg font-bold mb-2">Rendered Script</h3>
+        <pre class="bg-gray-200 p-4 rounded-md"><code>{{ rendered_script | safe }}</code></pre>
+        <div class="mt-4">
+            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Copy</button>
+            <a href="#" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Download</a>
+        </div>
     </div>
 </div>
-
-<script>
-function copyToClipboard() {
-    const scriptContent = document.querySelector('pre').innerText;
-    navigator.clipboard.writeText(scriptContent).then(() => {
-        alert('Script copied to clipboard!');
-    }).catch(err => {
-        console.error('Failed to copy script: ', err);
-    });
-}
-</script>
 {% endblock %}

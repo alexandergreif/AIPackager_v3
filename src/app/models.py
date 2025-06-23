@@ -37,6 +37,10 @@ class Package(Base):
         default="uploading",
         nullable=False,
     )
+    current_step: Mapped[str] = mapped_column(
+        String(50), default="upload", nullable=False
+    )
+    progress_pct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # User input
     custom_instructions: Mapped[Optional[str]] = mapped_column(Text)

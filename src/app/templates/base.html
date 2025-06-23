@@ -6,14 +6,26 @@
     <title>{% block title %}AIPackager{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 text-gray-800">
-    <div class="container mx-auto px-4">
-        <nav class="bg-blue-500 text-white p-4 rounded-b-lg">
-            <h1 class="text-3xl font-bold">AIPackager</h1>
-        </nav>
-        <main class="mt-8">
-            {% block content %}{% endblock %}
-        </main>
+<body class="font-sans bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Fixed Sidebar -->
+        <aside class="w-64 bg-gray-800 text-white flex flex-col">
+            <div class="p-4 border-b border-gray-700">
+                <h1 class="text-2xl font-bold">AIPackager v2</h1>
+            </div>
+            <nav class="flex-grow">
+                <a href="{{ url_for('index') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">Home</a>
+                <a href="{{ url_for('upload') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">Upload</a>
+                <a href="{{ url_for('history') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">History</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
     </div>
 </body>
 </html>

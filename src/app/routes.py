@@ -16,7 +16,6 @@ from flask import (
 import json
 from .file_persistence import save_uploaded_file
 from .database import create_package, get_package, get_all_packages, create_metadata
-from .progress import get_job, start_job
 from .metadata_extractor import extract_file_metadata
 
 
@@ -28,9 +27,9 @@ def register_routes(app: Flask) -> None:
     """
 
     @app.route("/")
-    def index() -> Response:
-        """Redirect to the upload page."""
-        return redirect(url_for("upload"))
+    def index() -> str:
+        """Render the landing page."""
+        return render_template("index.html")
 
     @app.route("/upload", methods=["GET", "POST"])
     def upload() -> Union[str, Response, tuple[str, int]]:
@@ -42,35 +41,37 @@ def register_routes(app: Flask) -> None:
             if file.filename == "":
                 return "No selected file", 400
             if file:
-                custom_instructions = request.form.get("custom_instructions", "")
-                job_id = start_job(file.filename, custom_instructions)
-                return redirect(url_for("progress", id=job_id))
+                # The form now submits to the API, so this route is not used for POST
+                return redirect(url_for("upload"))
         return render_template("upload.html")
 
     @app.route("/progress/<id>")
     def progress(id: str) -> Union[str, Response, tuple[str, int]]:
         """Progress tracking page."""
-        job = get_job(id)
-        if not job:
-            return "Job not found", 404
+        package = get_package(id)
+        if not package:
+            return "Package not found", 404
 
-        if job["status"] == "Uploading":
+        if package.status == "uploading":
             # Simulate processing
-            from .progress import set_job_progress
+            from .database import update_package_status
             import time
 
-            set_job_progress(id, 25, "Extracting metadata...")
+            update_package_status(id, "processing")
             time.sleep(1)
-            set_job_progress(id, 50, "Generating script...")
-            time.sleep(1)
-            set_job_progress(id, 75, "Finalizing script...")
-            time.sleep(1)
-            set_job_progress(id, 100, "Completed")
+            update_package_status(id, "completed")
 
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify(job)
+            return jsonify(
+                {
+                    "job_id": str(package.id),
+                    "filename": package.filename,
+                    "status": package.status,
+                    "progress": 100 if package.status == "completed" else 50,
+                }
+            )
 
-        if job["status"] == "Completed":
+        if package.status == "completed":
             return redirect(url_for("detail", id=id))
 
         return render_template("progress.html", job_id=id)
@@ -82,16 +83,15 @@ def register_routes(app: Flask) -> None:
         if not package:
             return "Package not found", 404
 
-        metadata = {}
-        if package.package_metadata:
-            metadata = json.loads(package.package_metadata.metadata)
-
-        return render_template("detail.html", package=package, metadata=metadata)
+        return render_template(
+            "detail.html", package=package, metadata=package.package_metadata
+        )
 
     @app.route("/history")
     def history() -> str:
         """Upload history page."""
-        return render_template("history.html")
+        packages = get_all_packages()
+        return render_template("history.html", packages=packages)
 
     @app.route("/api/packages", methods=["POST"])
     def api_create_package() -> Union[Response, tuple[str, int]]:
@@ -104,6 +104,9 @@ def register_routes(app: Flask) -> None:
             file = request.files["installer"]
             if file.filename == "":
                 return jsonify({"error": "No selected file"}), 400
+
+            if not file.filename.lower().endswith((".msi", ".exe")):
+                return jsonify({"error": "Invalid file type"}), 400
 
             # Get custom instructions
             custom_instructions = request.form.get("custom_instructions", "")
