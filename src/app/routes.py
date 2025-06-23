@@ -13,7 +13,6 @@ from flask import (
     current_app,
 )
 
-import json
 from .file_persistence import save_uploaded_file
 from .database import create_package, get_package, get_all_packages, create_metadata
 from .metadata_extractor import extract_file_metadata
@@ -126,7 +125,28 @@ def register_routes(app: Flask) -> None:
 
             # Extract and store metadata
             metadata_dict = extract_file_metadata(file_path)
-            create_metadata(package_id=package.id, metadata=json.dumps(metadata_dict))
+
+            # Get PSADT variables with fallback mapping
+            from .metadata_extractor import MetadataExtractor
+
+            extractor = MetadataExtractor()
+            psadt_vars = extractor.get_psadt_variables(metadata_dict)
+
+            create_metadata(
+                package_id=package.id,
+                product_name=psadt_vars.get("appName")
+                or metadata_dict.get("product_name"),
+                version=psadt_vars.get("appVersion") or metadata_dict.get("version"),
+                publisher=psadt_vars.get("appVendor") or metadata_dict.get("publisher"),
+                install_date=metadata_dict.get("install_date"),
+                uninstall_string=metadata_dict.get("uninstall_string"),
+                estimated_size=metadata_dict.get("estimated_size"),
+                product_code=psadt_vars.get("productCode")
+                or metadata_dict.get("product_code"),
+                upgrade_code=metadata_dict.get("upgrade_code"),
+                language=metadata_dict.get("language"),
+                architecture=metadata_dict.get("architecture"),
+            )
 
             # Return package information
             return jsonify(
