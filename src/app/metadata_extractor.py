@@ -177,6 +177,8 @@ class MetadataExtractor:
                         metadata["summary_author"] = value
                     elif key == "template":
                         metadata["template"] = value
+                    elif key == "comments":
+                        metadata["summary_comments"] = value
 
             logger.debug(f"MSI summary info extracted: {metadata}")
 
@@ -568,6 +570,18 @@ class MetadataExtractor:
         if not app_vendor:
             # Use summary_author as vendor fallback
             app_vendor = metadata.get("summary_author")
+
+        # Try to extract version from summary_comments if not available from property table
+        if not app_version:
+            comments = metadata.get("summary_comments", "")
+            if comments:
+                # Try to extract version from comments like "136.0.7103.114 Copyright 2025 Google LLC"
+                import re
+
+                # Look for version patterns like X.Y.Z.W or X.Y.Z
+                version_match = re.search(r"(\d+\.\d+\.\d+(?:\.\d+)?)", comments)
+                if version_match:
+                    app_version = version_match.group(1)
 
         psadt_vars = {
             "appName": app_name or "",
