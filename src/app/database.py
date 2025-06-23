@@ -33,13 +33,17 @@ class DatabaseService:
 def get_database_service() -> DatabaseService:
     """Get the database service instance."""
     if not hasattr(current_app, "database_service"):
-        # Get instance directory
-        instance_dir = Path(current_app.instance_path)
-        instance_dir.mkdir(exist_ok=True)
+        # Check if DATABASE_URL is configured
+        database_url = current_app.config.get("DATABASE_URL")
 
-        # Create database URL
-        db_path = instance_dir / "aipackager.db"
-        database_url = f"sqlite:///{db_path}"
+        if not database_url:
+            # Get instance directory
+            instance_dir = Path(current_app.instance_path)
+            instance_dir.mkdir(exist_ok=True)
+
+            # Create database URL
+            db_path = instance_dir / "aipackager.db"
+            database_url = f"sqlite:///{db_path}"
 
         # Create service
         current_app.database_service = DatabaseService(database_url)

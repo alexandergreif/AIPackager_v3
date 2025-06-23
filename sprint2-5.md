@@ -30,8 +30,8 @@ These rules apply to *every* ticket below.
 | **SP2-5-08** | Logging | ✅ DONE: Add **packages.log** (global). On each `PackageRequest.set_step()` write CMTrace line: `<timestamp> | <package_id> | <old_step> -> <new_step>`. Unit test asserts line append. |
 | **SP2-5-09** | UI | ✅ DONE: Build **detail view** (`/detail/<uuid>`) showing summary card, full metadata table, and rendered script in `<pre>` with Copy / Download buttons. | Copy places script on clipboard. |
 | **SP2-5-10** | UI | ✅ DONE: **History page**: list last 90 days (date, name, version, status). | Row click loads matching detail view. |
-| **SP2-5-11** | Resume | On app start, resume packages not `COMPLETED`/`FAILED` via `PackageRequest.resume_pending_jobs()`. | Integration test: crash mid-workflow, restart completes job. |
-| **SP2-5-12** | Docs | Update `README` + `/docs`: new pages, workflow diagram, GIF of progress bar; `markdownlint` passes. | CI green. |
+| **SP2-5-11** | Resume | ✅ DONE: On app start, resume packages not `COMPLETED`/`FAILED` via `PackageRequest.resume_pending_jobs()`. | Integration test: crash mid-workflow, restart completes job. |
+| **SP2-5-12** | Docs | ✅ DONE: Update `README` + `/docs`: new pages, workflow diagram, GIF of progress bar; `markdownlint` passes. | CI green. |
 
 ---
 

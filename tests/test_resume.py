@@ -19,9 +19,14 @@ def test_resume_pending_jobs(tmp_path):
             file_path="/path/to/test.msi",
             status="processing",
         )
-        db_service.get_session().add(package)
-        db_service.get_session().commit()
-        package_id = package.id
+        session = db_service.get_session()
+        try:
+            session.add(package)
+            session.commit()
+            session.refresh(package)  # Ensure the package is fully loaded
+            package_id = str(package.id)  # Convert UUID to string
+        finally:
+            session.close()
 
     # Restart the app
     app = create_app({"DATABASE_URL": f"sqlite:///{db_path}"})
@@ -29,4 +34,8 @@ def test_resume_pending_jobs(tmp_path):
     with app.app_context():
         # The resume logic should have run on app start
         retrieved_package = get_package(package_id)
+
+        assert retrieved_package is not None, (
+            f"Package {package_id} not found in database"
+        )
         assert retrieved_package.status == "completed"

@@ -24,4 +24,13 @@ def create_app(config: Optional[dict] = None) -> Flask:
     # Register routes
     register_routes(app)
 
+    # Resume pending jobs on startup
+    with app.app_context():
+        try:
+            from src.aipackager.workflow import PackageRequest
+
+            PackageRequest.resume_pending_jobs()
+        except Exception as e:
+            app.logger.error(f"Failed to resume pending jobs on startup: {e}")
+
     return app
