@@ -1,1 +1,1 @@
-"""AIPackager v3 source package."""
+# src/__init__.py

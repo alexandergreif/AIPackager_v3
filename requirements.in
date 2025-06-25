@@ -1,5 +1,7 @@
 # Core dependencies
 PyYAML>=6.0.0
+openai>=1.0.0
+pydantic>=2.0.0
 
 # Flask web framework
 Flask>=2.3.0

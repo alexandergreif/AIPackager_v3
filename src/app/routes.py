@@ -1,5 +1,6 @@
 """Route handlers for AIPackager v3."""
 
+from datetime import datetime
 from pathlib import Path
 from typing import Union
 from flask import (
@@ -16,6 +17,7 @@ from flask import (
 from .file_persistence import save_uploaded_file
 from .database import create_package, get_package, get_all_packages, create_metadata
 from .metadata_extractor import extract_file_metadata
+from .services.script_generator import PSADTGenerator
 
 
 def register_routes(app: Flask) -> None:
@@ -158,6 +160,87 @@ def register_routes(app: Flask) -> None:
                     "custom_instructions": package.custom_instructions,
                 }
             )
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/packages/<package_id>/generate", methods=["POST"])
+    def api_generate_script(package_id: str) -> Union[Response, tuple[str, int]]:
+        """API endpoint to generate a PSADT script using the 5-stage pipeline."""
+        try:
+            package = get_package(package_id)
+            if not package:
+                return jsonify({"error": "Package not found"}), 404
+
+            generator = PSADTGenerator()
+            psadt_script = generator.generate_script(package.custom_instructions)
+
+            # Store the generated script as a JSON file
+            instance_dir = Path(current_app.instance_path)
+            script_path = instance_dir / f"{package_id}.json"
+            with open(script_path, "w") as f:
+                f.write(psadt_script.model_dump_json(indent=4))
+
+            return jsonify(
+                {
+                    "package_id": str(package.id),
+                    "message": "Script generation started.",
+                    "script_path": str(script_path),
+                }
+            )
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/render/<package_id>", methods=["POST"])
+    def api_render_package(package_id: str) -> Union[Response, tuple[str, int]]:
+        """API endpoint for manual re-rendering of PSADT scripts."""
+        try:
+            package = get_package(package_id)
+            if not package:
+                return jsonify({"error": "Package not found"}), 404
+
+            # Import ScriptRenderer
+            from .script_renderer import ScriptRenderer
+
+            # Get AI sections from request body (for testing/manual rendering)
+            request_data = request.get_json() or {}
+            ai_sections = request_data.get(
+                "ai_sections",
+                {
+                    "pre_installation_tasks": "# Manual render - no AI sections provided",
+                    "installation_tasks": "# Manual render - no AI sections provided",
+                    "post_installation_tasks": "# Manual render - no AI sections provided",
+                    "uninstallation_tasks": "# Manual render - no AI sections provided",
+                    "post_uninstallation_tasks": "# Manual render - no AI sections provided",
+                },
+            )
+
+            # Initialize renderer and render script
+            renderer = ScriptRenderer()
+            rendered_script = renderer.render_psadt_script(package, ai_sections)
+
+            # Build response
+            response_data = {
+                "package_id": str(package.id),
+                "filename": package.filename,
+                "rendered_script": rendered_script,
+                "render_timestamp": datetime.now().isoformat(),
+                "ai_sections_provided": list(ai_sections.keys()),
+            }
+
+            # Include metadata if available
+            if package.package_metadata:
+                metadata = package.package_metadata
+                response_data["metadata"] = {
+                    "product_name": metadata.product_name,
+                    "version": metadata.version,
+                    "publisher": metadata.publisher,
+                    "architecture": metadata.architecture,
+                    "product_code": metadata.product_code,
+                }
+
+            return jsonify(response_data)
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500

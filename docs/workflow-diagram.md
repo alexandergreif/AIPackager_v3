@@ -1,8 +1,6 @@
-# Workflow Diagram
+# Enhanced Workflow Diagram - 5-Stage Self-Correcting Pipeline
 
-This document describes the AIPackager v3 workflow process and architecture.
-
-## 🔄 Processing Workflow
+## 🔄 5-Stage Processing Workflow
 
 ```mermaid
 graph TD
@@ -11,6 +9,7 @@ graph TD
     C --> D[Create Package Record]
     D --> E[Extract Metadata]
 
+    %% Traditional metadata extraction (unchanged)
     E --> F{MSI Tools Available?}
     F -->|Yes| G[Use msiinfo for MSI]
     F -->|No| H[Use Alternative Methods]
@@ -19,209 +18,122 @@ graph TD
     J --> K[Extract Architecture from Template]
     H --> L[Try LessMSI/PE Analysis]
     L --> K
-    K --> M[Generate PSADT Variables]
 
-    M --> N[Preprocess Data]
-    N --> O[Generate AI Prompt]
-    O --> P[Call GPT-4o API]
-    P --> Q[Render PSADT Script]
-    Q --> R[Mark as Completed]
+    %% NEW: 5-Stage AI Pipeline
+    K --> M[Start 5-Stage Pipeline]
 
-    R --> S[Display Results]
-    S --> T[Download/Copy Script]
+    %% Stage 1: Instruction Processing
+    M --> N1[Stage 1: Instruction Processor]
+    N1 --> N2[Convert User Text to Structured Instructions]
+    N2 --> N3[Predict Required PSADT Cmdlets]
+    N3 --> O1{Stage 1 Success?}
+    O1 -->|No| Z[Mark as Failed]
+    O1 -->|Yes| P1[Store Predicted Cmdlets]
 
-    %% Error Handling
-    E --> U{Error?}
-    N --> U
-    O --> U
-    P --> U
-    Q --> U
-    U -->|Yes| V[Mark as Failed]
-    U -->|No| W[Continue]
+    %% Stage 2: Targeted RAG
+    P1 --> Q1[Stage 2: Targeted RAG]
+    Q1 --> Q2[Query Documentation for Predicted Cmdlets]
+    Q2 --> Q3[Compile Focused Documentation Context]
+    Q3 --> R1{Stage 2 Success?}
+    R1 -->|No| Z
+    R1 -->|Yes| S1[Store Documentation Context]
 
-    %% Resume Logic
-    X[App Startup] --> Y[Check Pending Jobs]
-    Y --> Z{Found Pending?}
-    Z -->|Yes| AA[Resume from Current Step]
-    Z -->|No| BB[Ready for New Jobs]
-    AA --> N
+    %% Stage 3: Script Generation
+    S1 --> T1[Stage 3: Script Generator]
+    T1 --> T2[Generate Initial PowerShell Script]
+    T2 --> T3[Apply PSADT Template Structure]
+    T3 --> U1{Stage 3 Success?}
+    U1 -->|No| Z
+    U1 -->|Yes| V1[Store Initial Script]
 
-    style A fill:#e1f5fe
-    style R fill:#c8e6c9
-    style V fill:#ffcdd2
-    style X fill:#fff3e0
+    %% Stage 4: Hallucination Detection
+    V1 --> W1[Stage 4: Hallucination Detector]
+    W1 --> W2[Validate Script Against Knowledge Graph]
+    W2 --> W3[Identify Invalid Cmdlets/Parameters]
+    W3 --> X1{Hallucinations Found?}
+    X1 -->|No| Y1[Mark as Completed]
+    X1 -->|Yes| X2[Generate Hallucination Report]
+
+    %% Stage 5: Advisor Correction
+    X2 --> Y2[Stage 5: Advisor AI]
+    Y2 --> Y3[Query RAG for Correction Documentation]
+    Y3 --> Y4[Generate Corrected Script]
+    Y4 --> Y5[Validate Corrections]
+    Y5 --> Y6{Correction Success?}
+    Y6 -->|No| Z
+    Y6 -->|Yes| Y1
+
+    %% Final Steps
+    Y1 --> AA[Display Results with Pipeline Report]
+    AA --> BB[Download/Copy Script + Metrics]
+
+    %% Resume Logic (Enhanced)
+    CC[App Startup] --> DD[Check Pending Jobs]
+    DD --> EE{Found Pending?}
+    EE -->|Yes| FF[Resume from Current Pipeline Stage]
+    EE -->|No| GG[Ready for New Jobs]
+    FF --> M
+
+    %% Styling
+    style N1 fill:#e3f2fd
+    style Q1 fill:#f3e5f5
+    style T1 fill:#e8f5e8
+    style W1 fill:#fff3e0
+    style Y2 fill:#fce4ec
+    style Y1 fill:#c8e6c9
+    style Z fill:#ffcdd2
 ```
 
-## 📊 Workflow Steps Enum
+## 📊 Enhanced Workflow Steps
 
 ```python
 class WorkflowStep(enum.Enum):
-    UPLOAD = "upload"                    # File uploaded and validated
-    EXTRACT_METADATA = "extract_metadata"  # Parsing MSI/EXE metadata
-    PREPROCESS = "preprocess"            # Preparing data for AI
-    GENERATE_PROMPT = "generate_prompt"  # Creating structured prompt
-    CALL_AI = "call_ai"                 # Calling GPT-4o API
-    RENDER_SCRIPT = "render_script"     # Finalizing PSADT script
-    COMPLETED = "completed"             # Successfully finished
-    FAILED = "failed"                   # Error occurred
+    UPLOAD = "upload"
+    EXTRACT_METADATA = "extract_metadata"
+    STAGE_1_INSTRUCTION_PROCESSING = "stage_1_instruction_processing"
+    STAGE_2_TARGETED_RAG = "stage_2_targeted_rag"
+    STAGE_3_SCRIPT_GENERATION = "stage_3_script_generation"
+    STAGE_4_HALLUCINATION_DETECTION = "stage_4_hallucination_detection"
+    STAGE_5_ADVISOR_CORRECTION = "stage_5_advisor_correction"
+    COMPLETED = "completed"
+    FAILED = "failed"
 ```
 
-## 🏗️ System Architecture
+## 🏗️ Enhanced System Architecture
 
 ```mermaid
 graph TB
     subgraph "Web Layer"
-        A[Flask Routes] --> B[Jinja2 Templates]
-        A --> C[Static Assets]
+        A[Flask Routes] --> B[Enhanced Templates]
+        A --> C[Pipeline Progress UI]
     end
 
-    subgraph "Business Logic"
-        D[PackageRequest] --> E[WorkflowStep Enum]
-        D --> F[Metadata Extractor]
-        D --> G[File Persistence]
+    subgraph "5-Stage AI Pipeline"
+        D[Pipeline Orchestrator] --> E[Stage 1: Instruction Processor]
+        D --> F[Stage 2: Targeted RAG]
+        D --> G[Stage 3: Script Generator]
+        D --> H[Stage 4: Hallucination Detector]
+        D --> I[Stage 5: Advisor AI]
+    end
+
+    subgraph "Knowledge & Validation"
+        J[crawl4ai-rag MCP] --> K[PSADT Documentation]
+        J --> L[Knowledge Graph]
+        J --> M[Hallucination Detection]
     end
 
     subgraph "Data Layer"
-        H[SQLAlchemy Models] --> I[SQLite Database]
-        J[Alembic Migrations] --> I
-    end
-
-    subgraph "External Tools"
-        K[msitools/msiinfo] --> F
-        L[LessMSI] --> F
-        M[PE Analysis] --> F
-    end
-
-    subgraph "Logging & Monitoring"
-        N[CMTrace Logger] --> O[packages.log]
-        P[Progress Tracking] --> N
+        N[Enhanced Models] --> O[Pipeline State Tracking]
+        P[Alembic Migrations] --> O
     end
 
     A --> D
-    D --> H
-    F --> K
-    F --> L
-    F --> M
+    D --> J
+    F --> J
+    H --> J
+    I --> J
     D --> N
 
-    style A fill:#e3f2fd
-    style D fill:#f3e5f5
-    style H fill:#e8f5e8
-    style K fill:#fff8e1
-    style N fill:#fce4ec
-```
-
-## 🔄 Resume Functionality
-
-```mermaid
-sequenceDiagram
-    participant App as Flask App
-    participant DB as Database
-    participant WF as Workflow
-    participant PK as Package
-
-    Note over App: Application Startup
-    App->>WF: resume_pending_jobs()
-    WF->>DB: Query packages WHERE status NOT IN ('completed', 'failed')
-    DB-->>WF: Return pending packages
-
-    loop For each pending package
-        WF->>PK: Create PackageRequest(package)
-        PK->>PK: resume()
-        PK->>PK: Continue from current_step
-        PK->>DB: Update status to 'completed'
-    end
-
-    WF-->>App: Resume complete
-
-    Note over App: Ready for new requests
-```
-
-## 📁 File Processing Flow
-
-```mermaid
-graph LR
-    A[Upload Form] --> B[File Validation]
-    B --> C{Valid MSI/EXE?}
-    C -->|No| D[Show Error]
-    C -->|Yes| E[Generate UUID]
-    E --> F[Save to instance/uploads/]
-    F --> G[Create Package Record]
-    G --> H[Start Workflow]
-
-    H --> I[Extract Metadata]
-    I --> J{MSI File?}
-    J -->|Yes| K[Use msitools]
-    J -->|No| L[PE Header Analysis]
-
-    K --> M[Summary Info]
-    M --> N[Property Table]
-    N --> O[Template Parsing]
-    O --> P[PSADT Variables]
-
-    L --> Q[Version Info]
-    Q --> R[Architecture Detection]
-    R --> P
-
-    P --> S[Store in Database]
-    S --> T[Continue Workflow]
-
-    style C fill:#fff3e0
-    style J fill:#fff3e0
-    style P fill:#e8f5e8
-```
-
-## 🎯 PSADT Variable Mapping
-
-| Source | PSADT Variable | Fallback Strategy |
-|--------|----------------|-------------------|
-| Property.ProductName | `appName` | summary_subject → summary_title |
-| Property.ProductVersion | `appVersion` | PE version info |
-| Property.Manufacturer | `appVendor` | summary_author |
-| Property.ProductCode | `productCode` | N/A (MSI only) |
-| Template field | `architecture` | PE machine type |
-| Property.ProductLanguage | `language` | Template language codes |
-
-## 🔍 Metadata Extraction Strategy
-
-### MSI Files (Preferred: msitools)
-1. **Summary Information** (`msiinfo suminfo`)
-   - Title, Subject, Author
-   - Template (architecture + language)
-
-2. **Property Table** (`msiinfo export Property`)
-   - ProductName, ProductVersion
-   - Manufacturer, ProductCode
-   - UpgradeCode, ProductLanguage
-
-3. **Fallback Methods**
-   - LessMSI (if available)
-   - Direct MSI database queries
-
-### EXE Files
-1. **PE Header Analysis**
-   - Machine type (architecture)
-   - Timestamp, characteristics
-
-2. **Version Information Resources**
-   - ProductName, ProductVersion
-   - CompanyName, FileDescription
-
-3. **Platform-Specific**
-   - Windows: win32api (if available)
-   - Cross-platform: Basic PE parsing
-
-## 📈 Progress Tracking
-
-Progress is tracked at multiple levels:
-
-1. **Package Level**: Overall completion percentage (0-100%)
-2. **Step Level**: Current workflow step enum
-3. **Logging**: CMTrace format for monitoring
-4. **Database**: Persistent state for resume functionality
-
-Each step transition is logged with:
-- Timestamp
-- Package ID
-- Step transition (old → new)
-- Success/failure status
+    style D fill:#e3f2fd
+    style J fill:#f3e5f5
+    style N fill:#e8f5e8
