@@ -1,0 +1,108 @@
+## Stage 1: Instruction Processing
+
+Convert the following user instructions into structured deployment instructions and predict the required PSADT cmdlets.
+
+### Example 1: Simple Silent Install
+
+**User Instructions:**
+"Silently install the application."
+
+**Application Metadata:**
+- **Name**: "My App"
+- **Version**: "1.2.3"
+- **File Type**: "msi"
+- **Architecture**: "x64"
+
+**Expected Output:**
+```json
+{
+  "structured_instructions": {
+    "primary_action": "install",
+    "installation_method": "silent",
+    "custom_parameters": null,
+    "prerequisites": [],
+    "post_install_actions": [],
+    "special_requirements": []
+  },
+  "predicted_cmdlets": [
+    "Start-ADTMsiProcess",
+    "Write-ADTLogEntry"
+  ],
+  "confidence_score": 0.95
+}
+```
+
+### Example 2: Interactive Install with a Custom Parameter
+
+**User Instructions:**
+"Install the app interactively and set the server address to 'prod.server.com'."
+
+**Application Metadata:**
+- **Name**: "Client Tool"
+- **Version**: "2.0"
+- **File Type**: "exe"
+- **Architecture**: "x86"
+
+**Expected Output:**
+```json
+{
+  "structured_instructions": {
+    "primary_action": "install",
+    "installation_method": "interactive",
+    "custom_parameters": "SERVER_ADDRESS=prod.server.com",
+    "prerequisites": [],
+    "post_install_actions": [],
+    "special_requirements": []
+  },
+  "predicted_cmdlets": [
+    "Show-ADTInstallationWelcome",
+    "Start-ADTProcess",
+    "Write-ADTLogEntry"
+  ],
+  "confidence_score": 0.90
+}
+```
+
+---
+
+### Your Task
+
+**User Instructions:**
+{{ user_instructions }}
+
+### Application Metadata
+- **Name**: {{ metadata.product_name | default("Unknown Application") }}
+- **Version**: {{ metadata.version | default("1.0.0") }}
+- **File Type**: {{ metadata.file_type | default("msi") }}
+- **Architecture**: {{ metadata.architecture | default("x86/x64") }}
+
+### Expected Output Format
+```json
+{
+  "structured_instructions": {
+    "primary_action": "install|uninstall|repair",
+    "installation_method": "silent|interactive|custom",
+    "custom_parameters": "string or null",
+    "prerequisites": ["list of requirements"],
+    "post_install_actions": ["list of actions"],
+    "special_requirements": ["list of special needs"]
+  },
+  "predicted_cmdlets": [
+    "Start-ADTMsiProcess",
+    "Show-ADTInstallationWelcome",
+    "Write-ADTLogEntry"
+  ],
+  "confidence_score": 0.85
+}
+```
+
+### PSADT v4 Cmdlet Reference
+Focus on these commonly used cmdlets:
+- **MSI/EXE Execution**: Start-ADTMsiProcess, Start-ADTProcess
+- **User Interface**: Show-ADTInstallationWelcome, Show-ADTInstallationProgress
+- **Process Management**: Get-ADTApplication, Stop-ADTServiceAndDependencies
+- **File Operations**: Copy-ADTFile, Remove-ADTFile, New-ADTFolder
+- **Registry**: Set-ADTRegistryKey, Remove-ADTRegistryKey
+- **Logging**: Write-ADTLogEntry
+
+Analyze the instructions and provide structured output with predicted cmdlets.

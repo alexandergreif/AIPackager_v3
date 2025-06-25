@@ -1,0 +1,31 @@
+## Stage 2: Targeted RAG Context Integration
+
+Use the following PSADT documentation context to inform script generation for the predicted cmdlets.
+
+### Predicted Cmdlets from Stage 1
+{% for cmdlet in predicted_cmdlets %}
+- {{ cmdlet }}
+{% endfor %}
+
+### Retrieved Documentation Context
+{{ rag_documentation }}
+
+### Application Context
+- **Name**: {{ metadata.product_name | default("Unknown Application") }}
+- **Type**: {{ metadata.file_type | default("msi") }}
+- **Instructions**: {{ structured_instructions.primary_action | default("install") }}
+
+### Integration Guidelines
+1. **Cmdlet Usage**: Apply the documentation examples to the specific application context
+2. **Parameter Mapping**: Use appropriate parameters based on the application type and requirements
+3. **Best Practices**: Follow the documented patterns and recommendations
+4. **Error Handling**: Implement the suggested error handling approaches
+
+### Context for Script Generation
+This documentation context should be used in Stage 3 to generate accurate, well-documented PowerShell commands that:
+- Follow official PSADT patterns
+- Use correct parameter syntax
+- Include appropriate error handling
+- Maintain consistency with PSADT best practices
+
+The retrieved documentation provides the foundation for generating production-ready script sections.

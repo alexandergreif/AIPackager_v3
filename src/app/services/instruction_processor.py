@@ -1,0 +1,67 @@
+# src/app/services/instruction_processor.py
+
+"""
+Stage 1: User instruction processing
+"""
+
+import os
+from openai import OpenAI
+from ..schemas import InstructionResult
+
+
+from jinja2 import Environment, FileSystemLoader
+
+
+class InstructionProcessor:
+    def __init__(self) -> None:
+        self.client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        self.jinja_env = Environment(loader=FileSystemLoader("src/app/prompts"))
+
+    def process_instructions(self, text: str) -> InstructionResult:
+        prompt = self.jinja_env.get_template("instruction_processing.j2").render(
+            user_instructions=text,
+            metadata={
+                "product_name": "Application",
+                "version": "1.0.0",
+                "file_type": "msi",
+                "architecture": "x64",
+            },
+        )
+
+        response = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert in PowerShell and PSAppDeployToolkit. Return a JSON object with structured_instructions, predicted_cmdlets, and confidence_score.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            response_format={"type": "json_object"},
+        )
+
+        import json
+
+        try:
+            response_data = json.loads(response.choices[0].message.content)
+            return InstructionResult(
+                structured_instructions=response_data.get(
+                    "structured_instructions", {}
+                ),
+                predicted_cmdlets=response_data.get("predicted_cmdlets", []),
+                confidence_score=response_data.get("confidence_score", 0.8),
+            )
+        except (json.JSONDecodeError, KeyError):
+            # Fallback for failed parsing
+            return InstructionResult(
+                structured_instructions={
+                    "installation_type": "basic",
+                    "user_instructions": text,
+                },
+                predicted_cmdlets=[
+                    "Start-ADTMsiProcess",
+                    "Show-ADTInstallationWelcome",
+                    "Show-ADTInstallationProgress",
+                ],
+                confidence_score=0.7,
+            )

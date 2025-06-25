@@ -1,0 +1,35 @@
+## Package Information
+**Application**: {{ metadata.product_name | default("Unknown Application") }}
+**Version**: {{ metadata.version | default("1.0.0") }}
+**Publisher**: {{ metadata.publisher | default("Unknown Publisher") }}
+**Architecture**: {{ metadata.architecture | default("x86/x64") }}
+**File Type**: {{ file_extension | default("msi") }}
+**Installer Path**: {{ package.filename }}
+
+{% if metadata.product_code %}
+**Product Code**: {{ metadata.product_code }}
+{% endif %}
+
+{% if metadata.upgrade_code %}
+**Upgrade Code**: {{ metadata.upgrade_code }}
+{% endif %}
+
+## User Instructions
+{{ package.custom_instructions | default("Standard installation with default settings") }}
+
+## Deployment Requirements
+- **Silent Installation**: Support unattended deployment
+- **User Interface**: Show progress and handle user interactions appropriately
+- **Process Management**: Close running instances before installation
+- **Error Handling**: Provide clear error messages and appropriate exit codes
+- **Logging**: Use CMTrace format for all log entries
+
+## Context for AI Processing
+This information will be used to generate PSADT script sections for:
+1. Pre-installation tasks (process closure, prerequisites)
+2. Installation tasks (main installer execution)
+3. Post-installation tasks (shortcuts, registry, cleanup)
+4. Uninstallation tasks (removal process)
+5. Post-uninstallation tasks (cleanup, verification)
+
+Generate PowerShell commands that are appropriate for this specific application and follow PSADT v4 best practices.

@@ -1,5 +1,16 @@
 # Core dependencies
 PyYAML>=6.0.0
+openai>=1.0.0
+pydantic>=2.0.0
+
+# Flask web framework
+Flask>=2.3.0
+Werkzeug>=2.3.0
+Jinja2>=3.1.0
+
+# Database
+SQLAlchemy>=2.0.0
+Alembic>=1.12.0
 
 # Development and testing tools
 pytest>=7.0.0
@@ -10,3 +21,5 @@ pre-commit>=3.0.0
 
 # Documentation
 sphinx>=5.0.0
+
+# MSI parsing

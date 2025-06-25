@@ -1,0 +1,66 @@
+## Stage 3: PSADT Script Generation
+
+Generate PowerShell script sections using the structured instructions and PSADT documentation context.
+
+### Structured Instructions from Stage 1
+```json
+{{ structured_instructions | tojson }}
+```
+
+### PSADT Documentation Context
+{{ rag_documentation }}
+
+### Application Metadata
+- **Name**: {{ metadata.product_name | default("Unknown Application") }}
+- **Version**: {{ metadata.version | default("1.0.0") }}
+- **Publisher**: {{ metadata.publisher | default("Unknown Publisher") }}
+- **File Type**: {{ metadata.file_type | default("msi") }}
+- **Architecture**: {{ metadata.architecture | default("x86/x64") }}
+{% if metadata.product_code %}
+- **Product Code**: {{ metadata.product_code }}
+{% endif %}
+
+### Task
+Generate the following PowerShell script sections using PSADT v4 cmdlets:
+
+#### Required Sections
+1. **pre_installation_tasks**: Commands to run before installation
+2. **installation_tasks**: Main installation commands
+3. **post_installation_tasks**: Commands to run after installation
+4. **uninstallation_tasks**: Commands for uninstalling the application
+5. **post_uninstallation_tasks**: Cleanup commands after uninstallation
+
+### Output Format
+Provide each section as clean PowerShell code that can be directly inserted into the PSADT template:
+
+```powershell
+# Pre-Installation Tasks
+Write-ADTLogEntry -Message "Starting pre-installation tasks for {{ metadata.product_name | default("application") }}" -Severity 1
+# Additional pre-installation commands here
+
+# Installation Tasks
+Write-ADTLogEntry -Message "Beginning installation of {{ metadata.product_name | default("application") }}" -Severity 1
+# Main installation commands here
+
+# Post-Installation Tasks
+Write-ADTLogEntry -Message "Completing post-installation tasks" -Severity 1
+# Post-installation commands here
+
+# Uninstallation Tasks
+Write-ADTLogEntry -Message "Beginning uninstallation of {{ metadata.product_name | default("application") }}" -Severity 1
+# Uninstallation commands here
+
+# Post-Uninstallation Tasks
+Write-ADTLogEntry -Message "Completing post-uninstallation cleanup" -Severity 1
+# Cleanup commands here
+```
+
+### Requirements
+- Use only PSADT v4 cmdlets (Start-ADTMsiProcess, Start-ADTProcess, etc.)
+- Include Write-ADTLogEntry statements with appropriate severity levels
+- Handle both MSI and EXE installers appropriately
+- Include proper error handling with try-catch blocks where needed
+- Follow the patterns from the provided documentation context
+- Generate commands specific to the application and user instructions
+
+Generate production-ready PowerShell code sections now.
