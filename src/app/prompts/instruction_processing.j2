@@ -2,7 +2,72 @@
 
 Convert the following user instructions into structured deployment instructions and predict the required PSADT cmdlets.
 
-### User Instructions
+### Example 1: Simple Silent Install
+
+**User Instructions:**
+"Silently install the application."
+
+**Application Metadata:**
+- **Name**: "My App"
+- **Version**: "1.2.3"
+- **File Type**: "msi"
+- **Architecture**: "x64"
+
+**Expected Output:**
+```json
+{
+  "structured_instructions": {
+    "primary_action": "install",
+    "installation_method": "silent",
+    "custom_parameters": null,
+    "prerequisites": [],
+    "post_install_actions": [],
+    "special_requirements": []
+  },
+  "predicted_cmdlets": [
+    "Start-ADTMsiProcess",
+    "Write-ADTLogEntry"
+  ],
+  "confidence_score": 0.95
+}
+```
+
+### Example 2: Interactive Install with a Custom Parameter
+
+**User Instructions:**
+"Install the app interactively and set the server address to 'prod.server.com'."
+
+**Application Metadata:**
+- **Name**: "Client Tool"
+- **Version**: "2.0"
+- **File Type**: "exe"
+- **Architecture**: "x86"
+
+**Expected Output:**
+```json
+{
+  "structured_instructions": {
+    "primary_action": "install",
+    "installation_method": "interactive",
+    "custom_parameters": "SERVER_ADDRESS=prod.server.com",
+    "prerequisites": [],
+    "post_install_actions": [],
+    "special_requirements": []
+  },
+  "predicted_cmdlets": [
+    "Show-ADTInstallationWelcome",
+    "Start-ADTProcess",
+    "Write-ADTLogEntry"
+  ],
+  "confidence_score": 0.90
+}
+```
+
+---
+
+### Your Task
+
+**User Instructions:**
 {{ user_instructions }}
 
 ### Application Metadata
@@ -10,14 +75,6 @@ Convert the following user instructions into structured deployment instructions 
 - **Version**: {{ metadata.version | default("1.0.0") }}
 - **File Type**: {{ metadata.file_type | default("msi") }}
 - **Architecture**: {{ metadata.architecture | default("x86/x64") }}
-
-### Task
-Analyze the user instructions and application metadata to:
-
-1. **Extract Deployment Actions**: Identify what needs to be done (install, configure, etc.)
-2. **Determine Installation Method**: Silent, interactive, or custom parameters
-3. **Identify Prerequisites**: Any required components or conditions
-4. **Predict PSADT Cmdlets**: List the specific PSADT v4 cmdlets likely needed
 
 ### Expected Output Format
 ```json
