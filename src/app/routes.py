@@ -2,7 +2,8 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Union
+from typing import Union, Any, cast
+from uuid import UUID
 from flask import (
     Flask,
     jsonify,
@@ -45,7 +46,7 @@ def register_routes(app: Flask) -> None:
                 return "No selected file", 400
             if file:
                 # The form now submits to the API, so this route is not used for POST
-                return redirect(url_for("upload"))
+                return cast(Response, redirect(url_for("upload")))
         return render_template("upload.html")
 
     @app.route("/progress/<id>")
@@ -94,21 +95,18 @@ def register_routes(app: Flask) -> None:
 
         # Handle AJAX requests for progress updates
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            # Get real progress from database
+            from .workflow.progress import pct
+
             progress_pct = (
-                package.progress_pct if package.progress_pct is not None else 0
+                package.progress_pct
+                if package.progress_pct is not None
+                else pct(package.current_step or "upload")
             )
 
-            # Map status to progress if not set
-            if progress_pct == 0:
-                if package.status == "uploading":
-                    progress_pct = 10
-                elif package.status == "processing":
-                    progress_pct = 45  # Show 45% during processing
-                elif package.status == "completed":
-                    progress_pct = 100
-                elif package.status == "failed":
-                    progress_pct = 0
+            if package.status == "completed":
+                progress_pct = 100
+            elif package.status == "failed":
+                progress_pct = 0
 
             return jsonify(
                 {
@@ -122,7 +120,7 @@ def register_routes(app: Flask) -> None:
 
         # Redirect to detail page when completed
         if package.status == "completed":
-            return redirect(url_for("detail", id=id))
+            return cast(Response, redirect(url_for("detail", id=id)))
 
         # Show error message if failed
         if package.status == "failed":
@@ -207,7 +205,7 @@ def register_routes(app: Flask) -> None:
         return render_template("history.html", packages=packages)
 
     @app.route("/api/packages", methods=["POST"])
-    def api_create_package() -> Union[Response, tuple[str, int]]:
+    def api_create_package() -> Response | tuple[Response, int]:
         """API endpoint to create a new package with file upload."""
         package_logger = None
         try:
@@ -216,10 +214,11 @@ def register_routes(app: Flask) -> None:
                 return jsonify({"error": "No file part"}), 400
 
             file = request.files["installer"]
-            if file.filename == "":
+            filename = file.filename or ""
+            if filename == "":
                 return jsonify({"error": "No selected file"}), 400
 
-            if not file.filename.lower().endswith((".msi", ".exe")):
+            if not filename.lower().endswith((".msi", ".exe")):
                 return jsonify({"error": "Invalid file type"}), 400
 
             # Get custom instructions
@@ -233,7 +232,7 @@ def register_routes(app: Flask) -> None:
 
             # Create package record in database
             package = create_package(
-                filename=file.filename,
+                filename=filename,
                 file_path=file_path,
                 custom_instructions=custom_instructions,
             )
@@ -268,7 +267,9 @@ def register_routes(app: Flask) -> None:
                     e,
                     {
                         "file_path": str(file_path),
-                        "file_type": file.filename.split(".")[-1].lower(),
+                        "file_type": (
+                            filename.split(".")[-1].lower() if filename else ""
+                        ),
                     },
                 )
                 # Continue with empty metadata dict
@@ -341,21 +342,24 @@ def register_routes(app: Flask) -> None:
                 package_logger.log_error("UPLOAD_FAILED", e)
             return jsonify({"error": str(e)}), 500
 
-    @app.route("/api/packages/<package_id>/generate", methods=["POST"])
-    def api_generate_script(package_id: str) -> Union[Response, tuple[str, int]]:
+    @app.route("/api/packages/<uuid:package_id>/generate", methods=["POST"])
+    def api_generate_script(package_id: UUID) -> Response | tuple[Response, int]:
         """API endpoint to generate a PSADT script using the 5-stage pipeline."""
-        package_logger = get_package_logger(package_id)
+        package_logger = get_package_logger(str(package_id))
+        from .database import get_database_service
+
+        db_service = get_database_service()
+        session = db_service.get_session()
         try:
-            package = get_package(package_id)
+            package = session.get(Package, package_id)
             if not package:
+                session.close()
                 return jsonify({"error": "Package not found"}), 404
 
             package_logger.log_step("SCRIPT_GENERATION", "Starting 5-stage pipeline")
 
-            # Update package status to processing
-            from .database import update_package_status
-
-            update_package_status(package_id, "processing")
+            package.status = "processing"
+            session.commit()
             package_logger.log_step(
                 "STATUS_UPDATE", "Package status updated to processing"
             )
@@ -366,17 +370,21 @@ def register_routes(app: Flask) -> None:
 
             try:
                 psadt_script = generator.generate_script(
-                    package.custom_instructions or "Install the application"
+                    package.custom_instructions or "Install the application",
+                    package=package,
+                    session=session,
                 )
                 package_logger.log_step(
                     "PIPELINE_COMPLETE",
                     "5-stage pipeline completed successfully",
                     data={
-                        "has_hallucinations": psadt_script.hallucination_report.get(
-                            "has_hallucinations", False
-                        )
-                        if psadt_script.hallucination_report
-                        else False,
+                        "has_hallucinations": (
+                            psadt_script.hallucination_report.get(
+                                "has_hallucinations", False
+                            )
+                            if psadt_script.hallucination_report
+                            else False
+                        ),
                         "corrections_count": len(
                             psadt_script.corrections_applied or []
                         ),
@@ -384,26 +392,17 @@ def register_routes(app: Flask) -> None:
                 )
             except Exception as e:
                 package_logger.log_error("PIPELINE_FAILED", e)
-                update_package_status(package_id, "failed")
+                package.status = "failed"
+                session.commit()
                 return jsonify({"error": f"Pipeline failed: {str(e)}"}), 500
 
             # Update the package with pipeline results
             package_logger.log_step(
                 "DATABASE_UPDATE", "Storing pipeline results in database"
             )
-            from .database import get_database_service
-
-            db_service = get_database_service()
-            session = db_service.get_session()
 
             try:
-                # Get fresh package instance from this session
-                from uuid import UUID
-
-                uuid_obj = UUID(package_id)
-                db_package = (
-                    session.query(Package).filter(Package.id == uuid_obj).first()
-                )
+                db_package = package
 
                 if db_package:
                     # Store pipeline results in database
@@ -437,22 +436,27 @@ def register_routes(app: Flask) -> None:
                         f"Script generation completed successfully for package {package_id}",
                     )
 
-                    return jsonify(
-                        {
-                            "package_id": str(package.id),
-                            "message": "Script generation completed successfully.",
-                            "status": "completed",
-                            "has_hallucinations": psadt_script.hallucination_report.get(
-                                "has_hallucinations", False
-                            )
-                            if psadt_script.hallucination_report
-                            else False,
-                            "corrections_applied": len(
-                                psadt_script.corrections_applied or []
-                            ),
-                            "script_path": str(script_path),
-                            "log_file": str(package_logger.get_log_file_path()),
-                        }
+                    return (
+                        jsonify(
+                            {
+                                "package_id": str(package.id),
+                                "message": "Script generation completed successfully.",
+                                "status": "completed",
+                                "has_hallucinations": (
+                                    psadt_script.hallucination_report.get(
+                                        "has_hallucinations", False
+                                    )
+                                    if psadt_script.hallucination_report
+                                    else False
+                                ),
+                                "corrections_applied": len(
+                                    psadt_script.corrections_applied or []
+                                ),
+                                "script_path": str(script_path),
+                                "log_file": str(package_logger.get_log_file_path()),
+                            }
+                        ),
+                        202,
                     )
                 else:
                     package_logger.log_error(
@@ -467,13 +471,15 @@ def register_routes(app: Flask) -> None:
             # Update package status to failed
             package_logger.log_error("GENERATION_FAILED", e)
             try:
-                update_package_status(package_id, "failed")
+                if package:
+                    package.status = "failed"
+                    session.commit()
             except Exception:
                 pass
             return jsonify({"error": str(e)}), 500
 
     @app.route("/api/render/<package_id>", methods=["POST"])
-    def api_render_package(package_id: str) -> Union[Response, tuple[str, int]]:
+    def api_render_package(package_id: str) -> Response | tuple[Response, int]:
         """API endpoint for manual re-rendering of PSADT scripts."""
         try:
             package = get_package(package_id)
@@ -501,7 +507,7 @@ def register_routes(app: Flask) -> None:
             rendered_script = renderer.render_psadt_script(package, ai_sections)
 
             # Build response
-            response_data = {
+            response_data: dict[str, Any] = {
                 "package_id": str(package.id),
                 "filename": package.filename,
                 "rendered_script": rendered_script,
@@ -526,14 +532,14 @@ def register_routes(app: Flask) -> None:
             return jsonify({"error": str(e)}), 500
 
     @app.route("/api/packages", methods=["GET"])
-    def api_list_packages() -> Response:
+    def api_list_packages() -> Response | tuple[Response, int]:
         """API endpoint to list all packages."""
         try:
             packages = get_all_packages()
 
             package_list = []
             for package in packages:
-                package_data = {
+                package_data: dict[str, Any] = {
                     "package_id": str(package.id),
                     "filename": package.filename,
                     "status": package.status,
@@ -565,14 +571,14 @@ def register_routes(app: Flask) -> None:
             return jsonify({"error": str(e)}), 500
 
     @app.route("/api/packages/<package_id>", methods=["GET"])
-    def api_get_package(package_id: str) -> Union[Response, tuple[str, int]]:
+    def api_get_package(package_id: str) -> Response | tuple[Response, int]:
         """API endpoint to get a specific package."""
         try:
             package = get_package(package_id)
             if not package:
                 return jsonify({"error": "Package not found"}), 404
 
-            package_data = {
+            package_data: dict[str, Any] = {
                 "package_id": str(package.id),
                 "filename": package.filename,
                 "status": package.status,
@@ -620,7 +626,7 @@ def register_routes(app: Flask) -> None:
         )
 
     @app.route("/api/packages/<package_id>/logs", methods=["GET"])
-    def api_get_logs(package_id: str) -> Union[Response, tuple[str, int]]:
+    def api_get_logs(package_id: str) -> Response | tuple[Response, int]:
         """API endpoint to get logs for a specific package."""
         try:
             package = get_package(package_id)

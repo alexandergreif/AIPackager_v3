@@ -10,6 +10,35 @@ from .hallucination_detector import HallucinationDetector
 from .advisor_service import AdvisorService
 from ..schemas import PSADTScript, InstructionResult
 from ..utils import retry_with_backoff
+from ..workflow.progress import pct
+from ..logging_cmtrace import get_cmtrace_logger
+from typing import ContextManager
+
+try:
+    from prometheus_client import Summary  # type: ignore
+except Exception:  # pragma: no cover - optional dependency
+
+    class Summary:  # type: ignore
+        def __init__(self, *_: object, **__: object) -> None:
+            pass
+
+        def labels(self, *_: object, **__: object) -> "Summary":  # type: ignore
+            return self
+
+        def time(self) -> ContextManager[None]:  # type: ignore
+            from contextlib import nullcontext
+
+            return nullcontext()
+
+
+from sqlalchemy.orm import Session
+from ..models import Package
+
+
+logger_cm = get_cmtrace_logger("pipeline")
+PIPELINE_STAGE_SECONDS = Summary(
+    "pipeline_stage_seconds", "Time spent in pipeline stage", ["stage"]
+)
 
 
 class PSADTGenerator:
@@ -20,35 +49,94 @@ class PSADTGenerator:
         self.advisor_service = AdvisorService()
 
     @retry_with_backoff()
-    def generate_script(self, text: str) -> PSADTScript:
+    def generate_script(
+        self,
+        text: str,
+        package: Package | None = None,
+        session: Session | None = None,
+    ) -> PSADTScript:
         """
         5-stage pipeline for generating validated PSADT scripts.
         """
         # Stage 1: Instruction Processing
-        instruction_result = self.instruction_processor.process_instructions(text)
+        with PIPELINE_STAGE_SECONDS.labels("instruction_processing").time():
+            instruction_result = self.instruction_processor.process_instructions(text)
+        if package and session:
+            package.current_step = "instruction_processing"
+            package.progress_pct = pct("instruction_processing")
+            session.commit()
+            logger_cm.info(
+                "Stage %s \u2192 %s %%",
+                "instruction_processing",
+                pct("instruction_processing"),
+            )
 
         # Stage 2: Targeted RAG - Query documentation for predicted cmdlets
-        rag_documentation = self.rag_service.query(instruction_result.predicted_cmdlets)
+        with PIPELINE_STAGE_SECONDS.labels("rag_enrichment").time():
+            rag_documentation = self.rag_service.query(
+                instruction_result.predicted_cmdlets
+            )
+        if package and session:
+            package.current_step = "rag_enrichment"
+            package.progress_pct = pct("rag_enrichment")
+            session.commit()
+            logger_cm.info(
+                "Stage %s \u2192 %s %%",
+                "rag_enrichment",
+                pct("rag_enrichment"),
+            )
 
         # Stage 3: Script Generation - Generate initial script with documentation
-        initial_script = self._generate_initial_script(
-            instruction_result, rag_documentation
-        )
+        with PIPELINE_STAGE_SECONDS.labels("script_generation").time():
+            initial_script = self._generate_initial_script(
+                instruction_result, rag_documentation
+            )
+        if package and session:
+            package.current_step = "script_generation"
+            package.progress_pct = pct("script_generation")
+            session.commit()
+            logger_cm.info(
+                "Stage %s \u2192 %s %%",
+                "script_generation",
+                pct("script_generation"),
+            )
 
         # Stage 4: Hallucination Detection - Validate the generated script
-        hallucination_report = self.hallucination_detector.detect(
-            self._script_to_powershell(initial_script)
-        )
+        with PIPELINE_STAGE_SECONDS.labels("hallucination_detection").time():
+            hallucination_report = self.hallucination_detector.detect(
+                self._script_to_powershell(initial_script)
+            )
+        if package and session:
+            package.current_step = "hallucination_detection"
+            package.progress_pct = pct("hallucination_detection")
+            session.commit()
+            logger_cm.info(
+                "Stage %s \u2192 %s %%",
+                "hallucination_detection",
+                pct("hallucination_detection"),
+            )
 
         # Stage 5: Advisor AI - Apply corrections if hallucinations detected
         if hallucination_report.get("has_hallucinations", False):
-            corrected_script = self.advisor_service.correct_script(
-                initial_script, hallucination_report
-            )
+            with PIPELINE_STAGE_SECONDS.labels("advisor_correction").time():
+                corrected_script = self.advisor_service.correct_script(
+                    initial_script, hallucination_report
+                )
+            if package and session:
+                package.current_step = "advisor_correction"
+                package.progress_pct = pct("advisor_correction")
+                session.commit()
+                logger_cm.info(
+                    "Stage %s \u2192 %s %%",
+                    "advisor_correction",
+                    pct("advisor_correction"),
+                )
             corrected_script.hallucination_report = hallucination_report
             return corrected_script
         else:
             initial_script.hallucination_report = hallucination_report
+            if package and session:
+                package.progress_pct = pct("hallucination_detection")
             return initial_script
 
     def _generate_initial_script(

@@ -43,7 +43,7 @@ class InstructionProcessor:
         import json
 
         try:
-            response_data = json.loads(response.choices[0].message.content)
+            response_data = json.loads(response.choices[0].message.content or "")
             return InstructionResult(
                 structured_instructions=response_data.get(
                     "structured_instructions", {}

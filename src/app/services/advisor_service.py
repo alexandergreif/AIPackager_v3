@@ -41,7 +41,7 @@ class AdvisorService:
         try:
             import json
 
-            corrected_data = json.loads(corrected_script_str)
+            corrected_data = json.loads(corrected_script_str or "")
 
             # Update the original script with corrected data
             if "pre_installation_tasks" in corrected_data:

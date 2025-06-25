@@ -1,24 +1,31 @@
 """Mock progress poller for AIPackager v3."""
 
 from typing import Dict, Any
+from uuid import uuid4
+
+_JOBS: Dict[str, Dict[str, Any]] = {}
 
 
 def get_job(job_id: str) -> Dict[str, Any] | None:
     """Get a job by its ID."""
-    # This is a mock implementation. In a real application, this would
-    # query a database or a job queue.
-    return None
+    return _JOBS.get(job_id)
 
 
-def set_job_progress(job_id: str, progress: int) -> None:
+def set_job_progress(job_id: str, progress: int, status: str = "Processing") -> None:
     """Set the progress of a job."""
-    # This is a mock implementation. In a real application, this would
-    # update the job progress in a database or job queue.
-    pass
+    job = _JOBS.get(job_id)
+    if job:
+        job["progress"] = progress
+        job["status"] = status
 
 
-def start_job(job_id: str, job_type: str = "script_generation") -> None:
-    """Start a job."""
-    # This is a mock implementation. In a real application, this would
-    # create and start a job in a job queue.
-    pass
+def start_job(filename: str, custom_instructions: str | None = None) -> str:
+    """Start a job and return its ID."""
+    job_id = str(uuid4())
+    _JOBS[job_id] = {
+        "filename": filename,
+        "custom_instructions": custom_instructions or "",
+        "status": "Uploading",
+        "progress": 0,
+    }
+    return job_id
