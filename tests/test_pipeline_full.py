@@ -7,6 +7,8 @@ import pytest
 from src.app import create_app
 from src.app.database import get_database_service
 from src.app.models import Package
+from src.app.schemas import InstructionResult
+import uuid
 
 
 def wait_for_completion(client, pkg_id, timeout=10):
@@ -40,8 +42,10 @@ def test_full_pipeline_flow(app_with_db):
 
     mocks = {
         "instruction": patch(
-            "src.app.services.script_generator.InstructionProcessor.process_instructions",
-            return_value=Package(),
+            "src.app.services.script_generator.InstructionProcessor"
+        ),
+        "advisor": patch(
+            "src.app.services.script_generator.AdvisorService"
         ),
         "rag": patch(
             "src.app.services.script_generator.RAGService.query",
@@ -53,7 +57,17 @@ def test_full_pipeline_flow(app_with_db):
         ),
     }
 
-    with mocks["instruction"], mocks["rag"], mocks["detect"]:
+    with (
+        mocks["instruction"] as MockInstr,
+        mocks["advisor"],
+        mocks["rag"],
+        mocks["detect"],
+    ):
+        MockInstr.return_value.process_instructions.return_value = InstructionResult(
+            structured_instructions={"user_instructions": "Install"},
+            predicted_cmdlets=["Start-ADTMsiProcess"],
+            confidence_score=0.9,
+        )
         data = {"installer": (BytesIO(b"abc"), "dummy.msi")}
         resp = client.post("/api/packages", data=data)
         pkg_id = resp.get_json()["package_id"]
@@ -67,7 +81,7 @@ def test_full_pipeline_flow(app_with_db):
             db_service = get_database_service()
             session = db_service.get_session()
             try:
-                pkg = session.get(Package, pkg_id)
+                pkg = session.get(Package, uuid.UUID(pkg_id))
                 assert pkg is not None
                 assert pkg.generated_script is not None
             finally:
