@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -44,6 +44,13 @@ class Package(Base):
 
     # User input
     custom_instructions: Mapped[Optional[str]] = mapped_column(Text)
+
+
+    # 5-Stage Pipeline Results
+    generated_script: Mapped[Optional[dict]] = mapped_column(JSON)
+    hallucination_report: Mapped[Optional[dict]] = mapped_column(JSON)
+    pipeline_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
+    corrections_applied: Mapped[Optional[list]] = mapped_column(JSON)
 
     # Relationship to metadata
     package_metadata: Mapped[Optional["Metadata"]] = relationship(

@@ -1,5 +1,5 @@
 # Sprint 0 – Repository & Tooling
-**Duration:** 1 week  
+**Duration:** 1 week
 **Goal:** Stable repo, dependency locks, automated tests on every push.
 
 | ID | Task | Acceptance |

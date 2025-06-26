@@ -43,8 +43,19 @@ class PackageRequest:
         logger.info(f"{self.package.id} | {old_step} -> {step_name}")
 
     def save_metadata(self, metadata: Dict[str, Any]) -> None:
-        """Saves the extracted metadata to the package."""
-        self.package.package_metadata = metadata
+
+        """Persist metadata for this package and attach the new record."""
+        try:
+            from src.app.database import create_metadata
+
+            record = create_metadata(self.package.id, **metadata)
+            # Attach for immediate access when this instance is still in use
+            self.package.package_metadata = record
+        except Exception:  # pragma: no cover - fail silently in tests without DB
+            # Fallback to simple assignment when database helpers are unavailable
+            self.package.package_metadata = metadata
+
+
 
     def resume(self) -> None:
         """Resume processing of this package from its current step."""

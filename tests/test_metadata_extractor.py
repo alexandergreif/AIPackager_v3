@@ -256,7 +256,9 @@ class TestMetadataExtractor:
         assert (
             psadt_vars["appName"] == "Google Chrome Installer"
         )  # From summary_subject
-        assert psadt_vars["appVersion"] == ""  # Version not available in summary
+        assert (
+            psadt_vars["appVersion"] == "136.0.7103.114"
+        )  # Version successfully extracted
         assert psadt_vars["appVendor"] == "Google LLC"  # From summary_author
         assert psadt_vars["productCode"] == ""  # Product code not available in summary
 

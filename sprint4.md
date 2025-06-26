@@ -14,16 +14,18 @@
 
 ## **Sprint 4 Tasks**
 
-| ID | Task |
-|----|------|
-| SP4‑01 | Integrate OpenAI SDK, load key from env. |
-| SP4‑02 | Define `PSADTScript` Pydantic schema + `InstructionResult` schema for Stage 1. |
-| SP4‑03 | Implement **5-Stage PSADTGenerator** service with retry/backoff. |
-| SP4‑04 | Update `/api/packages/<id>/generate` to use 5-stage pipeline, store JSON. |
-| SP4‑05 | Unit tests with mocked 5-stage pipeline responses. |
-| SP4‑06 | **Enhanced**: Set up RAG knowledge base for Stages 2+5 (targeted documentation). |
-| SP4‑07 | **NEW**: Implement `InstructionProcessor` (Stage 1) with cmdlet prediction. |
-| SP4‑08 | **NEW**: Implement `AdvisorService` (Stage 5) with hallucination correction. |
+
+| ID | Task | Status |
+|----|------|--------|
+| SP4‑01 | Integrate OpenAI SDK, load key from env. | ✅ DONE |
+| SP4‑02 | Define `PSADTScript` Pydantic schema + `InstructionResult` schema for Stage 1. | ✅ DONE |
+| SP4‑03 | Implement **5-Stage PSADTGenerator** service with retry/backoff. | ✅ DONE |
+| SP4‑04 | Update `/api/packages/<id>/generate` to use 5-stage pipeline, store JSON. | ✅ DONE |
+| SP4‑05 | Unit tests with mocked 5-stage pipeline responses. | ✅ DONE |
+| SP4‑06 | **Enhanced**: Set up RAG knowledge base for Stages 2+5 (targeted documentation). | ✅ DONE |
+| SP4‑07 | **NEW**: Implement `InstructionProcessor` (Stage 1) with cmdlet prediction. | ✅ DONE |
+| SP4‑08 | **NEW**: Implement `AdvisorService` (Stage 5) with hallucination correction. | ✅ DONE |
+
 
 ## **New Service Architecture**
 ```
