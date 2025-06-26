@@ -63,20 +63,64 @@ def register_routes(app: Flask) -> None:
             package.status == "completed" and not package.generated_script
         ):
             try:
-                from .database import update_package_status
-                import requests  # type: ignore
+                from .database import update_package_status, get_database_service
                 import threading
 
                 # Update status to processing
                 update_package_status(id, "processing")
 
-                # Start script generation in background
+                # Start script generation in background without HTTP self-call
                 def generate_script_async() -> None:
+                    from uuid import UUID
+
                     try:
-                        base_url = request.host_url.rstrip("/")
-                        requests.post(f"{base_url}/api/packages/{id}/generate")
+                        with app.app_context():
+                            db_service = get_database_service()
+                            session = db_service.get_session()
+                            try:
+                                package_obj = session.get(Package, UUID(id))
+                                if not package_obj:
+                                    update_package_status(id, "failed")
+                                    return
+
+                                package_logger = get_package_logger(str(package_obj.id))
+                                generator = PSADTGenerator()
+
+                                try:
+                                    psadt_script = generator.generate_script(
+                                        package_obj.custom_instructions or "Install the application",
+                                        package=package_obj,
+                                        session=session,
+                                    )
+                                except Exception as e:
+                                    package_logger.log_error("PIPELINE_FAILED", e)
+                                    package_obj.status = "failed"
+                                    session.commit()
+                                    return
+
+                                package_obj.generated_script = psadt_script.model_dump()
+                                package_obj.hallucination_report = psadt_script.hallucination_report
+                                package_obj.corrections_applied = psadt_script.corrections_applied
+                                package_obj.pipeline_metadata = {
+                                    "generation_timestamp": datetime.now().isoformat(),
+                                    "model_used": "gpt-4o-mini",
+                                    "pipeline_version": "5-stage-v1",
+                                }
+                                package_obj.status = "completed"
+                                session.commit()
+
+                                instance_dir = Path(current_app.instance_path)
+                                script_path = instance_dir / f"{package_obj.id}.json"
+                                with open(script_path, "w") as f:
+                                    f.write(psadt_script.model_dump_json(indent=4))
+
+                                package_logger.log_step(
+                                    "GENERATION_COMPLETE",
+                                    f"Script generation completed successfully for package {package_obj.id}",
+                                )
+                            finally:
+                                session.close()
                     except Exception:
-                        # If generation fails, mark as failed
                         try:
                             update_package_status(id, "failed")
                         except Exception:
