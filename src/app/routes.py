@@ -78,7 +78,8 @@ def register_routes(app: Flask) -> None:
                     except Exception:
                         # If generation fails, mark as failed
                         try:
-                            update_package_status(id, "failed")
+                            with app.app_context():
+                                update_package_status(id, "failed")
                         except Exception:
                             pass
 
