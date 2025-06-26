@@ -66,17 +66,18 @@ def register_routes(app: Flask) -> None:
                 from .database import update_package_status
                 import requests  # type: ignore
                 import threading
+                package_logger = get_package_logger(id)
 
                 # Update status to processing
                 update_package_status(id, "processing")
 
                 # Start script generation in background
                 def generate_script_async() -> None:
+                    base_url = request.host_url.rstrip("/")
                     try:
-                        base_url = request.host_url.rstrip("/")
                         requests.post(f"{base_url}/api/packages/{id}/generate")
-                    except Exception:
-                        # If generation fails, mark as failed
+                    except Exception as e:
+                        package_logger.log_error("GENERATION_START_FAILED", e)
                         try:
                             update_package_status(id, "failed")
                         except Exception:
