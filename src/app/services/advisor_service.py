@@ -5,7 +5,7 @@ Stage 5: Self-correction AI
 """
 
 import os
-from openai import OpenAI
+from openai import OpenAI, OpenAIError, APIConnectionError, APITimeoutError, AuthenticationError
 from jinja2 import Environment, FileSystemLoader
 from ..schemas import PSADTScript
 
@@ -18,22 +18,35 @@ class AdvisorService:
     def correct_script(
         self, script: PSADTScript, hallucination_report: dict
     ) -> PSADTScript:
+        if not self.client.api_key:
+            raise RuntimeError(
+                "OpenAI API key not configured. Set OPENAI_API_KEY environment variable."
+            )
         prompt = self.jinja_env.get_template("advisor_correction.j2").render(
             original_script=script.model_dump_json(indent=4),
             hallucination_report=hallucination_report,
         )
 
-        response = self.client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an expert in PowerShell and PSAppDeployToolkit. Return a corrected PSADTScript JSON object.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            response_format={"type": "json_object"},
-        )
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert in PowerShell and PSAppDeployToolkit. Return a corrected PSADTScript JSON object.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                response_format={"type": "json_object"},
+            )
+        except (APIConnectionError, APITimeoutError) as e:
+            raise RuntimeError(f"Unable to reach OpenAI service: {e}") from e
+        except AuthenticationError as e:
+            raise RuntimeError(
+                "Authentication with OpenAI failed. Check your API key."
+            ) from e
+        except OpenAIError as e:
+            raise RuntimeError(f"OpenAI request failed: {e}") from e
 
         corrected_script_str = response.choices[0].message.content
 
