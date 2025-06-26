@@ -6,6 +6,7 @@ Stage 5: Self-correction AI
 
 import os
 from openai import OpenAI, OpenAIError, APIConnectionError, APITimeoutError, AuthenticationError
+
 from jinja2 import Environment, FileSystemLoader
 from ..schemas import PSADTScript
 
@@ -18,10 +19,12 @@ class AdvisorService:
     def correct_script(
         self, script: PSADTScript, hallucination_report: dict
     ) -> PSADTScript:
+
         if not self.client.api_key:
             raise RuntimeError(
                 "OpenAI API key not configured. Set OPENAI_API_KEY environment variable."
             )
+
         prompt = self.jinja_env.get_template("advisor_correction.j2").render(
             original_script=script.model_dump_json(indent=4),
             hallucination_report=hallucination_report,

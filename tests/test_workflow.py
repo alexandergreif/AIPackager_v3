@@ -65,6 +65,7 @@ def test_save_metadata_method():
     assert mock_package_row.package_metadata == metadata
 
 
+
 def test_save_metadata_persists_to_db(tmp_path):
     """save_metadata should create a Metadata record linked to the package."""
     from src.app import create_app
@@ -88,3 +89,4 @@ def test_save_metadata_persists_to_db(tmp_path):
         assert refreshed is not None
         assert refreshed.package_metadata is not None
         assert refreshed.package_metadata.product_name == "Test Product"
+

@@ -6,8 +6,10 @@ from uuid import uuid4
 _JOBS: Dict[str, Dict[str, Any]] = {}
 
 
+
 def get_job(job_id: str) -> Dict[str, Any] | None:
     """Get a job by its ID."""
+
     return _JOBS.get(job_id)
 
 
@@ -29,3 +31,4 @@ def start_job(filename: str, custom_instructions: str | None = None) -> str:
         "progress": 0,
     }
     return job_id
+

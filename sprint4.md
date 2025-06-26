@@ -14,6 +14,7 @@
 
 ## **Sprint 4 Tasks**
 
+
 | ID | Task | Status |
 |----|------|--------|
 | SP4‑01 | Integrate OpenAI SDK, load key from env. | ✅ DONE |
@@ -24,6 +25,7 @@
 | SP4‑06 | **Enhanced**: Set up RAG knowledge base for Stages 2+5 (targeted documentation). | ✅ DONE |
 | SP4‑07 | **NEW**: Implement `InstructionProcessor` (Stage 1) with cmdlet prediction. | ✅ DONE |
 | SP4‑08 | **NEW**: Implement `AdvisorService` (Stage 5) with hallucination correction. | ✅ DONE |
+
 
 ## **New Service Architecture**
 ```

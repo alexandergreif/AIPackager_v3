@@ -152,3 +152,4 @@ def test_rag_service():
     result = rag.query(["Unknown-Cmdlet"])
     assert isinstance(result, str)
     assert "Unknown-Cmdlet" in result
+

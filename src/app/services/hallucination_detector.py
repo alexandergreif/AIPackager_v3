@@ -129,3 +129,4 @@ class HallucinationDetector:
             recommendations.append("No issues detected. Script appears to be valid.")
 
         return recommendations
+

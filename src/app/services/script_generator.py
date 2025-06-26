@@ -41,6 +41,7 @@ PIPELINE_STAGE_SECONDS = Summary(
 )
 
 
+
 class PSADTGenerator:
     def __init__(self) -> None:
         self.instruction_processor = InstructionProcessor()
@@ -212,3 +213,4 @@ class PSADTGenerator:
             sections.extend(script.post_uninstallation_tasks)
 
         return "\n".join(sections)
+
