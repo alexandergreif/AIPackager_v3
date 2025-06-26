@@ -5,7 +5,7 @@ Stage 1: User instruction processing
 """
 
 import os
-from openai import OpenAI
+from openai import OpenAI, OpenAIError, APIConnectionError, APITimeoutError, AuthenticationError
 from ..schemas import InstructionResult
 
 
@@ -18,6 +18,11 @@ class InstructionProcessor:
         self.jinja_env = Environment(loader=FileSystemLoader("src/app/prompts"))
 
     def process_instructions(self, text: str) -> InstructionResult:
+        if not self.client.api_key:
+            raise RuntimeError(
+                "OpenAI API key not configured. Set OPENAI_API_KEY environment variable."
+            )
+
         prompt = self.jinja_env.get_template("instruction_processing.j2").render(
             user_instructions=text,
             metadata={
@@ -28,17 +33,26 @@ class InstructionProcessor:
             },
         )
 
-        response = self.client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an expert in PowerShell and PSAppDeployToolkit. Return a JSON object with structured_instructions, predicted_cmdlets, and confidence_score.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            response_format={"type": "json_object"},
-        )
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert in PowerShell and PSAppDeployToolkit. Return a JSON object with structured_instructions, predicted_cmdlets, and confidence_score.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                response_format={"type": "json_object"},
+            )
+        except (APIConnectionError, APITimeoutError) as e:
+            raise RuntimeError(f"Unable to reach OpenAI service: {e}") from e
+        except AuthenticationError as e:
+            raise RuntimeError(
+                "Authentication with OpenAI failed. Check your API key."
+            ) from e
+        except OpenAIError as e:
+            raise RuntimeError(f"OpenAI request failed: {e}") from e
 
         import json
 
