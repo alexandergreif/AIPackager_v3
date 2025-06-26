@@ -131,7 +131,8 @@ def register_routes(app: Flask) -> None:
                         package_logger.log_error("GENERATION_START_FAILED", e)
 >>>>>>> codex/fix-uuid-handling-and-update-pipeline-progress
                         try:
-                            update_package_status(id, "failed")
+                            with app.app_context():
+                                update_package_status(id, "failed")
                         except Exception:
                             pass
 
