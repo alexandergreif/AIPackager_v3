@@ -65,12 +65,14 @@ def register_routes(app: Flask) -> None:
             try:
                 from .database import update_package_status, get_database_service
                 import threading
+                package_logger = get_package_logger(id)
 
                 # Update status to processing
                 update_package_status(id, "processing")
 
                 # Start script generation in background without HTTP self-call
                 def generate_script_async() -> None:
+<<<<<<< codex/replace-requests.post-with-psadtgenerator
                     from uuid import UUID
 
                     try:
@@ -121,6 +123,13 @@ def register_routes(app: Flask) -> None:
                             finally:
                                 session.close()
                     except Exception:
+=======
+                    base_url = request.host_url.rstrip("/")
+                    try:
+                        requests.post(f"{base_url}/api/packages/{id}/generate")
+                    except Exception as e:
+                        package_logger.log_error("GENERATION_START_FAILED", e)
+>>>>>>> codex/fix-uuid-handling-and-update-pipeline-progress
                         try:
                             update_package_status(id, "failed")
                         except Exception:

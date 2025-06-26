@@ -63,3 +63,28 @@ def test_save_metadata_method():
     metadata = {"product_name": "Test Product"}
     package_request.save_metadata(metadata)
     assert mock_package_row.package_metadata == metadata
+
+
+def test_save_metadata_persists_to_db(tmp_path):
+    """save_metadata should create a Metadata record linked to the package."""
+    from src.app import create_app
+    from src.app.database import get_database_service, create_package, get_package
+
+    db_path = tmp_path / "test.db"
+    app = create_app({"DATABASE_URL": f"sqlite:///{db_path}"})
+
+    with app.app_context():
+        db_service = get_database_service()
+        db_service.create_tables()
+
+        package = create_package(
+            filename="test.msi", file_path="/tmp/test.msi"
+        )
+
+        package_request = PackageRequest(package)
+        package_request.save_metadata({"product_name": "Test Product"})
+
+        refreshed = get_package(str(package.id))
+        assert refreshed is not None
+        assert refreshed.package_metadata is not None
+        assert refreshed.package_metadata.product_name == "Test Product"
