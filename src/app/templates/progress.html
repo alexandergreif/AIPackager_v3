@@ -4,10 +4,42 @@
 
 {% block content %}
 <div class="bg-white p-8 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-6">Generating Script...</h2>
+    <h2 class="text-2xl font-bold mb-6">Processing Progress</h2>
     <div class="w-full bg-gray-200 rounded-full">
-        <div class="bg-blue-500 text-xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full" style="width: 45%"> 45%</div>
+        <div id="progress-bar" class="bg-blue-500 text-xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full" style="width: 0%">0%</div>
     </div>
-    <p class="mt-4 text-gray-600">Please wait while the script is being generated. This may take a few moments.</p>
+    <p id="progress-message" class="mt-4 text-gray-600">Preparing...</p>
+    <p id="error-message" class="mt-2 text-red-600"></p>
 </div>
+
+<script>
+const jobId = "{{ job_id }}";
+
+function updateProgress() {
+    fetch(`/progress/${jobId}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const bar = document.getElementById('progress-bar');
+        const message = document.getElementById('progress-message');
+        bar.style.width = `${data.progress}%`;
+        bar.textContent = `${data.progress}%`;
+        message.textContent = data.current_step;
+
+        if (data.status === 'completed') {
+            window.location.href = `/detail/${jobId}`;
+        } else if (data.status === 'failed') {
+            clearInterval(timer);
+            document.getElementById('error-message').textContent = 'Script generation failed. Please try again.';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+const timer = setInterval(updateProgress, 2000);
+updateProgress();
+</script>
 {% endblock %}
