@@ -1,7 +1,6 @@
 """Database service for AIPackager v3."""
 
 from pathlib import Path
-<<<<<<< codex/fix-uuid-handling-and-update-pipeline-progress
 from typing import Optional, Any, Union
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -13,14 +12,6 @@ from .models import Base, Package, Metadata
 def to_uuid(val: Union[str, UUID]) -> UUID:
     """Coerce a string or UUID into a UUID instance."""
     return val if isinstance(val, UUID) else UUID(str(val))
-=======
-from typing import Optional, Any
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from flask import current_app
-
-from .models import Base, Package, Metadata
->>>>>>> main
 
 
 class DatabaseService:
@@ -60,17 +51,10 @@ def get_database_service() -> DatabaseService:
             database_url = f"sqlite:///{db_path}"
 
         # Create service
-<<<<<<< codex/fix-uuid-handling-and-update-pipeline-progress
         current_app.database_service = DatabaseService(database_url)  # type: ignore[attr-defined]
         current_app.database_service.create_tables()  # type: ignore[attr-defined]
 
     return current_app.database_service  # type: ignore[no-any-return, attr-defined]
-=======
-        current_app.database_service = DatabaseService(database_url)
-        current_app.database_service.create_tables()
-
-    return current_app.database_service  # type: ignore[no-any-return]
->>>>>>> main
 
 
 def create_package(
@@ -103,9 +87,7 @@ def create_package(
         session.close()
 
 
-
 def get_package(package_id: Union[str, UUID]) -> Optional[Package]:
-
     """Get a package by ID.
 
     Args:
@@ -120,7 +102,6 @@ def get_package(package_id: Union[str, UUID]) -> Optional[Package]:
     try:
         try:
             uuid_obj = to_uuid(package_id)
-
         except ValueError:
             return None
 
@@ -133,9 +114,7 @@ def get_package(package_id: Union[str, UUID]) -> Optional[Package]:
         session.close()
 
 
-
 def update_package_status(package_id: Union[str, UUID], status: str) -> bool:
-
     """Update package status.
 
     Args:
@@ -145,15 +124,12 @@ def update_package_status(package_id: Union[str, UUID], status: str) -> bool:
     Returns:
         True if updated successfully, False otherwise
     """
-
-
     db_service = get_database_service()
 
     session = db_service.get_session()
     try:
         try:
             uuid_obj = to_uuid(package_id)
-
         except ValueError:
             return False
         package = session.query(Package).filter(Package.id == uuid_obj).first()
@@ -167,7 +143,6 @@ def update_package_status(package_id: Union[str, UUID], status: str) -> bool:
 
 
 def create_metadata(package_id: Union[str, UUID], **metadata_fields: Any) -> Metadata:
-
     """Create metadata for a package.
 
     Args:
@@ -181,9 +156,7 @@ def create_metadata(package_id: Union[str, UUID], **metadata_fields: Any) -> Met
 
     session = db_service.get_session()
     try:
-
         metadata = Metadata(package_id=to_uuid(package_id), **metadata_fields)
-
         session.add(metadata)
         session.commit()
         session.refresh(metadata)
