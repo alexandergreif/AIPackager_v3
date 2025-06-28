@@ -1,6 +1,6 @@
 ## Stage 1: Instruction Processing
 
-Convert the following user instructions into structured deployment instructions and predict the required PSADT cmdlets.
+Convert the following user instructions into structured deployment instructions and predict the required PSADT cmdlets. Also identify any running processes that should be closed before installation.
 
 ### Example 1: Simple Silent Install
 
@@ -28,6 +28,7 @@ Convert the following user instructions into structured deployment instructions 
     "Start-ADTMsiProcess",
     "Write-ADTLogEntry"
   ],
+  "predicted_processes_to_close": ["myapp.exe"],
   "confidence_score": 0.95
 }
 ```
@@ -59,6 +60,7 @@ Convert the following user instructions into structured deployment instructions 
     "Start-ADTProcess",
     "Write-ADTLogEntry"
   ],
+  "predicted_processes_to_close": ["clienttool.exe"],
   "confidence_score": 0.90
 }
 ```
@@ -69,6 +71,10 @@ Convert the following user instructions into structured deployment instructions 
 
 **User Instructions:**
 {{ user_instructions }}
+
+Predict which running processes may block installation. Guess likely executable
+names (e.g., "proc1.exe") and include them in the output under
+"predicted_processes_to_close".
 
 ### Application Metadata
 - **Name**: {{ metadata.product_name | default("Unknown Application") }}
@@ -92,6 +98,7 @@ Convert the following user instructions into structured deployment instructions 
     "Show-ADTInstallationWelcome",
     "Write-ADTLogEntry"
   ],
+  "predicted_processes_to_close": ["proc1.exe"],
   "confidence_score": 0.85
 }
 ```
