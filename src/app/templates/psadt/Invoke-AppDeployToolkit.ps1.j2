@@ -123,13 +123,19 @@ function Install-ADTDeployment
     $adtSession.InstallPhase = "Pre-$($adtSession.DeploymentType)"
 
     ## Show Welcome Message, close Internet Explorer if required, allow up to 3 deferrals, verify there is enough disk space to complete the install, and persist the prompt.
+    {% if package.package_metadata and package.package_metadata.executable_names and package.package_metadata.executable_names|length > 0 %}
+    Show-ADTInstallationWelcome -CloseApps '{{ package.package_metadata.executable_names | join(',') }}' -AllowDefer -DeferTimes 3 -CheckDiskSpace -PersistPrompt
+    {% else %}
     Show-ADTInstallationWelcome -CloseProcesses @{ Name = '{{ app_name }}'; Description = $adtSession.AppName } -AllowDefer -DeferTimes 3 -CheckDiskSpace -PersistPrompt
+    {% endif %}
 
     ## Show Progress Message (with the default message).
     Show-ADTInstallationProgress
 
     ## <Perform Pre-Installation tasks here>
-    # {{ pre_installation_tasks }}
+    {% for task in pre_installation_tasks %}
+    {{ task }}
+    {% endfor %}
 
 
     ##================================================
@@ -138,7 +144,9 @@ function Install-ADTDeployment
     $adtSession.InstallPhase = $adtSession.DeploymentType
 
     ## <Perform Installation tasks here>
-    # {{ installation_tasks }}
+    {% for task in installation_tasks %}
+    {{ task }}
+    {% endfor %}
 
 
     ##================================================
@@ -147,7 +155,9 @@ function Install-ADTDeployment
     $adtSession.InstallPhase = "Post-$($adtSession.DeploymentType)"
 
     ## <Perform Post-Installation tasks here>
-    # {{ post_installation_tasks }}
+    {% for task in post_installation_tasks %}
+    {{ task }}
+    {% endfor %}
 
 
     ## Display a message at the end of the install.
@@ -171,7 +181,9 @@ function Uninstall-ADTDeployment
     Show-ADTInstallationProgress
 
     ## <Perform Pre-Uninstallation tasks here>
-    # {{ pre_uninstallation_tasks }}
+    {% for task in pre_uninstallation_tasks %}
+    {{ task }}
+    {% endfor %}
 
 
     ##================================================
@@ -180,7 +192,9 @@ function Uninstall-ADTDeployment
     $adtSession.InstallPhase = $adtSession.DeploymentType
 
     ## <Perform Uninstallation tasks here>
-    # {{ uninstallation_tasks }}
+    {% for task in uninstallation_tasks %}
+    {{ task }}
+    {% endfor %}
 
 
     ##================================================
@@ -189,7 +203,9 @@ function Uninstall-ADTDeployment
     $adtSession.InstallPhase = "Post-$($adtSession.DeploymentType)"
 
     ## <Perform Post-Uninstallation tasks here>
-    # {{ post_uninstallation_tasks }}
+    {% for task in post_uninstallation_tasks %}
+    {{ task }}
+    {% endfor %}
 }
 
 function Repair-ADTDeployment
@@ -206,7 +222,9 @@ function Repair-ADTDeployment
     Show-ADTInstallationProgress
 
     ## <Perform Pre-Repair tasks here>
-    # {{ pre_repair_tasks }}
+    {% for task in pre_repair_tasks %}
+    {{ task }}
+    {% endfor %}
 
 
     ##================================================
@@ -215,7 +233,9 @@ function Repair-ADTDeployment
     $adtSession.InstallPhase = $adtSession.DeploymentType
 
     ## <Perform Repair tasks here>
-    # {{ repair_tasks }}
+    {% for task in repair_tasks %}
+    {{ task }}
+    {% endfor %}
 
 
     ##================================================
@@ -224,7 +244,9 @@ function Repair-ADTDeployment
     $adtSession.InstallPhase = "Post-$($adtSession.DeploymentType)"
 
     ## <Perform Post-Repair tasks here>
-    # {{ post_repair_tasks }}
+    {% for task in post_repair_tasks %}
+    {{ task }}
+    {% endfor %}
 }
 
 

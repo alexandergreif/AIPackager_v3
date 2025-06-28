@@ -1,3 +1,5 @@
+from typing import List
+
 """Metadata extractor for MSI and EXE files using cross-platform tools."""
 
 import os
@@ -11,6 +13,44 @@ logger = logging.getLogger(__name__)
 
 class MetadataExtractor:
     """Extract metadata from installer files using cross-platform tools."""
+
+    def extract_executable_names(self, file_path: str) -> List[str]:
+        """
+        Extracts executable names from an MSI's Icon and Shortcut tables.
+        """
+        if not file_path.lower().endswith(".msi"):
+            return []
+
+        if not self._is_msitools_available():
+            logger.warning("msitools not available, cannot extract executable names.")
+            return []
+
+        executables = set()
+
+        for table in ["Icon", "Shortcut"]:
+            try:
+                cmd = ["msiinfo", "export", file_path, table]
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, check=False, timeout=30
+                )
+                if result.returncode == 0:
+                    content = result.stdout
+                    import re
+
+                    found = re.findall(r"(\w+\.exe)", content, re.IGNORECASE)
+                    for exe in found:
+                        executables.add(exe.lower())
+                else:
+                    logger.warning(
+                        f"msiinfo failed for table {table} with exit code {result.returncode}: {result.stderr}"
+                    )
+
+            except Exception as e:
+                logger.warning(
+                    f"Could not extract executables from MSI table '{table}': {e}"
+                )
+
+        return sorted(list(executables))
 
     def extract_metadata(self, file_path: str) -> Dict[str, Any]:
         """Extract metadata from an installer file.
@@ -201,47 +241,34 @@ class MetadataExtractor:
         metadata: Dict[str, Any] = {}
 
         try:
-            # Export the Property table to a temporary location
-            import tempfile
-
-            with tempfile.NamedTemporaryFile(
-                mode="w+", suffix=".txt", delete=False
-            ) as temp_file:
-                temp_path = temp_file.name
-
-            try:
-                cmd = ["msiinfo", "export", file_path, "Property", temp_path]
-                subprocess.run(
-                    cmd, capture_output=True, text=True, check=True, timeout=30
+            cmd = ["msiinfo", "export", file_path, "Property"]
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, check=False, timeout=30
+            )
+            if result.returncode == 0:
+                content = result.stdout
+            else:
+                logger.warning(
+                    f"msiinfo failed for Property table with exit code {result.returncode}: {result.stderr}"
                 )
+                content = ""
 
-                # Read and parse the exported property table
-                with open(temp_path, "r", encoding="utf-8") as f:
-                    content = f.read()
+            # Parse property table format (tab-separated values)
+            properties = self._parse_property_table(content)
 
-                # Parse property table format (tab-separated values)
-                properties = self._parse_property_table(content)
+            # Map MSI properties to our metadata fields
+            metadata.update(
+                {
+                    "product_name": properties.get("ProductName"),
+                    "version": properties.get("ProductVersion"),
+                    "publisher": properties.get("Manufacturer"),
+                    "product_code": properties.get("ProductCode"),
+                    "upgrade_code": properties.get("UpgradeCode"),
+                    "language": properties.get("ProductLanguage"),
+                }
+            )
 
-                # Map MSI properties to our metadata fields
-                metadata.update(
-                    {
-                        "product_name": properties.get("ProductName"),
-                        "version": properties.get("ProductVersion"),
-                        "publisher": properties.get("Manufacturer"),
-                        "product_code": properties.get("ProductCode"),
-                        "upgrade_code": properties.get("UpgradeCode"),
-                        "language": properties.get("ProductLanguage"),
-                    }
-                )
-
-                logger.debug(f"MSI properties extracted: {len(properties)} properties")
-
-            finally:
-                # Clean up temporary file
-                try:
-                    os.unlink(temp_path)
-                except OSError:
-                    pass
+            logger.debug(f"MSI properties extracted: {len(properties)} properties")
 
         except subprocess.CalledProcessError as e:
             logger.warning(f"Failed to export MSI property table: {e}")
@@ -306,6 +333,8 @@ class MetadataExtractor:
             # Determine architecture
             if not platform or platform.lower() == "intel":
                 metadata["architecture"] = "x86"
+            elif platform.lower() in ["x64", "intel64"]:
+                metadata["architecture"] = "x64"
             elif platform.lower() in ["x64", "intel64"]:
                 metadata["architecture"] = "x64"
             elif platform.lower() == "arm64":
@@ -604,3 +633,42 @@ def extract_file_metadata(file_path: str) -> Dict[str, Any]:
     """
     extractor = MetadataExtractor()
     return extractor.extract_metadata(file_path)
+
+</file_content>
+
+Now that you have the latest state of the file, try the operation again with fewer, more precise SEARCH blocks. For large files especially, it may be prudent to try to limit yourself to <5 SEARCH/REPLACE blocks at a time, then wait for the user to respond with the result of the operation before following up with another replace_in_file call to make additional edits.
+(If you run into this error 3 times in a row, you may use the write_to_file tool as a fallback.)
+</error><environment_details>
+# VSCode Visible Files
+../../../../../src/app/routes.py
+../../../../../src/app/routes.py
+src/app/metadata_extractor.py
+
+# VSCode Open Tabs
+.clinerules
+src/app/database.py
+src/aipackager/workflow.py
+src/app/services/advisor_service.py
+src/app/services/instruction_processor.py
+src/app/prompts/instruction_processing.j2
+instance/logs/894f360c-7cd4-4a13-a0c1-55786b697f5d.log
+src/app/services/cmdlet_discovery.py
+src/app/prompts/script_generation.j2
+additional-tasks.md
+src/app/models.py
+src/app/script_renderer.py
+src/app/templates/psadt/Invoke-AppDeployToolkit.ps1.j2
+closeapps-problem.md
+src/app/services/script_generator.py
+src/app/routes.py
+src/app/metadata_extractor.py
+
+# Current Time
+28.6.2025, 4:17:36 PM (Europe/Berlin, UTC+2:00)
+
+# Context Window Usage
+109.517 / 1.048,576K tokens used (10%)
+
+# Current Mode
+ACT MODE
+</environment_details>

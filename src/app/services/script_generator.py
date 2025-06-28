@@ -12,6 +12,7 @@ from ..schemas import PSADTScript, InstructionResult
 from ..utils import retry_with_backoff
 from ..workflow.progress import pct
 from ..logging_cmtrace import get_cmtrace_logger
+from ..package_logger import get_package_logger
 from typing import ContextManager
 
 try:
@@ -41,7 +42,6 @@ PIPELINE_STAGE_SECONDS = Summary(
 )
 
 
-
 class PSADTGenerator:
     def __init__(self) -> None:
         self.instruction_processor = InstructionProcessor()
@@ -59,9 +59,17 @@ class PSADTGenerator:
         """
         5-stage pipeline for generating validated PSADT scripts.
         """
+        package_id = package.id if package else "unknown_package"
+        package_logger = get_package_logger(package_id)
+
         # Stage 1: Instruction Processing
+        package_logger.log_5_stage_pipeline(
+            1, "Instruction Processing", "START", {"user_instructions": text}
+        )
         with PIPELINE_STAGE_SECONDS.labels("instruction_processing").time():
-            instruction_result = self.instruction_processor.process_instructions(text)
+            instruction_result = self.instruction_processor.process_instructions(
+                text, package_id
+            )
         if package and session:
             package.current_step = "instruction_processing"
             package.progress_pct = pct("instruction_processing")
@@ -71,8 +79,20 @@ class PSADTGenerator:
                 "instruction_processing",
                 pct("instruction_processing"),
             )
+        package_logger.log_5_stage_pipeline(
+            1,
+            "Instruction Processing",
+            "COMPLETED",
+            {"instruction_result": instruction_result.model_dump()},
+        )
 
         # Stage 2: Targeted RAG - Query documentation for predicted cmdlets
+        package_logger.log_5_stage_pipeline(
+            2,
+            "Targeted RAG",
+            "START",
+            {"predicted_cmdlets": instruction_result.predicted_cmdlets},
+        )
         with PIPELINE_STAGE_SECONDS.labels("rag_enrichment").time():
             rag_documentation = self.rag_service.query(
                 instruction_result.predicted_cmdlets
@@ -86,11 +106,26 @@ class PSADTGenerator:
                 "rag_enrichment",
                 pct("rag_enrichment"),
             )
+        package_logger.log_5_stage_pipeline(
+            2,
+            "Targeted RAG",
+            "COMPLETED",
+            {"rag_documentation_length": len(rag_documentation)},
+        )
 
         # Stage 3: Script Generation - Generate initial script with documentation
+        package_logger.log_5_stage_pipeline(
+            3,
+            "Script Generation",
+            "START",
+            {
+                "instruction_result": instruction_result.model_dump(),
+                "rag_documentation_length": len(rag_documentation),
+            },
+        )
         with PIPELINE_STAGE_SECONDS.labels("script_generation").time():
             initial_script = self._generate_initial_script(
-                instruction_result, rag_documentation
+                instruction_result, rag_documentation, package
             )
         if package and session:
             package.current_step = "script_generation"
@@ -101,11 +136,24 @@ class PSADTGenerator:
                 "script_generation",
                 pct("script_generation"),
             )
+        package_logger.log_5_stage_pipeline(
+            3,
+            "Script Generation",
+            "COMPLETED",
+            {"initial_script": initial_script.model_dump()},
+        )
 
         # Stage 4: Hallucination Detection - Validate the generated script
+        script_to_validate = self._script_to_powershell(initial_script)
+        package_logger.log_5_stage_pipeline(
+            4,
+            "Hallucination Detection",
+            "START",
+            {"script_to_validate_length": len(script_to_validate)},
+        )
         with PIPELINE_STAGE_SECONDS.labels("hallucination_detection").time():
             hallucination_report = self.hallucination_detector.detect(
-                self._script_to_powershell(initial_script)
+                script_to_validate
             )
         if package and session:
             package.current_step = "hallucination_detection"
@@ -116,12 +164,21 @@ class PSADTGenerator:
                 "hallucination_detection",
                 pct("hallucination_detection"),
             )
+        package_logger.log_5_stage_pipeline(
+            4,
+            "Hallucination Detection",
+            "COMPLETED",
+            {"hallucination_report": hallucination_report},
+        )
 
         # Stage 5: Advisor AI - Apply corrections if hallucinations detected
         if hallucination_report.get("has_hallucinations", False):
+            package_logger.log_5_stage_pipeline(
+                5, "Advisor AI", "START", {"hallucination_report": hallucination_report}
+            )
             with PIPELINE_STAGE_SECONDS.labels("advisor_correction").time():
                 corrected_script = self.advisor_service.correct_script(
-                    initial_script, hallucination_report
+                    initial_script, hallucination_report, package_id
                 )
             if package and session:
                 package.current_step = "advisor_correction"
@@ -133,56 +190,58 @@ class PSADTGenerator:
                     pct("advisor_correction"),
                 )
             corrected_script.hallucination_report = hallucination_report
+            package_logger.log_5_stage_pipeline(
+                5,
+                "Advisor AI",
+                "COMPLETED",
+                {"corrected_script": corrected_script.model_dump()},
+            )
             return corrected_script
         else:
             initial_script.hallucination_report = hallucination_report
             if package and session:
                 package.progress_pct = pct("hallucination_detection")
+            package_logger.log_5_stage_pipeline(
+                5, "Advisor AI", "SKIPPED", {"reason": "No hallucinations detected"}
+            )
             return initial_script
 
     def _generate_initial_script(
-        self, instruction_result: InstructionResult, documentation: str
+        self,
+        instruction_result: InstructionResult,
+        documentation: str,
+        package: Package | None,
     ) -> PSADTScript:
         """Generate initial PSADT script based on instructions and documentation."""
-        # For now, use a working mock implementation since the template expects metadata
-        # that we don't have in this context. In a full implementation, this would
-        # call OpenAI with the script_generation.j2 template
+        from .instruction_processor import InstructionProcessor
+        import json
 
-        user_instructions = instruction_result.structured_instructions.get(
-            "user_instructions", "Install the application"
-        )
-        installer_name = instruction_result.structured_instructions.get(
-            "installer_name", "setup.msi"
+        ip = InstructionProcessor()
+
+        prompt = ip.jinja_env.get_template("script_generation.j2").render(
+            instructions=instruction_result.structured_instructions,
+            documentation=documentation,
+            package=package,
         )
 
-        return PSADTScript(
-            pre_installation_tasks=[
-                "Show-ADTInstallationWelcome -CloseAppsCountdown 60 -CheckDiskSpace",
-                "Get-ADTLoggedOnUser",
-                "Test-ADTCallerIsAdmin",
-                f"Write-ADTLogEntry -Message 'Starting installation based on: {user_instructions}' -Severity 1",
-            ],
-            installation_tasks=[
-                "Write-ADTLogEntry -Message 'Beginning installation process' -Severity 1",
-                f"Start-ADTMsiProcess -Action Install -Path '$dirFiles\\{installer_name}'",
-                "Write-ADTLogEntry -Message 'Installation completed successfully' -Severity 1",
-            ],
-            post_installation_tasks=[
-                "Show-ADTInstallationProgress -StatusMessage 'Finalizing installation...'",
-                "Write-ADTLogEntry -Message 'Running post-installation tasks' -Severity 1",
-                "Set-ADTRegistryKey -Key 'HKLM:\\SOFTWARE\\Company\\Product' -Name 'InstallDate' -Value (Get-Date -Format 'yyyy-MM-dd')",
-            ],
-            uninstallation_tasks=[
-                "Write-ADTLogEntry -Message 'Beginning uninstallation process' -Severity 1",
-                f"Start-ADTMsiProcess -Action Uninstall -Path '$dirFiles\\{installer_name}'",
-                "Write-ADTLogEntry -Message 'Uninstallation completed successfully' -Severity 1",
-            ],
-            post_uninstallation_tasks=[
-                "Write-ADTLogEntry -Message 'Running post-uninstallation cleanup' -Severity 1",
-                "Remove-ADTRegistryKey -Key 'HKLM:\\SOFTWARE\\Company\\Product'",
-                "Remove-ADTFolder -Path '$envProgramFiles\\Company\\Product' -ContinueOnError $true",
-            ],
+        messages = [
+            {
+                "role": "system",
+                "content": "You are an expert PowerShell developer specializing in the PSAppDeployToolkit. Return a valid JSON object matching the PSADTScript schema.",
+            },
+            {"role": "user", "content": prompt},
+        ]
+
+        response = ip.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            response_format={"type": "json_object"},
         )
+
+        response_content = response.choices[0].message.content or "{}"
+        script_data = json.loads(response_content)
+
+        return PSADTScript(**script_data)
 
     def _script_to_powershell(self, script: PSADTScript) -> str:
         """Convert PSADTScript object to PowerShell script string for validation."""
@@ -213,4 +272,3 @@ class PSADTGenerator:
             sections.extend(script.post_uninstallation_tasks)
 
         return "\n".join(sections)
-

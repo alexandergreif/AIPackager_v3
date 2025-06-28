@@ -19,6 +19,7 @@ from .file_persistence import save_uploaded_file
 from .database import create_package, get_package, get_all_packages, create_metadata
 from .metadata_extractor import extract_file_metadata
 from .services.script_generator import PSADTGenerator
+from .script_renderer import ScriptRenderer
 from .models import Package
 from .package_logger import get_package_logger
 
@@ -64,8 +65,6 @@ def register_routes(app: Flask) -> None:
             try:
                 from .database import update_package_status, get_database_service
                 import threading
-
-                package_logger = get_package_logger(id)
 
                 # Update status to processing
                 update_package_status(id, "processing")
@@ -196,53 +195,10 @@ def register_routes(app: Flask) -> None:
         rendered_script = "No script generated yet."
 
         if package.generated_script:
-            # Convert PSADTScript JSON back to readable PowerShell
-            script_data = package.generated_script
-            script_sections = []
-
-            if script_data.get("pre_installation_tasks"):
-                script_sections.append("# Pre-Installation Tasks")
-                script_sections.extend(script_data["pre_installation_tasks"])
-                script_sections.append("")
-
-            if script_data.get("installation_tasks"):
-                script_sections.append("# Installation Tasks")
-                script_sections.extend(script_data["installation_tasks"])
-                script_sections.append("")
-
-            if script_data.get("post_installation_tasks"):
-                script_sections.append("# Post-Installation Tasks")
-                script_sections.extend(script_data["post_installation_tasks"])
-                script_sections.append("")
-
-            if script_data.get("uninstallation_tasks"):
-                script_sections.append("# Uninstallation Tasks")
-                script_sections.extend(script_data["uninstallation_tasks"])
-                script_sections.append("")
-
-            if script_data.get("post_uninstallation_tasks"):
-                script_sections.append("# Post-Uninstallation Tasks")
-                script_sections.extend(script_data["post_uninstallation_tasks"])
-                script_sections.append("")
-
-            # Add pipeline metadata at the end
-            if package.hallucination_report or package.corrections_applied:
-                script_sections.append("# 5-Stage Pipeline Results")
-                if package.hallucination_report:
-                    has_issues = package.hallucination_report.get(
-                        "has_hallucinations", False
-                    )
-                    script_sections.append(
-                        f"# Hallucination Detection: {'Issues Found' if has_issues else 'Clean'}"
-                    )
-                if package.corrections_applied:
-                    script_sections.append(
-                        f"# Corrections Applied: {len(package.corrections_applied)}"
-                    )
-                    for correction in package.corrections_applied:
-                        script_sections.append(f"#   - {correction}")
-
-            rendered_script = "\n".join(script_sections)
+            renderer = ScriptRenderer()
+            rendered_script = renderer.render_psadt_script(
+                package=package, ai_sections=package.generated_script
+            )
 
         return render_template(
             "detail.html",
@@ -340,14 +296,19 @@ def register_routes(app: Flask) -> None:
 
                 extractor = MetadataExtractor()
                 psadt_vars = extractor.get_psadt_variables(metadata_dict)
+                executable_names = extractor.extract_executable_names(file_path)
                 package_logger.log_step(
                     "PSADT_MAPPING",
                     "PSADT mapping completed",
-                    data={"psadt_vars": psadt_vars},
+                    data={
+                        "psadt_vars": psadt_vars,
+                        "executable_names": executable_names,
+                    },
                 )
             except Exception as e:
                 package_logger.log_error("PSADT_MAPPING", e)
                 psadt_vars = {}
+                executable_names = []
 
             # Store metadata in database
             package_logger.log_step("DATABASE_STORAGE", "Storing metadata in database")
@@ -368,6 +329,7 @@ def register_routes(app: Flask) -> None:
                     upgrade_code=metadata_dict.get("upgrade_code"),
                     language=metadata_dict.get("language"),
                     architecture=metadata_dict.get("architecture"),
+                    executable_names=executable_names,
                 )
                 package_logger.log_step(
                     "DATABASE_STORAGE", "Metadata stored successfully"

@@ -97,12 +97,10 @@ Convert the following user instructions into structured deployment instructions 
 ```
 
 ### PSADT v4 Cmdlet Reference
-Focus on these commonly used cmdlets:
-- **MSI/EXE Execution**: Start-ADTMsiProcess, Start-ADTProcess
-- **User Interface**: Show-ADTInstallationWelcome, Show-ADTInstallationProgress
-- **Process Management**: Get-ADTApplication, Stop-ADTServiceAndDependencies
-- **File Operations**: Copy-ADTFile, Remove-ADTFile, New-ADTFolder
-- **Registry**: Set-ADTRegistryKey, Remove-ADTRegistryKey
-- **Logging**: Write-ADTLogEntry
+This is the list of available cmdlets. Use these to make your predictions.
+
+{% for cmdlet in cmdlet_reference %}
+- **{{ cmdlet.name }}**: {{ cmdlet.description }}
+{% endfor %}
 
 Analyze the instructions and provide structured output with predicted cmdlets.

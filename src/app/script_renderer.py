@@ -193,6 +193,7 @@ class ScriptRenderer:
             {
                 "package_filename": package.filename,
                 "custom_instructions": package.custom_instructions or "",
+                "package": package,  # Add the package object itself to the context
             }
         )
 

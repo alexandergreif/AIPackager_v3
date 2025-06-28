@@ -6,6 +6,7 @@ for processing a single package creation request.
 import enum
 import logging
 from typing import Any, Dict
+from src.app.package_logger import get_package_logger
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +33,23 @@ class PackageRequest:
     def start(self) -> None:
         """Starts the processing of the package."""
         self.package.status = "processing"
+        package_logger = get_package_logger(self.package.id)
+        package_logger.log_step(
+            "WORKFLOW_START", f"Starting package processing for {self.package.id}"
+        )
 
     def set_step(self, step_name: str) -> None:
         """Sets the current step of the package."""
-        import logging
-
-        logger = logging.getLogger("aipackager.workflow")
+        package_logger = get_package_logger(self.package.id)
         old_step = self.package.current_step
         self.package.current_step = step_name
-        logger.info(f"{self.package.id} | {old_step} -> {step_name}")
+        package_logger.log_step(
+            "WORKFLOW_STEP",
+            f"Transitioning from {old_step} to {step_name}",
+            data={"old_step": old_step, "new_step": step_name},
+        )
 
     def save_metadata(self, metadata: Dict[str, Any]) -> None:
-
         """Persist metadata for this package and attach the new record."""
         try:
             from src.app.database import create_metadata
@@ -55,12 +61,12 @@ class PackageRequest:
             # Fallback to simple assignment when database helpers are unavailable
             self.package.package_metadata = metadata
 
-
-
     def resume(self) -> None:
         """Resume processing of this package from its current step."""
-        logger.info(
-            f"Resuming package {self.package.id} from step {self.package.current_step}"
+        package_logger = get_package_logger(self.package.id)
+        package_logger.log_step(
+            "WORKFLOW_RESUME",
+            f"Resuming package {self.package.id} from step {self.package.current_step}",
         )
 
         try:
@@ -78,14 +84,17 @@ class PackageRequest:
             try:
                 session.merge(self.package)
                 session.commit()
-                logger.info(
-                    f"Successfully resumed and completed package {self.package.id}"
+                package_logger.log_step(
+                    "WORKFLOW_RESUME",
+                    f"Successfully resumed and completed package {self.package.id}",
                 )
             finally:
                 session.close()
 
         except Exception as e:
-            logger.error(f"Failed to resume package {self.package.id}: {e}")
+            package_logger.log_error(
+                "WORKFLOW_RESUME", e, context={"package_id": self.package.id}
+            )
             self.set_step(WorkflowStep.FAILED.value)
             self.package.status = "failed"
 
@@ -107,6 +116,7 @@ class PackageRequest:
         This method should be called on application startup to resume
         any workflows that were interrupted.
         """
+        # No package_id available here, so use the general logger
         logger.info("Starting resume of pending jobs...")
 
         try:
@@ -127,8 +137,10 @@ class PackageRequest:
                 logger.info(f"Found {len(pending_packages)} pending packages to resume")
 
                 for package in pending_packages:
-                    logger.info(
-                        f"Resuming package {package.id} (status: {package.status}, step: {package.current_step})"
+                    package_logger = get_package_logger(package.id)
+                    package_logger.log_step(
+                        "WORKFLOW_RESUME_PENDING",
+                        f"Resuming package {package.id} (status: {package.status}, step: {package.current_step})",
                     )
                     package_request = cls(package)
                     package_request.resume()

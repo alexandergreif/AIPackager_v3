@@ -1,66 +1,62 @@
-## Stage 3: PSADT Script Generation
+You are an expert PowerShell developer specializing in the PSAppDeployToolkit.
+Your task is to generate the content for a PSADT script based on structured instructions and relevant documentation.
 
-Generate PowerShell script sections using the structured instructions and PSADT documentation context.
+Only generate the PowerShell commands for the requested sections. Do not include the section titles themselves (e.g., "Pre-Installation").
+Return a valid JSON object matching the PSADTScript schema.
 
-### Structured Instructions from Stage 1
+### PSADTScript Schema
 ```json
-{{ structured_instructions | tojson }}
+{
+  "pre_installation_tasks": ["string"],
+  "installation_tasks": ["string"],
+  "post_installation_tasks": ["string"],
+  "uninstallation_tasks": ["string"],
+  "post_uninstallation_tasks": ["string"]
+}
 ```
 
-### PSADT Documentation Context
-{{ rag_documentation }}
+---
 
-### Application Metadata
-- **Name**: {{ metadata.product_name | default("Unknown Application") }}
-- **Version**: {{ metadata.version | default("1.0.0") }}
-- **Publisher**: {{ metadata.publisher | default("Unknown Publisher") }}
-- **File Type**: {{ metadata.file_type | default("msi") }}
-- **Architecture**: {{ metadata.architecture | default("x86/x64") }}
-{% if metadata.product_code %}
-- **Product Code**: {{ metadata.product_code }}
-{% endif %}
+### Structured Instructions
+The user wants to perform the following actions:
+```json
+{{ instructions | tojson(indent=2) }}
+```
 
-### Task
-Generate the following PowerShell script sections using PSADT v4 cmdlets:
+---
 
-#### Required Sections
-1. **pre_installation_tasks**: Commands to run before installation
-2. **installation_tasks**: Main installation commands
-3. **post_installation_tasks**: Commands to run after installation
-4. **uninstallation_tasks**: Commands for uninstalling the application
-5. **post_uninstallation_tasks**: Cleanup commands after uninstallation
-
-### Output Format
-Provide each section as clean PowerShell code that can be directly inserted into the PSADT template:
-
+### Relevant PSADT Documentation
+Here is documentation for the cmdlets that are likely required. Use this to ensure correct syntax and parameter usage.
 ```powershell
-# Pre-Installation Tasks
-Write-ADTLogEntry -Message "Starting pre-installation tasks for {{ metadata.product_name | default("application") }}" -Severity 1
-# Additional pre-installation commands here
-
-# Installation Tasks
-Write-ADTLogEntry -Message "Beginning installation of {{ metadata.product_name | default("application") }}" -Severity 1
-# Main installation commands here
-
-# Post-Installation Tasks
-Write-ADTLogEntry -Message "Completing post-installation tasks" -Severity 1
-# Post-installation commands here
-
-# Uninstallation Tasks
-Write-ADTLogEntry -Message "Beginning uninstallation of {{ metadata.product_name | default("application") }}" -Severity 1
-# Uninstallation commands here
-
-# Post-Uninstallation Tasks
-Write-ADTLogEntry -Message "Completing post-uninstallation cleanup" -Severity 1
-# Cleanup commands here
+{{ documentation }}
 ```
 
-### Requirements
-- Use only PSADT v4 cmdlets (Start-ADTMsiProcess, Start-ADTProcess, etc.)
-- Include Write-ADTLogEntry statements with appropriate severity levels
-- Handle both MSI and EXE installers appropriately
-- Include proper error handling with try-catch blocks where needed
-- Follow the patterns from the provided documentation context
-- Generate commands specific to the application and user instructions
+---
 
-Generate production-ready PowerShell code sections now.
+### Method 1: Essential Scripting Context
+When generating the script, you **MUST** use the following built-in variables. Do not use hard-coded strings for application names, versions, or paths.
+
+- **Installer File**: The main installer file is named `{{ package.filename }}` and is located in the `$dirFiles` directory. Always use `Join-Path $dirFiles '{{ package.filename }}'` to reference it.
+- **Application Name**: Use the `$appName` variable (e.g., '{{ package.package_metadata.product_name }}').
+- **Application Version**: Use the `$appVersion` variable (e.g., '{{ package.package_metadata.version }}').
+- **Application Vendor**: Use the `$appVendor` variable (e.g., '{{ package.package_metadata.publisher }}').
+- **Registry Paths**: Construct registry paths dynamically (e.g., `"HKLM:\SOFTWARE\$appVendor\$appName"`).
+
+### Method 2: Enterprise Best Practices
+Follow these rules to ensure the script is robust and reliable for large-scale deployments.
+
+1.  **All Steps are Critical**: Every instruction provided by the user is mandatory. If any step fails, the script must terminate. Do **NOT** use `try/catch` blocks to suppress errors or allow the script to continue on failure.
+2.  **Idempotency**: Before creating a file, folder, or registry key, check if it already exists to prevent errors on script re-runs.
+3.  **Clear Logging**: Use `Write-ADTLogEntry` to log the intent and result of each major operation. For example: "INFO: Attempting to copy license file..." followed by "INFO: License file copied successfully."
+
+---
+
+### Your Task
+Based on the instructions, documentation, and the context and best practices provided above, generate the PowerShell script sections.
+Remember to only output a valid JSON object containing the lists of tasks.
+
+### CRITICAL RULES
+- **DO NOT** hard-code filenames. Use the `{{ package.filename }}` variable.
+- **DO NOT** hard-code application names or vendors. Use the `$appName` and `$appVendor` variables.
+- **ALWAYS** construct the installer path using `Join-Path $dirFiles '{{ package.filename }}'`.
+- **EVERY** step is critical. If a step fails, the script must terminate. Do **NOT** use `try/catch` blocks to suppress errors.
