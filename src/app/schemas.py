@@ -8,6 +8,7 @@ class InstructionResult(BaseModel):
 
     structured_instructions: Dict[str, Any]
     predicted_cmdlets: List[str]
+    predicted_processes_to_close: Optional[List[str]] = None
     confidence_score: float
 
 
