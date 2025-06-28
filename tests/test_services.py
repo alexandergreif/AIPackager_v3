@@ -23,6 +23,7 @@ def mock_services():
                 structured_instructions={"install": "test"},
                 predicted_cmdlets=["Install-MSI"],
                 confidence_score=0.9,
+                predicted_processes_to_close=["app1.exe"],
             )
         )
 

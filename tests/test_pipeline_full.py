@@ -67,6 +67,7 @@ def test_full_pipeline_flow(app_with_db):
             structured_instructions={"user_instructions": "Install"},
             predicted_cmdlets=["Start-ADTMsiProcess"],
             confidence_score=0.9,
+            predicted_processes_to_close=None,
         )
         data = {"installer": (BytesIO(b"abc"), "dummy.msi")}
         resp = client.post("/api/packages", data=data)

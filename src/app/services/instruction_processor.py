@@ -39,7 +39,11 @@ class InstructionProcessor:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert in PowerShell and PSAppDeployToolkit. Return a JSON object with structured_instructions, predicted_cmdlets, and confidence_score.",
+                        "content": (
+                            "You are an expert in PowerShell and PSAppDeployToolkit. "
+                            "Return a JSON object with structured_instructions, predicted_cmdlets, "
+                            "predicted_processes_to_close, and confidence_score."
+                        ),
                     },
                     {"role": "user", "content": prompt},
                 ],
@@ -64,6 +68,9 @@ class InstructionProcessor:
                 ),
                 predicted_cmdlets=response_data.get("predicted_cmdlets", []),
                 confidence_score=response_data.get("confidence_score", 0.8),
+                predicted_processes_to_close=response_data.get(
+                    "predicted_processes_to_close"
+                ),
             )
         except (json.JSONDecodeError, KeyError):
             # Fallback for failed parsing
@@ -78,4 +85,5 @@ class InstructionProcessor:
                     "Show-ADTInstallationProgress",
                 ],
                 confidence_score=0.7,
+                predicted_processes_to_close=None,
             )
