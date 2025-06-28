@@ -112,6 +112,7 @@ def test_create_metadata_function_with_individual_fields():
             publisher="Test Company",
             architecture="x64",
             product_code="{12345678-1234-1234-1234-123456789012}",
+            executable_names=["app.exe"],
         )
 
         # Verify metadata was saved correctly
@@ -120,9 +121,11 @@ def test_create_metadata_function_with_individual_fields():
         assert metadata.publisher == "Test Company"
         assert metadata.architecture == "x64"
         assert metadata.product_code == "{12345678-1234-1234-1234-123456789012}"
+        assert metadata.executable_names == ["app.exe"]
 
         # Verify relationship works
         retrieved_package = get_package(str(package.id))
         assert retrieved_package is not None
         assert retrieved_package.package_metadata is not None
         assert retrieved_package.package_metadata.product_name == "Test Application"
+        assert retrieved_package.package_metadata.executable_names == ["app.exe"]

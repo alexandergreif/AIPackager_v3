@@ -142,11 +142,16 @@ def update_package_status(package_id: Union[str, UUID], status: str) -> bool:
         session.close()
 
 
-def create_metadata(package_id: Union[str, UUID], **metadata_fields: Any) -> Metadata:
+def create_metadata(
+    package_id: Union[str, UUID],
+    executable_names: Optional[list[str]] | None = None,
+    **metadata_fields: Any,
+) -> Metadata:
     """Create metadata for a package.
 
     Args:
         package_id: UUID string of the package
+        executable_names: Optional list of executable names associated with the package
         **metadata_fields: Metadata field values
 
     Returns:
@@ -156,7 +161,11 @@ def create_metadata(package_id: Union[str, UUID], **metadata_fields: Any) -> Met
 
     session = db_service.get_session()
     try:
-        metadata = Metadata(package_id=to_uuid(package_id), **metadata_fields)
+        metadata = Metadata(
+            package_id=to_uuid(package_id),
+            executable_names=executable_names,
+            **metadata_fields,
+        )
         session.add(metadata)
         session.commit()
         session.refresh(metadata)

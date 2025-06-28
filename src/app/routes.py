@@ -368,6 +368,7 @@ def register_routes(app: Flask) -> None:
                     upgrade_code=metadata_dict.get("upgrade_code"),
                     language=metadata_dict.get("language"),
                     architecture=metadata_dict.get("architecture"),
+                    executable_names=metadata_dict.get("executable_names"),
                 )
                 package_logger.log_step(
                     "DATABASE_STORAGE", "Metadata stored successfully"

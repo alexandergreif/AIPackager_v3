@@ -108,6 +108,7 @@ class TestMetadataModel:
             install_date="2025-01-01",
             uninstall_string="msiexec /x {GUID}",
             estimated_size=1024,
+            executable_names=["setup.exe"],
         )
 
         session.add(metadata)
@@ -122,6 +123,7 @@ class TestMetadataModel:
         assert metadata.install_date == "2025-01-01"
         assert metadata.uninstall_string == "msiexec /x {GUID}"
         assert metadata.estimated_size == 1024
+        assert metadata.executable_names == ["setup.exe"]
 
     def test_package_metadata_relationship(self, session):
         """Test relationship between Package and Metadata."""
