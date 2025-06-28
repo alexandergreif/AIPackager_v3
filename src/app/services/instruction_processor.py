@@ -63,6 +63,9 @@ class InstructionProcessor:
                     "structured_instructions", {}
                 ),
                 predicted_cmdlets=response_data.get("predicted_cmdlets", []),
+                predicted_processes_to_close=response_data.get(
+                    "predicted_processes_to_close"
+                ),
                 confidence_score=response_data.get("confidence_score", 0.8),
             )
         except (json.JSONDecodeError, KeyError):
@@ -77,5 +80,6 @@ class InstructionProcessor:
                     "Show-ADTInstallationWelcome",
                     "Show-ADTInstallationProgress",
                 ],
+                predicted_processes_to_close=None,
                 confidence_score=0.7,
             )
