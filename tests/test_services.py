@@ -34,122 +34,67 @@ def mock_services():
         }
 
 
-def test_psadt_generator_happy_path(mock_services):
+def test_psadt_generator_happy_path():
+    """Test the full PSADT generator pipeline with a simple, clean instruction."""
     generator = PSADTGenerator()
-
-    # Override the mocked services in the generator instance
-    generator.instruction_processor = mock_services["instruction_processor"]
-    generator.rag_service = mock_services["rag_service"]
-    generator.hallucination_detector = mock_services["hallucination_detector"]
-    generator.advisor_service = mock_services["advisor_service"]
-
-    # Mock RAG and hallucination detection responses
-    mock_services["rag_service"].query.return_value = "Mock PSADT documentation"
-    mock_services["hallucination_detector"].detect.return_value = {
-        "has_hallucinations": False,
-        "confidence_score": 0.95,
-        "issues": [],
-    }
-
-    result = generator.generate_script("test instructions")
+    result = generator.generate_script("Install the application silently.")
 
     assert isinstance(result, PSADTScript)
     assert result.hallucination_report is not None
     assert not result.hallucination_report["has_hallucinations"]
-
-    # Verify all stages were called
-    mock_services["instruction_processor"].process_instructions.assert_called_once_with(
-        "test instructions"
-    )
-    mock_services["rag_service"].query.assert_called_once()
-    mock_services["hallucination_detector"].detect.assert_called_once()
-    # Advisor should not be called when no hallucinations detected
-    mock_services["advisor_service"].correct_script.assert_not_called()
+    assert "Start-ADTMsiProcess" in result.installation_tasks[0]
 
 
-def test_psadt_generator_with_hallucinations(mock_services):
-    """Test 5-stage pipeline when hallucinations are detected."""
+def test_psadt_generator_with_hallucinations():
+    """Test the full PSADT generator pipeline with a hallucinated instruction."""
     generator = PSADTGenerator()
-
-    # Override the mocked services in the generator instance
-    generator.instruction_processor = mock_services["instruction_processor"]
-    generator.rag_service = mock_services["rag_service"]
-    generator.hallucination_detector = mock_services["hallucination_detector"]
-    generator.advisor_service = mock_services["advisor_service"]
-
-    # Mock responses with hallucinations detected
-    mock_services["rag_service"].query.return_value = "Mock PSADT documentation"
-    mock_services["hallucination_detector"].detect.return_value = {
-        "has_hallucinations": True,
-        "confidence_score": 0.6,
-        "issues": [{"type": "unknown_cmdlets", "cmdlets": ["Fake-ADTCmdlet"]}],
-    }
-
-    # Mock corrected script
-    corrected_script = PSADTScript(
-        pre_installation_tasks=["Show-ADTInstallationWelcome"],
-        installation_tasks=["Start-ADTMsiProcess -Action Install"],
-        post_installation_tasks=["Show-ADTInstallationProgress"],
-        uninstallation_tasks=["Start-ADTMsiProcess -Action Uninstall"],
-        post_uninstallation_tasks=["Remove-ADTRegistryKey"],
-        corrections_applied=["Removed unknown cmdlet: Fake-ADTCmdlet"],
-    )
-    mock_services["advisor_service"].correct_script.return_value = corrected_script
-
-    result = generator.generate_script("test instructions")
+    result = generator.generate_script("Install the application with Fake-Command.")
 
     assert isinstance(result, PSADTScript)
     assert result.hallucination_report is not None
     assert result.hallucination_report["has_hallucinations"]
     assert result.corrections_applied is not None
+    assert "Fake-Command" not in result.installation_tasks
+    assert "Removed unknown cmdlet: Fake-Command" in result.corrections_applied[0]
 
-    # Verify advisor was called for correction
-    mock_services["advisor_service"].correct_script.assert_called_once()
 
-
-def test_hallucination_detector():
-    """Test hallucination detection functionality."""
+def test_hallucination_detector_more_cases():
+    """Test hallucination detection functionality with more cases."""
     from src.app.services.hallucination_detector import HallucinationDetector
 
     detector = HallucinationDetector()
 
-    # Test script with known cmdlets (should pass)
-    clean_script = """
-    Show-ADTInstallationWelcome -CloseAppsCountdown 60
-    Start-ADTMsiProcess -Action Install -Path '$dirFiles\\setup.msi'
+    # Test with mixed known and unknown cmdlets
+    mixed_script = """
+    Show-ADTInstallationWelcome
+    Fake-Command -Parameter Value
+    Start-ADTMsiProcess -Action Install
+    Another-Fake-Command
     """
-
-    result = detector.detect(clean_script)
-    assert not result["has_hallucinations"]
-    assert result["confidence_score"] > 0.9
-
-    # Test script with unknown cmdlets (should fail)
-    bad_script = """
-    Show-ADTInstallationWelcome -CloseAppsCountdown 60
-    Show-ADTFakeCmdlet -Parameter Value
-    Start-ADTMsiProcess -Action Install -Path '$dirFiles\\setup.msi'
-    """
-
-    result = detector.detect(bad_script)
+    result = detector.detect(mixed_script)
     assert result["has_hallucinations"]
-    assert result["confidence_score"] < 0.8
-    assert len(result["issues"]) > 0
+    assert len(result["issues"]) == 1
+    assert "Fake-Command" in result["issues"][0]["cmdlets"]
+    assert "Another-Fake-Command" in result["issues"][0]["cmdlets"]
+
+    # Test with no cmdlets
+    no_cmdlet_script = "Write-Host 'Hello, World!'"
+    result = detector.detect(no_cmdlet_script)
+    assert not result["has_hallucinations"]
+    assert result["confidence_score"] == 1.0
 
 
-def test_rag_service():
-    """Test RAG service functionality."""
+def test_rag_service_edge_cases():
+    """Test RAG service functionality with edge cases."""
     from src.app.services.rag_service import RAGService
 
     rag = RAGService()
 
-    # Test with known cmdlets
-    result = rag.query(["Show-ADTInstallationWelcome", "Start-ADTMsiProcess"])
-    assert isinstance(result, str)
+    # Test with an empty list of cmdlets
+    result = rag.query([])
+    assert result == ""
+
+    # Test with a mix of known and unknown cmdlets
+    result = rag.query(["Show-ADTInstallationWelcome", "Unknown-Cmdlet"])
     assert "Show-ADTInstallationWelcome" in result
-    assert "Start-ADTMsiProcess" in result
-
-    # Test with unknown cmdlets
-    result = rag.query(["Unknown-Cmdlet"])
-    assert isinstance(result, str)
     assert "Unknown-Cmdlet" in result
-

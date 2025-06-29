@@ -124,9 +124,9 @@ function Install-ADTDeployment
 
     ## Show Welcome Message, close Internet Explorer if required, allow up to 3 deferrals, verify there is enough disk space to complete the install, and persist the prompt.
     {% if package.package_metadata and package.package_metadata.executable_names and package.package_metadata.executable_names|length > 0 %}
-    Show-ADTInstallationWelcome -CloseApps '{{ package.package_metadata.executable_names | join(',') }}' -AllowDefer -DeferTimes 3 -CheckDiskSpace -PersistPrompt
+    Show-ADTInstallationWelcome -CloseProcesses '{{ package.package_metadata.executable_names | join(',') }}' -AllowDefer -DeferTimes 3 -CheckDiskSpace -PersistPrompt
     {% else %}
-    Show-ADTInstallationWelcome -CloseProcesses @{ Name = '{{ app_name }}'; Description = $adtSession.AppName } -AllowDefer -DeferTimes 3 -CheckDiskSpace -PersistPrompt
+    Show-ADTInstallationWelcome -AllowDefer -DeferTimes 3 -CheckDiskSpace -PersistPrompt
     {% endif %}
 
     ## Show Progress Message (with the default message).

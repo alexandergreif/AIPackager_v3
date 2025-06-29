@@ -116,6 +116,8 @@ pygments==2.19.2
     #   sphinx
 pytest==8.4.1
     # via -r requirements.in
+python-dotenv==1.1.1
+    # via -r requirements.in
 pyyaml==6.0.2
     # via
     #   -r requirements.in

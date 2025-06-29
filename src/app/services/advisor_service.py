@@ -13,16 +13,20 @@ from openai import (
     APITimeoutError,
     AuthenticationError,
 )
+from dotenv import load_dotenv
 
 from jinja2 import Environment, FileSystemLoader
 from ..schemas import PSADTScript
 from ..package_logger import get_package_logger
+from .rag_service import RAGService
 
 
 class AdvisorService:
     def __init__(self) -> None:
+        load_dotenv()  # Load environment variables from .env file
         self.client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
         self.jinja_env = Environment(loader=FileSystemLoader("src/app/prompts"))
+        self.rag_service = RAGService()
 
     def correct_script(
         self, script: PSADTScript, hallucination_report: dict, package_id: str
@@ -37,9 +41,22 @@ class AdvisorService:
                 "OpenAI API key not configured. Set OPENAI_API_KEY environment variable."
             )
 
+        unknown_cmdlets = []
+        for issue in hallucination_report.get("issues", []):
+            if issue.get("type") == "unknown_cmdlets":
+                unknown_cmdlets.extend(issue.get("cmdlets", []))
+
+        if unknown_cmdlets:
+            cmdlet_reference = self.rag_service.query(unknown_cmdlets)
+        else:
+            cmdlet_reference = (
+                "No unknown cmdlets found. Using standard cmdlet reference."
+            )
+
         prompt = self.jinja_env.get_template("advisor_correction.j2").render(
             original_script=script.model_dump_json(indent=4),
             hallucination_report=hallucination_report,
+            cmdlet_reference=cmdlet_reference,
         )
 
         messages = [
@@ -49,7 +66,7 @@ class AdvisorService:
             },
             {"role": "user", "content": prompt},
         ]
-        model_name = "gpt-4o-mini"
+        model_name = "gpt-4.1-mini"
         response_format = {"type": "json_object"}
 
         package_logger.log_step(

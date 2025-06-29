@@ -19,38 +19,39 @@ This document provides detailed information about the AIPackager v3 API endpoint
 - **Response**: HTML form for MSI/EXE file upload
 
 #### `POST /upload`
-**Process File Upload**
-- **Description**: Handle file upload and start processing
-- **Content-Type**: `multipart/form-data`
-- **Parameters**:
-  - `file`: MSI or EXE installer file (required)
-  - `custom_instructions`: User notes (optional)
-- **Validation**:
-  - File extension must be `.msi` or `.exe`
-  - File size limit enforced
-- **Response**: Redirect to progress page or error flash message
+**DEPRECATED - Process File Upload**
+- **Description**: This route is no longer used for handling file uploads. All uploads are now processed through `POST /api/packages`.
+- **Response**: Redirects to the upload page.
 
 ### Package Management
 
 #### `GET /progress/<package_id>`
 **Progress Tracking**
-- **Description**: Real-time progress monitoring
+- **Description**: Real-time progress monitoring. This page triggers the asynchronous 5-stage script generation pipeline if the package has not yet been processed.
 - **Parameters**:
   - `package_id`: UUID of the package
 - **Template**: `progress.html`
-- **Response**: HTML page with progress bar and current step
+- **Response**: HTML page that connects to the SSE stream for live updates.
+
+#### `GET /stream-progress/<id>`
+**Stream Progress (SSE)**
+- **Description**: Streams real-time progress updates using Server-Sent Events (SSE).
+- **Parameters**:
+  - `id`: UUID of the package
+- **Response**: `text/event-stream` with JSON data objects.
 
 #### `GET /detail/<package_id>`
 **Package Details**
-- **Description**: Comprehensive package information
+- **Description**: Displays comprehensive package information, including the rendered script and performance metrics.
 - **Parameters**:
   - `package_id`: UUID of the package
 - **Template**: `detail.html`
-- **Response**: HTML page with metadata table and script preview
+- **Response**: HTML page with metadata, script preview, and display metrics.
 - **Features**:
+  - **Script Rendering**: Uses `ScriptRenderer` to display the final PSADT script.
+  - **Metrics Display**: Shows performance metrics calculated by `MetricsService`.
   - Copy to clipboard functionality
   - Download script button
-  - Full metadata display
 
 #### `GET /history`
 **Package History**
@@ -60,23 +61,35 @@ This document provides detailed information about the AIPackager v3 API endpoint
 - **Columns**: Date, Name, Version, Status
 - **Interaction**: Click row to view details
 
+#### `GET /logs/<package_id>`
+**View Logs**
+- **Description**: Displays detailed logs for a specific package.
+- **Parameters**:
+  - `package_id`: UUID of the package
+- **Template**: `logs.html`
+- **Response**: HTML page with package logs.
+
 ### API Endpoints (JSON)
 
-#### `GET /api/packages`
-**List All Packages**
-- **Description**: JSON list of all packages
-- **Response Format**:
+#### `POST /api/packages`
+**Create Package and Upload File**
+- **Description**: Handles file upload and initiates the processing workflow. This is the primary endpoint for creating new packages.
+- **Workflow**:
+  1. Validates file type and size.
+  2. Saves the uploaded file to the instance directory.
+  3. Creates a new package record in the database.
+  4. Extracts metadata from the installer.
+  5. Maps extracted data to PSADT variables.
+  6. Stores the metadata in the database.
+- **Response**: JSON object with the new package's information.
 ```json
-[
-  {
-    "id": "uuid",
-    "filename": "installer.msi",
-    "status": "completed",
-    "upload_time": "2025-01-23T10:30:00Z",
-    "progress_pct": 100,
-    "current_step": "completed"
-  }
-]
+{
+  "package_id": "uuid",
+  "filename": "installer.msi",
+  "status": "uploading",
+  "upload_time": "2025-01-23T10:30:00Z",
+  "custom_instructions": "User notes"
+}
 ```
 
 #### `GET /api/packages/<package_id>`
@@ -118,6 +131,26 @@ This document provides detailed information about the AIPackager v3 API endpoint
 }
 ```
 
+#### `POST /api/packages/<uuid:package_id>/generate`
+**Generate Script**
+- **Description**: Triggers the 5-stage script generation pipeline for a given package.
+- **Response**: JSON object confirming the start of the generation process.
+
+#### `POST /api/render/<package_id>`
+**Render Script**
+- **Description**: Manually re-renders a PSADT script from provided AI sections.
+- **Response**: JSON object with the rendered script.
+
+#### `GET /api/packages/<package_id>/logs`
+**Get Package Logs**
+- **Description**: Retrieves detailed logs for a specific package in JSON format.
+- **Response**: JSON object containing the logs.
+
+#### `GET /api/packages`
+**List All Packages**
+- **Description**: Retrieves a list of all packages.
+- **Response**: JSON array of package objects.
+
 ## 🗃️ Data Models
 
 ### Package Model
@@ -143,6 +176,12 @@ class Package(Base):
 
     # User input
     custom_instructions: Optional[str] = mapped_column(Text)
+
+    # 5-stage pipeline results
+    generated_script: Optional[dict] = mapped_column(JSON)
+    hallucination_report: Optional[dict] = mapped_column(JSON)
+    corrections_applied: Optional[dict] = mapped_column(JSON)
+    pipeline_metadata: Optional[dict] = mapped_column(JSON)
 
     # Relationship
     package_metadata: Optional["Metadata"] = relationship(...)
@@ -197,46 +236,26 @@ class WorkflowStep(enum.Enum):
 
 ## 🔧 Business Logic Classes
 
-### PackageRequest
+### PSADTGenerator
+- **Description**: Orchestrates the 5-stage script generation pipeline.
+- **Key Methods**:
+  - `generate_script()`: Executes the full pipeline, including instruction processing, RAG, script generation, hallucination detection, and advisor correction.
 
-```python
-class PackageRequest:
-    def __init__(self, package: Package) -> None
-    def start(self) -> None
-    def set_step(self, step_name: str) -> None
-    def save_metadata(self, metadata: Dict[str, Any]) -> None
-    def resume(self) -> None
+### ScriptRenderer
+- **Description**: Renders the final PSADT script from the generated AI sections.
+- **Key Methods**:
+  - `render_psadt_script()`: Combines the package data and AI-generated content into a complete script.
 
-    @classmethod
-    def resume_pending_jobs(cls) -> None
-```
-
-**Methods**:
-- `start()`: Initialize processing workflow
-- `set_step()`: Update current workflow step with logging
-- `save_metadata()`: Store extracted metadata
-- `resume()`: Continue processing from current step
-- `resume_pending_jobs()`: Class method to resume all pending jobs
+### MetricsService
+- **Description**: Calculates and provides display metrics for the package details page.
+- **Key Methods**:
+  - `get_display_metrics()`: Returns key performance indicators and other relevant metrics.
 
 ### MetadataExtractor
-
-```python
-class MetadataExtractor:
-    def extract_metadata(self, file_path: str) -> Dict[str, Any]
-    def get_psadt_variables(self, metadata: Dict[str, Any]) -> Dict[str, str]
-
-    # Private methods
-    def _extract_msi_metadata(self, file_path: str) -> Dict[str, Any]
-    def _extract_exe_metadata(self, file_path: str) -> Dict[str, Any]
-    def _extract_with_msitools(self, file_path: str) -> Dict[str, Any]
-    def _extract_pe_metadata(self, file_path: str) -> Dict[str, Any]
-```
-
-**Key Methods**:
-- `extract_metadata()`: Main extraction entry point
-- `get_psadt_variables()`: Map metadata to PSADT template variables
-- `_extract_with_msitools()`: Use msiinfo for MSI analysis
-- `_extract_pe_metadata()`: Parse PE headers for EXE files
+- **Description**: Extracts metadata from installer files.
+- **Key Methods**:
+  - `extract_file_metadata()`: Main entry point for metadata extraction.
+  - `get_psadt_variables()`: Maps extracted metadata to PSADT template variables.
 
 ## 🗄️ Database Service
 

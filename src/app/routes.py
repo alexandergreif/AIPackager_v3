@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Union, Any, cast
+from typing import Union, Any, cast, Generator
 from uuid import UUID
 from flask import (
     Flask,
@@ -20,8 +20,13 @@ from .database import create_package, get_package, get_all_packages, create_meta
 from .metadata_extractor import extract_file_metadata
 from .services.script_generator import PSADTGenerator
 from .script_renderer import ScriptRenderer
+from .services.metrics_service import MetricsService
 from .models import Package
 from .package_logger import get_package_logger
+import queue
+import json
+
+progress_queues: dict[str, queue.Queue] = {}
 
 
 def register_routes(app: Flask) -> None:
@@ -92,11 +97,20 @@ def register_routes(app: Flask) -> None:
                                         or "Install the application",
                                         package=package_obj,
                                         session=session,
+                                        progress_queue=progress_queues.get(id),
                                     )
                                 except Exception as e:
                                     package_logger.log_error("PIPELINE_FAILED", e)
                                     package_obj.status = "failed"
                                     session.commit()
+                                    if id in progress_queues:
+                                        progress_queues[id].put(
+                                            {
+                                                "status": "failed",
+                                                "error": str(e),
+                                            }
+                                        )
+                                        progress_queues[id].put(None)
                                     return
 
                                 package_obj.generated_script = psadt_script.model_dump()
@@ -108,11 +122,21 @@ def register_routes(app: Flask) -> None:
                                 )
                                 package_obj.pipeline_metadata = {
                                     "generation_timestamp": datetime.now().isoformat(),
-                                    "model_used": "gpt-4o-mini",
+                                    "model_used": "gpt-4.1-mini",
                                     "pipeline_version": "5-stage-v1",
                                 }
                                 package_obj.status = "completed"
                                 session.commit()
+
+                                if id in progress_queues:
+                                    progress_queues[id].put(
+                                        {
+                                            "status": "completed",
+                                            "progress": 100,
+                                            "current_step": "Completed",
+                                        }
+                                    )
+                                    progress_queues[id].put(None)
 
                                 instance_dir = Path(current_app.instance_path)
                                 script_path = instance_dir / f"{package_obj.id}.json"
@@ -142,47 +166,23 @@ def register_routes(app: Flask) -> None:
 
                 update_package_status(id, "failed")
 
-        # Simulate processing if status is uploading
-        if package.status == "uploading":
-            from .database import update_package_status
-            import time
-
-            update_package_status(id, "processing")
-            time.sleep(1)
-            update_package_status(id, "completed")
-
-        # Handle AJAX requests for progress updates
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            from .workflow.progress import pct
-
-            progress_pct = (
-                package.progress_pct
-                if package.progress_pct is not None
-                else pct(package.current_step or "upload")
-            )
-            return jsonify(
-                {
-                    "job_id": str(package.id),
-                    "filename": package.filename,
-                    "status": package.status,
-                    "progress": progress_pct,
-                    "current_step": package.current_step or "Processing",
-                }
-            )
-
-        # Redirect to detail page when completed
-        if package.status == "completed":
-            return cast(Response, redirect(url_for("detail", id=id)))
-
-        # Show error message if failed
-        if package.status == "failed":
-            return render_template(
-                "progress.html",
-                job_id=id,
-                error="Script generation failed. Please try again.",
-            )
-
         return render_template("progress.html", job_id=id)
+
+    @app.route("/stream-progress/<id>")
+    def stream_progress(id: str) -> Response:
+        def generate() -> Generator[str, None, None]:
+            progress_queues[id] = queue.Queue()
+            while True:
+                try:
+                    data = progress_queues[id].get(timeout=30)
+                    if data is None:
+                        break
+                    yield f"data: {json.dumps(data)}\n\n"
+                except queue.Empty:
+                    # Send a keep-alive comment
+                    yield ":\n\n"
+
+        return Response(generate(), mimetype="text/event-stream")
 
     @app.route("/detail/<id>")
     def detail(id: str) -> Union[str, tuple[str, int]]:
@@ -193,18 +193,22 @@ def register_routes(app: Flask) -> None:
 
         # Convert 5-stage pipeline results to rendered script
         rendered_script = "No script generated yet."
-
         if package.generated_script:
             renderer = ScriptRenderer()
             rendered_script = renderer.render_psadt_script(
                 package=package, ai_sections=package.generated_script
             )
 
+        # Calculate display metrics
+        metrics_service = MetricsService(package.__dict__)
+        display_metrics = metrics_service.get_display_metrics()
+
         return render_template(
             "detail.html",
             package=package,
             metadata=package.package_metadata,
             rendered_script=rendered_script,
+            display_metrics=display_metrics,
         )
 
     @app.route("/history")
@@ -427,7 +431,7 @@ def register_routes(app: Flask) -> None:
                     db_package.corrections_applied = psadt_script.corrections_applied
                     db_package.pipeline_metadata = {
                         "generation_timestamp": datetime.now().isoformat(),
-                        "model_used": "gpt-4o-mini",
+                        "model_used": "gpt-4.1-mini",
                         "pipeline_version": "5-stage-v1",
                     }
                     db_package.status = "completed"

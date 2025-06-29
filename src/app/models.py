@@ -46,6 +46,9 @@ class Package(Base):
     custom_instructions: Mapped[Optional[str]] = mapped_column(Text)
 
     # 5-Stage Pipeline Results
+    instruction_result: Mapped[Optional[dict]] = mapped_column(JSON)
+    rag_documentation: Mapped[Optional[str]] = mapped_column(Text)
+    initial_script: Mapped[Optional[dict]] = mapped_column(JSON)
     generated_script: Mapped[Optional[dict]] = mapped_column(JSON)
     hallucination_report: Mapped[Optional[dict]] = mapped_column(JSON)
     pipeline_metadata: Mapped[Optional[dict]] = mapped_column(JSON)

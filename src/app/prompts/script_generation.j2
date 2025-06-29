@@ -42,12 +42,20 @@ When generating the script, you **MUST** use the following built-in variables. D
 - **Application Vendor**: Use the `$appVendor` variable (e.g., '{{ package.package_metadata.publisher }}').
 - **Registry Paths**: Construct registry paths dynamically (e.g., `"HKLM:\SOFTWARE\$appVendor\$appName"`).
 
-### Method 2: Enterprise Best Practices
+### Method 2: Closing Applications and Processes
+When generating the `Show-ADTInstallationWelcome` command, use the correct parameter for closing applications versus processes:
+- **`-CloseApps 'AppName'`**: Use this for the friendly application name (e.g., 'Google Chrome').
+- **`-CloseProcesses 'process.exe'`**: Use this for the executable name (e.g., 'chrome.exe').
+
+If the `predicted_processes_to_close` list in the structured instructions contains executable names, you **MUST** use the `-CloseProcesses` parameter.
+
+### Method 3: Enterprise Best Practices
 Follow these rules to ensure the script is robust and reliable for large-scale deployments.
 
 1.  **All Steps are Critical**: Every instruction provided by the user is mandatory. If any step fails, the script must terminate. Do **NOT** use `try/catch` blocks to suppress errors or allow the script to continue on failure.
 2.  **Idempotency**: Before creating a file, folder, or registry key, check if it already exists to prevent errors on script re-runs.
 3.  **Clear Logging**: Use `Write-ADTLogEntry` to log the intent and result of each major operation. For example: "INFO: Attempting to copy license file..." followed by "INFO: License file copied successfully."
+4.  **Use PSADT Cmdlets**: For registry operations, you **MUST** use the `Set-ADTRegistryKey` cmdlet instead of the standard PowerShell `Set-ItemProperty`.
 
 ---
 
@@ -60,3 +68,4 @@ Remember to only output a valid JSON object containing the lists of tasks.
 - **DO NOT** hard-code application names or vendors. Use the `$appName` and `$appVendor` variables.
 - **ALWAYS** construct the installer path using `Join-Path $dirFiles '{{ package.filename }}'`.
 - **EVERY** step is critical. If a step fails, the script must terminate. Do **NOT** use `try/catch` blocks to suppress errors.
+- If the `predicted_processes_to_close` list is not empty, you **MUST** use the `-CloseProcesses` parameter in `Show-ADTInstallationWelcome`.

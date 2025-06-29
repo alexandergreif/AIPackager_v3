@@ -92,7 +92,8 @@ Convert the following user instructions into structured deployment instructions 
     "Show-ADTInstallationWelcome",
     "Write-ADTLogEntry"
   ],
-  "confidence_score": 0.85
+  "confidence_score": 0.85,
+  "predicted_processes_to_close": ["list of executable names"]
 }
 ```
 
@@ -104,3 +105,4 @@ This is the list of available cmdlets. Use these to make your predictions.
 {% endfor %}
 
 Analyze the instructions and provide structured output with predicted cmdlets.
+Based on the `Application Metadata` (especially `Name` and `File Type`), predict the most likely executable names (e.g., `chrome.exe`, `firefox.exe`) that might need to be closed during installation. Return these in the `predicted_processes_to_close` field. If no specific executables can be predicted, return an empty list or null.

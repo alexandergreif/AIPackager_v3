@@ -1,12 +1,9 @@
-from typing import List
-
-"""Metadata extractor for MSI and EXE files using cross-platform tools."""
-
 import os
 import subprocess
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +32,6 @@ class MetadataExtractor:
                 )
                 if result.returncode == 0:
                     content = result.stdout
-                    import re
-
                     found = re.findall(r"(\w+\.exe)", content, re.IGNORECASE)
                     for exe in found:
                         executables.add(exe.lower())
@@ -605,8 +600,6 @@ class MetadataExtractor:
             comments = metadata.get("summary_comments", "")
             if comments:
                 # Try to extract version from comments like "136.0.7103.114 Copyright 2025 Google LLC"
-                import re
-
                 # Look for version patterns like X.Y.Z.W or X.Y.Z
                 version_match = re.search(r"(\d+\.\d+\.\d+(?:\.\d+)?)", comments)
                 if version_match:
@@ -633,42 +626,3 @@ def extract_file_metadata(file_path: str) -> Dict[str, Any]:
     """
     extractor = MetadataExtractor()
     return extractor.extract_metadata(file_path)
-
-</file_content>
-
-Now that you have the latest state of the file, try the operation again with fewer, more precise SEARCH blocks. For large files especially, it may be prudent to try to limit yourself to <5 SEARCH/REPLACE blocks at a time, then wait for the user to respond with the result of the operation before following up with another replace_in_file call to make additional edits.
-(If you run into this error 3 times in a row, you may use the write_to_file tool as a fallback.)
-</error><environment_details>
-# VSCode Visible Files
-../../../../../src/app/routes.py
-../../../../../src/app/routes.py
-src/app/metadata_extractor.py
-
-# VSCode Open Tabs
-.clinerules
-src/app/database.py
-src/aipackager/workflow.py
-src/app/services/advisor_service.py
-src/app/services/instruction_processor.py
-src/app/prompts/instruction_processing.j2
-instance/logs/894f360c-7cd4-4a13-a0c1-55786b697f5d.log
-src/app/services/cmdlet_discovery.py
-src/app/prompts/script_generation.j2
-additional-tasks.md
-src/app/models.py
-src/app/script_renderer.py
-src/app/templates/psadt/Invoke-AppDeployToolkit.ps1.j2
-closeapps-problem.md
-src/app/services/script_generator.py
-src/app/routes.py
-src/app/metadata_extractor.py
-
-# Current Time
-28.6.2025, 4:17:36 PM (Europe/Berlin, UTC+2:00)
-
-# Context Window Usage
-109.517 / 1.048,576K tokens used (10%)
-
-# Current Mode
-ACT MODE
-</environment_details>

@@ -40,15 +40,97 @@
         </div>
     </div>
     <div class="mt-6">
-        <h3 class="text-lg font-bold mb-2">Rendered Script</h3>
-        <pre class="bg-gray-200 p-4 rounded-md"><code>{{ rendered_script | safe }}</code></pre>
+        <details>
+            <summary class="text-lg font-bold mb-2 cursor-pointer">Rendered Script (Click to expand)</summary>
+            <pre class="bg-gray-200 p-4 rounded-md mt-2"><code id="script-content">{{ rendered_script | safe }}</code></pre>
+        </details>
         <div class="mt-4">
-            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Copy</button>
-            <a href="#" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Download</a>
+            <button id="copy-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Copy</button>
+            <a id="download-link" href="#" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Download</a>
 
             <a href="{{ url_for('view_logs', package_id=package.id) }}" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded ml-2">🔍 View Logs</a>
 
         </div>
     </div>
+    <div class="mt-6">
+        <h3 class="text-lg font-bold mb-2">Pipeline Metrics</h3>
+        {% if display_metrics %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="font-bold">Overall Performance</h4>
+                <table class="table-auto w-full">
+                    <tbody>
+                        {% for key, value in display_metrics.overall_performance.items() %}
+                        <tr>
+                            <td class="font-bold pr-4">{{ key | title }}</td>
+                            <td>{{ value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h4 class="font-bold">Stage Times (seconds)</h4>
+                <table class="table-auto w-full">
+                    <tbody>
+                        {% for stage, time in display_metrics.stage_times.items() %}
+                        <tr>
+                            <td class="font-bold pr-4">{{ stage | title | replace('_', ' ') }}</td>
+                            <td>{{ time }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h4 class="font-bold">Hallucination Detection</h4>
+                <table class="table-auto w-full">
+                    <tbody>
+                        <tr>
+                            <td class="font-bold pr-4">Detected Issues</td>
+                            <td>{{ display_metrics.hallucination_metrics.detected_count }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h4 class="font-bold">Advisor AI</h4>
+                <table class="table-auto w-full">
+                    <tbody>
+                        <tr>
+                            <td class="font-bold pr-4">Corrections Applied</td>
+                            <td>{{ display_metrics.advisor_metrics.corrections_count }}</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold pr-4">Effectiveness Rate</td>
+                            <td>{{ display_metrics.advisor_metrics.effectiveness_rate }}%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <p>No pipeline metrics available.</p>
+        {% endif %}
+    </div>
 </div>
+
+<script>
+document.getElementById('copy-button').addEventListener('click', function() {
+    const scriptContent = document.getElementById('script-content').innerText;
+    navigator.clipboard.writeText(scriptContent).then(function() {
+        alert('Script copied to clipboard!');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+    });
+});
+
+document.getElementById('download-link').addEventListener('click', function() {
+    const scriptContent = document.getElementById('script-content').innerText;
+    const blob = new Blob([scriptContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    this.href = url;
+    this.download = '{{ package.filename }}.ps1';
+});
+</script>
 {% endblock %}

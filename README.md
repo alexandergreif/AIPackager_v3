@@ -22,35 +22,41 @@ A web application that generates PowerShell App Deployment Toolkit (PSADT) scrip
    make install
    ```
 
-2. **Run the application:**
+2. **Configure Environment:**
+   ```bash
+   cp .env.example .env
+   ```
+   - Edit the `.env` file and add your OpenAI API key.
+
+3. **Run the application:**
    ```bash
    python run.py
    ```
 
-3. **Access the web interface:**
-   Open http://localhost:5000 in your browser
+4. **Access the web interface:**
+   Open http://localhost:5001 in your browser
 
 ## 📋 Features
 
 ### ✅ Completed Features
 
-- **Web Interface**: Clean, responsive UI with Tailwind CSS
-- **File Upload**: Support for MSI and EXE installer files
-- **Metadata Extraction**: Advanced MSI metadata extraction using msitools
-- **Workflow Tracking**: Step-by-step progress tracking with CMTrace logging
-- **Resume Functionality**: Automatic resumption of interrupted workflows
-- **History Management**: View and manage previous package processing jobs
-- **PSADT Variables**: Intelligent extraction of PSADT template variables
+- **5-Stage Self-Correcting Pipeline**: Automated script generation with instruction processing, targeted RAG, script generation, hallucination detection, and advisor correction.
+- **Web Interface**: Clean, responsive UI with Tailwind CSS and real-time progress updates.
+- **File Upload**: Support for MSI and EXE installer files.
+- **Metadata Extraction**: Advanced MSI metadata extraction using msitools.
+- **Workflow Tracking**: Step-by-step progress tracking with CMTrace logging.
+- **History Management**: View and manage previous package processing jobs.
 
 ### 🔄 Workflow Steps
 
-1. **Upload** - Select MSI/EXE installer file
-2. **Extract Metadata** - Parse installer metadata using msitools/PE analysis
-3. **Preprocess** - Prepare data for AI processing
-4. **Generate Prompt** - Create structured prompt for AI
-5. **Call AI** - Generate PSADT script using GPT-4o
-6. **Render Script** - Finalize and format the output script
-7. **Completed** - Download or copy the generated script
+1. **Upload** - Select MSI/EXE installer file.
+2. **Metadata Extraction** - Parse installer metadata.
+3. **Stage 1: Instruction Processing** - Convert user input to structured instructions.
+4. **Stage 2: Targeted RAG** - Query documentation for relevant context.
+5. **Stage 3: Script Generation** - Generate the initial PowerShell script.
+6. **Stage 4: Hallucination Detection** - Validate the script against a knowledge graph.
+7. **Stage 5: Advisor Correction** - Self-correct any identified hallucinations.
+8. **Completed** - Download or copy the generated script.
 
 ## 🏗️ Architecture
 
@@ -84,6 +90,10 @@ AIPackager_v3/
 - **progress_pct**: Completion percentage
 - **upload_time**: Timestamp of upload
 - **custom_instructions**: User-provided notes
+- **generated_script**: JSON object with the generated script sections.
+- **hallucination_report**: JSON object with the hallucination detection results.
+- **corrections_applied**: JSON object with any corrections applied by the advisor.
+- **pipeline_metadata**: JSON object with metadata about the pipeline execution.
 
 ### Metadata Model
 - **package_id**: Foreign key to Package
@@ -137,9 +147,9 @@ alembic downgrade -1
 - ✅ **Sprint 1**: UI Skeleton & Basic Routes
 - ✅ **Sprint 2**: Backend Core & Database Models
 - ✅ **Sprint 2-5**: Workflow Refinement & Detailed Views
-- 🔄 **Sprint 3**: Template & Prompt Engineering (planned)
-- 🔄 **Sprint 4**: AI Integration with GPT-4o (planned)
-- 🔄 **Sprint 5**: Polish & Production Features (planned)
+- ✅ **Sprint 3**: Template & Prompt Engineering
+- ✅ **Sprint 4**: AI Integration with 5-Stage Pipeline
+- ✅ **Sprint 5**: Hallucination Detection & Advisor Correction
 
 ### Sprint 2-5 Achievements (Current)
 

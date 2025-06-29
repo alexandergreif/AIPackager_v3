@@ -7,30 +7,12 @@ Stage 4: Script validation
 from ..utils import retry_with_backoff
 import re
 from typing import Dict, List, Any
+from .rag_service import RAGService
 
 
 class HallucinationDetector:
     def __init__(self) -> None:
-        # Known PSADT cmdlets for validation
-        self.known_cmdlets = {
-            "Show-ADTInstallationWelcome",
-            "Start-ADTMsiProcess",
-            "Show-ADTInstallationProgress",
-            "Show-ADTInstallationPrompt",
-            "Remove-ADTFile",
-            "Copy-ADTFile",
-            "Set-ADTRegistryKey",
-            "Get-ADTRegistryKey",
-            "Get-ADTApplication",
-            "Test-ADTServiceExists",
-            "Start-ADTServiceAndDependencies",
-            "Stop-ADTServiceAndDependencies",
-            "New-ADTFolder",
-            "Remove-ADTFolder",
-            "Show-ADTInstallationRestartPrompt",
-            "Get-ADTLoggedOnUser",
-            "Test-ADTCallerIsAdmin",
-        }
+        self.rag_service = RAGService()
 
     @retry_with_backoff()
     def detect(self, script: str) -> Dict[str, Any]:
@@ -61,7 +43,9 @@ class HallucinationDetector:
                     "Stop-ADT",
                 )
             ):
-                if cmdlet not in self.known_cmdlets:
+                # Query RAG to see if documentation exists
+                docs = self.rag_service.query([cmdlet])
+                if not docs or f"Documentation for PSADT cmdlets: {cmdlet}" in docs:
                     unknown_cmdlets.append(cmdlet)
 
         if unknown_cmdlets:
@@ -129,4 +113,3 @@ class HallucinationDetector:
             recommendations.append("No issues detected. Script appears to be valid.")
 
         return recommendations
-

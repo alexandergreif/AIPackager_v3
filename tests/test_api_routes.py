@@ -73,6 +73,55 @@ class TestAPIRoutes:
         assert json_data["custom_instructions"] == "Test instructions"
         assert "upload_time" in json_data
 
+    def test_api_generate_script(self, client, sample_file):
+        """Test the script generation endpoint."""
+        # First, create a package
+        data = {"installer": sample_file}
+        response = client.post("/api/packages", data=data)
+        package_id = response.get_json()["package_id"]
+
+        # Then, trigger script generation
+        response = client.post(f"/api/packages/{package_id}/generate")
+        assert response.status_code == 202
+
+    def test_api_render_script(self, client, sample_file):
+        """Test the script rendering endpoint."""
+        # First, create a package
+        data = {"installer": sample_file}
+        response = client.post("/api/packages", data=data)
+        package_id = response.get_json()["package_id"]
+
+        # Then, render the script
+        response = client.post(f"/api/render/{package_id}")
+        assert response.status_code == 200
+        json_data = response.get_json()
+        assert "rendered_script" in json_data
+
+    def test_api_get_logs(self, client, sample_file):
+        """Test the get logs endpoint."""
+        # First, create a package
+        data = {"installer": sample_file}
+        response = client.post("/api/packages", data=data)
+        package_id = response.get_json()["package_id"]
+
+        # Then, get the logs
+        response = client.get(f"/api/packages/{package_id}/logs")
+        assert response.status_code == 200
+        json_data = response.get_json()
+        assert "logs" in json_data
+
+    def test_stream_progress(self, client, sample_file):
+        """Test the stream progress endpoint."""
+        # First, create a package
+        data = {"installer": sample_file}
+        response = client.post("/api/packages", data=data)
+        package_id = response.get_json()["package_id"]
+
+        # Then, stream the progress
+        response = client.get(f"/stream-progress/{package_id}")
+        assert response.status_code == 200
+        assert response.mimetype == "text/event-stream"
+
     def test_api_create_package_no_file(self, client):
         """Test package creation without file."""
         response = client.post("/api/packages", data={})
@@ -167,6 +216,7 @@ class TestAPIRoutes:
         assert response.status_code == 200
         assert b"test_installer.msi" in response.data
         assert b"Test instructions" in response.data
+        assert b"No script generated yet." in response.data
 
     def test_history_page_loads(self, client, sample_file):
         """Test that the history page loads correctly."""

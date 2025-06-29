@@ -22,4 +22,7 @@ pre-commit>=3.0.0
 # Documentation
 sphinx>=5.0.0
 
+# Environment Management
+python-dotenv>=1.0.0
+
 # MSI parsing

@@ -23,97 +23,20 @@ make install
 python run.py
 ```
 
-Access at: http://localhost:5000
+Access at: http://localhost:5001
 
 ### Production Deployment
 
 ```bash
 # Production setup
 export FLASK_ENV=production
-export DATABASE_URL=sqlite:///production.db
+export DATABASE_URL=sqlite:///instance/production.db
 
 # Install with production dependencies
 pip install -r requirements.txt
 
 # Run with Gunicorn
 gunicorn -w 4 -b 0.0.0.0:8000 "src.app:create_app()"
-```
-
-## 🐳 Docker Deployment
-
-### Dockerfile
-
-```dockerfile
-FROM python:3.12-slim
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    msitools \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
-WORKDIR /app
-
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY . .
-
-# Create instance directory
-RUN mkdir -p instance/uploads
-
-# Expose port
-EXPOSE 5000
-
-# Run application
-CMD ["python", "run.py"]
-```
-
-### Docker Compose
-
-```yaml
-version: '3.8'
-
-services:
-  aipackager:
-    build: .
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./instance:/app/instance
-    environment:
-      - FLASK_ENV=production
-      - DATABASE_URL=sqlite:///instance/production.db
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - aipackager
-    restart: unless-stopped
-```
-
-### Build and Run
-
-```bash
-# Build image
-docker build -t aipackager:latest .
-
-# Run container
-docker run -d \
-  --name aipackager \
-  -p 5000:5000 \
-  -v $(pwd)/instance:/app/instance \
-  aipackager:latest
-
-# Or use Docker Compose
-docker-compose up -d
 ```
 
 ## ☁️ Cloud Deployment
@@ -448,6 +371,8 @@ if not app.debug:
 
 ### Health Check Endpoint
 
+The application includes a `/health` endpoint to verify its operational status.
+
 ```python
 @app.route('/health')
 def health_check():
@@ -573,9 +498,10 @@ sudo chmod -R 777 /opt/aipackager/instance
 
 #### Database Migration Issues
 ```bash
-# Reset migrations
-rm -rf alembic/versions/*
-alembic revision --autogenerate -m "Initial migration"
+# Create a new migration
+alembic revision --autogenerate -m "Your migration message"
+
+# Apply the migration
 alembic upgrade head
 ```
 

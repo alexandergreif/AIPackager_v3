@@ -9,6 +9,7 @@ class InstructionResult(BaseModel):
     structured_instructions: Dict[str, Any]
     predicted_cmdlets: List[str]
     confidence_score: float
+    predicted_processes_to_close: Optional[List[str]] = None
 
 
 class PSADTScript(BaseModel):
