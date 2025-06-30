@@ -7,7 +7,7 @@ Stage 4: Script validation using MCP knowledge graph
 from ..utils import retry_with_backoff
 from ..package_logger import get_package_logger
 import re
-from typing import Dict, List, Any, Optional, Set
+from typing import Dict, Any, Optional
 from .psadt_documentation_parser import PSADTDocumentationParser, CmdletDefinition
 
 
@@ -86,7 +86,7 @@ class HallucinationDetector:
         return report
 
     def _parse_mcp_result(
-        self, mcp_result: Dict[str, Any], found_cmdlets: List[str]
+        self, mcp_result: Dict[str, Any], found_cmdlets: list[str]
     ) -> Dict[str, Any]:
         """Parse MCP server result into our expected format."""
 
@@ -146,17 +146,18 @@ class HallucinationDetector:
             return self._fallback_validation("", found_cmdlets)
 
     def _fallback_validation(
-        self, script: str, found_cmdlets: List[str]
+        self, script: str, found_cmdlets: list[str]
     ) -> Dict[str, Any]:
         """Enhanced validation using PSADT v4 cmdlet database."""
+        cmdlet_count = len(self.psadt_cmdlets) if self.psadt_cmdlets else 0
         self.package_logger.log_step(
             "ENHANCED_PSADT_VALIDATION",
-            f"Using comprehensive PSADT v4 validation with {len(self.psadt_cmdlets)} cmdlets",
+            f"Using comprehensive PSADT v4 validation with {cmdlet_count} cmdlets",
         )
 
-        issues = []
-        unknown_cmdlets = []
-        parameter_issues = []
+        issues: list[dict[str, Any]] = []
+        unknown_cmdlets: list[str] = []
+        parameter_issues: list[dict[str, Any]] = []
 
         # Get known PSADT cmdlets from our comprehensive database
         known_psadt_cmdlets = (
@@ -164,7 +165,7 @@ class HallucinationDetector:
         )
 
         # Fallback to basic validation if cmdlets didn't load
-        if not known_psadt_cmdlets:
+        if self.psadt_cmdlets is None or not known_psadt_cmdlets:
             self.package_logger.log_error(
                 "PSADT_CMDLETS_UNAVAILABLE",
                 Exception("PSADT cmdlets not loaded, using basic validation"),
@@ -266,7 +267,7 @@ class HallucinationDetector:
                         cmdlet, known_psadt_cmdlets
                     )
 
-                issue = {
+                issue: dict[str, Any] = {
                     "type": "unknown_cmdlet",
                     "description": description,
                     "severity": severity,
@@ -319,9 +320,9 @@ class HallucinationDetector:
             "mcp_validation": False,
         }
 
-    def _validate_cmdlet_parameters(self, script: str) -> List[Dict[str, Any]]:
+    def _validate_cmdlet_parameters(self, script: str) -> list[dict[str, Any]]:
         """Advanced parameter validation using PSADT v4 cmdlet definitions."""
-        issues = []
+        issues: list[dict[str, Any]] = []
 
         if not self.psadt_cmdlets:
             return issues  # No validation possible without cmdlet definitions
@@ -343,17 +344,18 @@ class HallucinationDetector:
         return issues
 
     def _validate_cmdlet_call_parameters(
-        self, cmdlet_name: str, params_text: str, cmdlet_def
-    ) -> List[Dict[str, Any]]:
+        self, cmdlet_name: str, params_text: str, cmdlet_def: CmdletDefinition
+    ) -> list[dict[str, Any]]:
         """Validate parameters for a specific cmdlet call."""
-        issues = []
+        issues: list[dict[str, Any]] = []
 
-        # Extract parameter names from the parameter text
-        param_pattern = r"-(\w+)(?:\s+[^\s-]+)?"
-        found_params = re.findall(param_pattern, params_text)
+        # Extract parameter names from the parameter text using a simpler approach
+        param_names: list[str] = []
+        for match in re.finditer(r"-(\w+)", params_text):
+            param_names.append(match.group(1))
 
         # Check each parameter against cmdlet definition
-        for param_name in found_params:
+        for param_name in param_names:
             if param_name not in cmdlet_def.parameters:
                 issues.append(
                     {
@@ -363,7 +365,7 @@ class HallucinationDetector:
                         "cmdlet": cmdlet_name,
                         "parameter": param_name,
                         "suggestions": self._find_similar_parameters(
-                            param_name, cmdlet_def.parameters.keys()
+                            param_name, set(cmdlet_def.parameters.keys())
                         ),
                     }
                 )
@@ -391,7 +393,7 @@ class HallucinationDetector:
 
         return issues
 
-    def _find_similar_cmdlets(self, cmdlet: str, known_cmdlets: set) -> List[str]:
+    def _find_similar_cmdlets(self, cmdlet: str, known_cmdlets: set) -> list[str]:
         """Find similar cmdlet names for suggestions."""
         suggestions = []
         cmdlet_lower = cmdlet.lower()
@@ -421,7 +423,7 @@ class HallucinationDetector:
 
         return suggestions[:3]  # Return top 3 suggestions
 
-    def _find_similar_parameters(self, param: str, known_params: set) -> List[str]:
+    def _find_similar_parameters(self, param: str, known_params: set) -> list[str]:
         """Find similar parameter names for suggestions."""
         suggestions = []
         param_lower = param.lower()
@@ -450,7 +452,7 @@ class HallucinationDetector:
         )
         return matches / len(longer)
 
-    def _generate_recommendations(self, issues: List[Dict[str, Any]]) -> List[str]:
+    def _generate_recommendations(self, issues: list[dict[str, Any]]) -> list[str]:
         """Generate recommendations based on detected issues."""
         recommendations = []
 

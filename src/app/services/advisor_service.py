@@ -6,6 +6,7 @@ Stage 5: Self-correction AI
 
 import os
 import json
+from typing import Optional, Dict
 from openai import (
     OpenAI,
     OpenAIError,
@@ -19,7 +20,7 @@ from jinja2 import Environment, FileSystemLoader
 from ..schemas import PSADTScript
 from ..package_logger import get_package_logger
 from .rag_service import RAGService
-from .psadt_documentation_parser import PSADTDocumentationParser
+from .psadt_documentation_parser import PSADTDocumentationParser, CmdletDefinition
 
 
 class AdvisorService:
@@ -30,7 +31,7 @@ class AdvisorService:
 
         # Initialize PSADT v4 documentation parser
         self.psadt_parser = PSADTDocumentationParser()
-        self.psadt_cmdlets = None
+        self.psadt_cmdlets: Optional[Dict[str, CmdletDefinition]] = None
         self._load_psadt_cmdlets()
 
     def _load_psadt_cmdlets(self) -> None:

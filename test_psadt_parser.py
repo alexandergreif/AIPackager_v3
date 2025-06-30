@@ -27,7 +27,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def test_psadt_parser():
+def test_psadt_parser() -> None:
     """Test the PSADT documentation parser"""
     print("🚀 Testing PSADT v4 Documentation Parser")
     print("=" * 80)
@@ -83,7 +83,7 @@ def test_psadt_parser():
     show_validation_improvements(cmdlets)
 
 
-def analyze_cmdlet_detail(cmdlet: CmdletDefinition):
+def analyze_cmdlet_detail(cmdlet: CmdletDefinition) -> None:
     """Analyze a specific cmdlet in detail"""
     print(f"  Name: {cmdlet.name}")
     print(f"  Synopsis: {cmdlet.synopsis[:100]}...")
@@ -114,7 +114,7 @@ def analyze_cmdlet_detail(cmdlet: CmdletDefinition):
         print(f"      {example.code}")
 
 
-def test_parameter_validation(cmdlets: dict):
+def test_parameter_validation(cmdlets: dict[str, CmdletDefinition]) -> None:
     """Test parameter validation capabilities"""
     # Test cases for validation
     test_cases = [
@@ -150,10 +150,14 @@ def test_parameter_validation(cmdlets: dict):
         print(f"  {status} {test_case['name']}")
 
 
-def validate_cmdlet_call(cmdlets: dict, test_case: dict) -> bool:
+def validate_cmdlet_call(
+    cmdlets: dict[str, CmdletDefinition],
+    test_case: dict[str, object],
+) -> bool:
     """Validate a cmdlet call against parsed definitions"""
-    cmdlet_name = test_case["cmdlet"]
-    params = test_case["params"]
+    cmdlet_name = str(test_case["cmdlet"])
+    params_value = test_case["params"]
+    params = dict(params_value) if isinstance(params_value, dict) else {}
 
     if cmdlet_name not in cmdlets:
         return False  # Cmdlet doesn't exist
@@ -193,7 +197,7 @@ def validate_cmdlet_call(cmdlets: dict, test_case: dict) -> bool:
     return False
 
 
-def show_validation_improvements(cmdlets: dict):
+def show_validation_improvements(cmdlets: dict[str, CmdletDefinition]) -> None:
     """Show how this improves validation compared to current system"""
     print("\n🎯 Validation Improvements Over Current System:")
     print("=" * 60)
@@ -263,7 +267,7 @@ def show_validation_improvements(cmdlets: dict):
     print("  ✅ Version 4 vs deprecated pattern detection")
 
 
-def main():
+def main() -> int:
     """Main function"""
     try:
         test_psadt_parser()

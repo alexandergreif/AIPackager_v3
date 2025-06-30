@@ -376,21 +376,21 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "NoWait",
-          "UseShellExecute",
-          "CreateNoWindow",
-          "WindowStyle",
-          "RebootExitCodes",
-          "WorkingDirectory",
-          "SuccessExitCodes",
+          "MsiExecWaitTime",
           "PriorityClass",
+          "CreateNoWindow",
           "PassThru",
-          "ArgumentList",
           "SecureArgumentList",
+          "WindowStyle",
+          "NoWait",
           "FilePath",
           "WaitForMsiExec",
+          "RebootExitCodes",
+          "UseShellExecute",
           "IgnoreExitCodes",
-          "MsiExecWaitTime"
+          "WorkingDirectory",
+          "ArgumentList",
+          "SuccessExitCodes"
         ],
         "description": ""
       }
@@ -558,10 +558,10 @@
         "name": "WindowTitle",
         "required_parameters": [],
         "optional_parameters": [
-          "Keys",
           "WaitSeconds",
-          "WaitDuration",
-          "WindowTitle"
+          "Keys",
+          "WindowTitle",
+          "WaitDuration"
         ],
         "description": ""
       },
@@ -569,9 +569,9 @@
         "name": "GetAllWindowTitles",
         "required_parameters": [],
         "optional_parameters": [
-          "Keys",
           "GetAllWindowTitles",
           "WaitSeconds",
+          "Keys",
           "WaitDuration"
         ],
         "description": ""
@@ -580,9 +580,9 @@
         "name": "WindowHandle",
         "required_parameters": [],
         "optional_parameters": [
-          "Keys",
           "WindowHandle",
           "WaitSeconds",
+          "Keys",
           "WaitDuration"
         ],
         "description": ""
@@ -763,10 +763,10 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
+          "MsiPath",
           "TransformProperties",
           "ApplyTransformPath",
-          "NewTransformPath",
-          "MsiPath"
+          "NewTransformPath"
         ],
         "description": ""
       }
@@ -835,8 +835,8 @@
         "required_parameters": [],
         "optional_parameters": [
           "InputObject",
-          "PropertyName",
-          "ArgumentList"
+          "ArgumentList",
+          "PropertyName"
         ],
         "description": ""
       }
@@ -934,12 +934,12 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "SID",
           "Key",
-          "ReturnEmptyKeyIfExists",
-          "Name",
           "Wow6432Node",
-          "DoNotExpandEnvironmentNames"
+          "Name",
+          "DoNotExpandEnvironmentNames",
+          "SID",
+          "ReturnEmptyKeyIfExists"
         ],
         "description": ""
       }
@@ -1181,9 +1181,9 @@
         "name": "WellKnownName",
         "required_parameters": [],
         "optional_parameters": [
-          "LocalHost",
           "WellKnownSIDName",
-          "WellKnownToNTAccount"
+          "WellKnownToNTAccount",
+          "LocalHost"
         ],
         "description": ""
       }
@@ -1277,8 +1277,8 @@
         "optional_parameters": [
           "SID",
           "Key",
-          "Recurse",
-          "Name"
+          "Name",
+          "Recurse"
         ],
         "description": ""
       }
@@ -1401,12 +1401,12 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "SID",
-          "Value",
-          "Key",
           "Type",
+          "Key",
+          "Wow6432Node",
           "Name",
-          "Wow6432Node"
+          "SID",
+          "Value"
         ],
         "description": ""
       }
@@ -1584,8 +1584,8 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "AdditionalArgumentList",
-          "FilePath"
+          "FilePath",
+          "AdditionalArgumentList"
         ],
         "description": ""
       }
@@ -1682,11 +1682,11 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "CommonParameters",
-          "ParameterSetName",
-          "Invocation",
           "HelpMessage",
-          "Exclude"
+          "Invocation",
+          "ParameterSetName",
+          "Exclude",
+          "CommonParameters"
         ],
         "description": ""
       }
@@ -1996,16 +1996,16 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "Description",
+          "IconLocation",
+          "Hotkey",
           "Path",
           "WindowStyle",
-          "TargetPath",
-          "WorkingDirectory",
-          "Hotkey",
+          "Description",
           "Arguments",
-          "RunAsAdmin",
           "IconIndex",
-          "IconLocation"
+          "RunAsAdmin",
+          "WorkingDirectory",
+          "TargetPath"
         ],
         "description": ""
       }
@@ -2215,11 +2215,11 @@
           "WindowSubtitle"
         ],
         "optional_parameters": [
-          "WindowLocation",
           "NoRelocation",
-          "NotTopMost",
           "MessageAlignment",
-          "StatusMessageDetail"
+          "NotTopMost",
+          "StatusMessageDetail",
+          "WindowLocation"
         ],
         "description": ""
       }
@@ -2559,25 +2559,25 @@
         "name": "PrimaryActiveUserSession",
         "required_parameters": [],
         "optional_parameters": [
-          "HideWindow",
-          "WorkingDirectory",
-          "ArgumentList",
-          "IsGuiApplication",
-          "InheritEnvironmentVariables",
-          "ConsoleTimeoutInSeconds",
           "FilePath",
-          "WaitOption",
-          "ProcessCreationFlags",
+          "NoRedirectOutput",
+          "ConsoleTimeoutInSeconds",
+          "IsGuiApplication",
+          "Wait",
+          "WorkingDirectory",
+          "SuccessExitCodes",
+          "HideWindow",
+          "PassThru",
           "SecureArgumentList",
+          "AdditionalEnvironmentVariables",
+          "OutputDirectory",
+          "WaitOption",
+          "InheritEnvironmentVariables",
+          "MergeStdErrAndStdOut",
           "UseLinkedAdminToken",
           "NoTerminateOnTimeout",
-          "NoRedirectOutput",
-          "OutputDirectory",
-          "AdditionalEnvironmentVariables",
-          "SuccessExitCodes",
-          "MergeStdErrAndStdOut",
-          "PassThru",
-          "Wait"
+          "ProcessCreationFlags",
+          "ArgumentList"
         ],
         "description": ""
       },
@@ -2585,26 +2585,26 @@
         "name": "AllActiveUserSessions",
         "required_parameters": [],
         "optional_parameters": [
-          "HideWindow",
-          "WorkingDirectory",
-          "AllActiveUserSessions",
-          "ArgumentList",
-          "IsGuiApplication",
-          "InheritEnvironmentVariables",
-          "ConsoleTimeoutInSeconds",
           "FilePath",
-          "WaitOption",
-          "ProcessCreationFlags",
+          "NoRedirectOutput",
+          "ConsoleTimeoutInSeconds",
+          "IsGuiApplication",
+          "Wait",
+          "WorkingDirectory",
+          "SuccessExitCodes",
+          "HideWindow",
+          "PassThru",
           "SecureArgumentList",
+          "AdditionalEnvironmentVariables",
+          "OutputDirectory",
+          "WaitOption",
+          "InheritEnvironmentVariables",
+          "AllActiveUserSessions",
+          "MergeStdErrAndStdOut",
           "UseLinkedAdminToken",
           "NoTerminateOnTimeout",
-          "NoRedirectOutput",
-          "OutputDirectory",
-          "AdditionalEnvironmentVariables",
-          "SuccessExitCodes",
-          "MergeStdErrAndStdOut",
-          "PassThru",
-          "Wait"
+          "ProcessCreationFlags",
+          "ArgumentList"
         ],
         "description": ""
       },
@@ -2612,26 +2612,26 @@
         "name": "SessionId",
         "required_parameters": [],
         "optional_parameters": [
-          "HideWindow",
-          "WorkingDirectory",
-          "ArgumentList",
-          "IsGuiApplication",
-          "InheritEnvironmentVariables",
-          "ConsoleTimeoutInSeconds",
           "FilePath",
-          "WaitOption",
-          "ProcessCreationFlags",
-          "SecureArgumentList",
-          "UseLinkedAdminToken",
-          "NoTerminateOnTimeout",
           "NoRedirectOutput",
-          "OutputDirectory",
-          "AdditionalEnvironmentVariables",
+          "ConsoleTimeoutInSeconds",
+          "IsGuiApplication",
+          "Wait",
+          "WorkingDirectory",
           "SuccessExitCodes",
-          "MergeStdErrAndStdOut",
+          "HideWindow",
           "PassThru",
+          "SecureArgumentList",
+          "AdditionalEnvironmentVariables",
+          "OutputDirectory",
+          "WaitOption",
+          "InheritEnvironmentVariables",
+          "MergeStdErrAndStdOut",
+          "UseLinkedAdminToken",
           "SessionId",
-          "Wait"
+          "ProcessCreationFlags",
+          "NoTerminateOnTimeout",
+          "ArgumentList"
         ],
         "description": ""
       },
@@ -2639,26 +2639,26 @@
         "name": "Username",
         "required_parameters": [],
         "optional_parameters": [
-          "HideWindow",
-          "WorkingDirectory",
-          "ArgumentList",
-          "IsGuiApplication",
-          "InheritEnvironmentVariables",
-          "ConsoleTimeoutInSeconds",
+          "Username",
           "FilePath",
-          "WaitOption",
-          "ProcessCreationFlags",
+          "NoRedirectOutput",
+          "ConsoleTimeoutInSeconds",
+          "IsGuiApplication",
+          "Wait",
+          "WorkingDirectory",
+          "SuccessExitCodes",
+          "HideWindow",
+          "PassThru",
           "SecureArgumentList",
+          "AdditionalEnvironmentVariables",
+          "OutputDirectory",
+          "WaitOption",
+          "InheritEnvironmentVariables",
+          "MergeStdErrAndStdOut",
           "UseLinkedAdminToken",
           "NoTerminateOnTimeout",
-          "NoRedirectOutput",
-          "OutputDirectory",
-          "Username",
-          "AdditionalEnvironmentVariables",
-          "SuccessExitCodes",
-          "MergeStdErrAndStdOut",
-          "PassThru",
-          "Wait"
+          "ProcessCreationFlags",
+          "ArgumentList"
         ],
         "description": ""
       }
@@ -2918,11 +2918,11 @@
         "name": "TableInfo",
         "required_parameters": [],
         "optional_parameters": [
-          "Path",
-          "Table",
           "TablePropertyValueColumnNum",
+          "Path",
+          "TablePropertyNameColumnNum",
           "TransformPath",
-          "TablePropertyNameColumnNum"
+          "Table"
         ],
         "description": ""
       },
@@ -2930,9 +2930,9 @@
         "name": "SummaryInfo",
         "required_parameters": [],
         "optional_parameters": [
+          "TransformPath",
           "GetSummaryInformation",
-          "Path",
-          "TransformPath"
+          "Path"
         ],
         "description": ""
       }
@@ -3232,13 +3232,13 @@
         "required_parameters": [],
         "optional_parameters": [
           "Path",
+          "Destination",
+          "Recurse",
+          "ContinueFileCopyOnError",
+          "FileCopyMode",
           "RobocopyParams",
           "RobocopyAdditionalParams",
-          "Recurse",
-          "Flatten",
-          "ContinueFileCopyOnError",
-          "Destination",
-          "FileCopyMode"
+          "Flatten"
         ],
         "description": ""
       }
@@ -3517,19 +3517,19 @@
           "Title"
         ],
         "optional_parameters": [
-          "MinimizeWindows",
-          "ButtonRightText",
-          "PersistPrompt",
-          "NoWait",
           "Icon",
           "Message",
-          "ButtonMiddleText",
-          "Timeout",
-          "NoExitOnTimeout",
-          "ButtonLeftText",
-          "Subtitle",
+          "MinimizeWindows",
+          "MessageAlignment",
+          "ButtonRightText",
+          "NoWait",
           "NotTopMost",
-          "MessageAlignment"
+          "ButtonLeftText",
+          "PersistPrompt",
+          "Subtitle",
+          "ButtonMiddleText",
+          "NoExitOnTimeout",
+          "Timeout"
         ],
         "description": ""
       }
@@ -3675,11 +3675,11 @@
         "required_parameters": [],
         "optional_parameters": [
           "Path",
-          "Force",
-          "CompressionLevel",
           "Update",
+          "CompressionLevel",
           "DestinationPath",
-          "RemoveSourceAfterArchiving"
+          "RemoveSourceAfterArchiving",
+          "Force"
         ],
         "description": ""
       },
@@ -3688,11 +3688,11 @@
         "required_parameters": [],
         "optional_parameters": [
           "Force",
-          "LiteralPath",
-          "CompressionLevel",
           "Update",
+          "CompressionLevel",
           "DestinationPath",
-          "RemoveSourceAfterArchiving"
+          "RemoveSourceAfterArchiving",
+          "LiteralPath"
         ],
         "description": ""
       }
@@ -3918,13 +3918,13 @@
         "name": "InstalledApplication",
         "required_parameters": [],
         "optional_parameters": [
-          "LoggingOptions",
-          "AdditionalArgumentList",
+          "LogFileName",
           "PassThru",
-          "ArgumentList",
           "SecureArgumentList",
+          "AdditionalArgumentList",
           "InstalledApplication",
-          "LogFileName"
+          "LoggingOptions",
+          "ArgumentList"
         ],
         "description": ""
       },
@@ -3932,18 +3932,18 @@
         "name": "Search",
         "required_parameters": [],
         "optional_parameters": [
-          "LoggingOptions",
-          "AdditionalArgumentList",
           "IncludeUpdatesAndHotfixes",
-          "PassThru",
-          "ArgumentList",
-          "NameMatch",
-          "ApplicationType",
           "Name",
-          "SecureArgumentList",
-          "ProductCode",
+          "ApplicationType",
+          "NameMatch",
           "LogFileName",
-          "FilterScript"
+          "SecureArgumentList",
+          "PassThru",
+          "FilterScript",
+          "AdditionalArgumentList",
+          "LoggingOptions",
+          "ProductCode",
+          "ArgumentList"
         ],
         "description": ""
       }
@@ -4033,8 +4033,8 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "ParameterName",
           "ProvidedValue",
+          "ParameterName",
           "ExceptionMessage",
           "InnerException"
         ],
@@ -4141,11 +4141,11 @@
         "required_parameters": [],
         "optional_parameters": [
           "ExcludeErrorInvocation",
-          "ExcludeErrorInnerException",
-          "ExcludeErrorRecord",
           "Property",
-          "ErrorRecord",
-          "ExcludeErrorException"
+          "ExcludeErrorRecord",
+          "ExcludeErrorException",
+          "ExcludeErrorInnerException",
+          "ErrorRecord"
         ],
         "description": ""
       }
@@ -4228,9 +4228,9 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "PropertyName",
           "Database",
-          "PropertyValue"
+          "PropertyValue",
+          "PropertyName"
         ],
         "description": ""
       }
@@ -4515,25 +4515,25 @@
         "name": "FilePath",
         "required_parameters": [],
         "optional_parameters": [
-          "RebootExitCodes",
-          "WorkingDirectory",
-          "ArgumentList",
-          "IncludeUpdatesAndHotfixes",
+          "PriorityClass",
+          "Action",
           "NoWait",
           "FilePath",
-          "IgnoreExitCodes",
-          "SkipMSIAlreadyInstalledCheck",
-          "Patches",
+          "LoggingOptions",
           "Transforms",
           "AdditionalArgumentList",
+          "RebootExitCodes",
+          "Patches",
+          "WorkingDirectory",
+          "SuccessExitCodes",
+          "SkipMSIAlreadyInstalledCheck",
+          "IncludeUpdatesAndHotfixes",
+          "LogFileName",
+          "PassThru",
           "SecureArgumentList",
           "RepairFromSource",
-          "Action",
-          "LoggingOptions",
-          "SuccessExitCodes",
-          "PriorityClass",
-          "PassThru",
-          "LogFileName"
+          "IgnoreExitCodes",
+          "ArgumentList"
         ],
         "description": ""
       },
@@ -4541,25 +4541,25 @@
         "name": "ProductCode",
         "required_parameters": [],
         "optional_parameters": [
-          "RebootExitCodes",
-          "WorkingDirectory",
-          "ArgumentList",
-          "IncludeUpdatesAndHotfixes",
+          "PriorityClass",
+          "Action",
           "NoWait",
-          "IgnoreExitCodes",
-          "SkipMSIAlreadyInstalledCheck",
-          "Patches",
+          "LoggingOptions",
+          "ProductCode",
           "Transforms",
           "AdditionalArgumentList",
-          "SecureArgumentList",
-          "ProductCode",
-          "RepairFromSource",
-          "Action",
-          "LoggingOptions",
+          "RebootExitCodes",
+          "Patches",
+          "WorkingDirectory",
           "SuccessExitCodes",
-          "PriorityClass",
+          "SkipMSIAlreadyInstalledCheck",
+          "IncludeUpdatesAndHotfixes",
+          "LogFileName",
           "PassThru",
-          "LogFileName"
+          "SecureArgumentList",
+          "RepairFromSource",
+          "IgnoreExitCodes",
+          "ArgumentList"
         ],
         "description": ""
       },
@@ -4567,25 +4567,25 @@
         "name": "InstalledApplication",
         "required_parameters": [],
         "optional_parameters": [
-          "RebootExitCodes",
-          "WorkingDirectory",
-          "ArgumentList",
-          "IncludeUpdatesAndHotfixes",
+          "PriorityClass",
+          "Action",
           "NoWait",
-          "IgnoreExitCodes",
-          "SkipMSIAlreadyInstalledCheck",
-          "Patches",
+          "LoggingOptions",
+          "InstalledApplication",
           "Transforms",
           "AdditionalArgumentList",
+          "RebootExitCodes",
+          "Patches",
+          "WorkingDirectory",
+          "SuccessExitCodes",
+          "SkipMSIAlreadyInstalledCheck",
+          "IncludeUpdatesAndHotfixes",
+          "LogFileName",
+          "PassThru",
           "SecureArgumentList",
           "RepairFromSource",
-          "Action",
-          "LoggingOptions",
-          "SuccessExitCodes",
-          "PriorityClass",
-          "PassThru",
-          "InstalledApplication",
-          "LogFileName"
+          "IgnoreExitCodes",
+          "ArgumentList"
         ],
         "description": ""
       }
@@ -4686,9 +4686,9 @@
         "required_parameters": [],
         "optional_parameters": [
           "PendingStatusWait",
+          "Name",
           "PassThru",
-          "SkipDependentServices",
-          "Name"
+          "SkipDependentServices"
         ],
         "description": ""
       }
@@ -4798,8 +4798,8 @@
         "required_parameters": [],
         "optional_parameters": [
           "SID",
-          "Wow6432Node",
           "Key",
+          "Wow6432Node",
           "Name"
         ],
         "description": ""
@@ -4907,9 +4907,9 @@
           "Path"
         ],
         "optional_parameters": [
-          "Force",
+          "Name",
           "PassThru",
-          "Name"
+          "Force"
         ],
         "description": ""
       },
@@ -4921,8 +4921,8 @@
         ],
         "optional_parameters": [
           "Index",
-          "Force",
-          "PassThru"
+          "PassThru",
+          "Force"
         ],
         "description": ""
       }
@@ -5036,11 +5036,11 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "NameMatch",
+          "IncludeUpdatesAndHotfixes",
           "Name",
           "ApplicationType",
+          "NameMatch",
           "ProductCode",
-          "IncludeUpdatesAndHotfixes",
           "FilterScript"
         ],
         "description": ""
@@ -5141,9 +5141,9 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "UpdateUrl",
           "InstallationMode",
           "ExtensionID",
+          "UpdateUrl",
           "MinimumVersionRequired"
         ],
         "description": ""
@@ -5276,8 +5276,8 @@
         "optional_parameters": [
           "NotTopMost",
           "CountdownSeconds",
-          "Subtitle",
-          "CountdownNoHideSeconds"
+          "CountdownNoHideSeconds",
+          "Subtitle"
         ],
         "description": ""
       },
@@ -5287,8 +5287,8 @@
           "Title"
         ],
         "optional_parameters": [
-          "NoCountdown",
           "NotTopMost",
+          "NoCountdown",
           "Subtitle"
         ],
         "description": ""
@@ -5380,8 +5380,8 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "ScriptBlock",
           "SkipUnloadedProfiles",
+          "ScriptBlock",
           "UserProfiles"
         ],
         "description": ""
@@ -5539,8 +5539,8 @@
         "required_parameters": [],
         "optional_parameters": [
           "UseCIM",
-          "PassThru",
-          "Name"
+          "Name",
+          "PassThru"
         ],
         "description": ""
       }
@@ -5714,15 +5714,15 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "ScriptSection",
-          "Message",
-          "Severity",
-          "PassThru",
-          "Source",
           "LogType",
           "LogFileDirectory",
+          "Message",
           "LogFileName",
-          "DebugMessage"
+          "Source",
+          "PassThru",
+          "ScriptSection",
+          "DebugMessage",
+          "Severity"
         ],
         "description": ""
       }
@@ -5795,9 +5795,9 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "FilePath",
+          "Key",
           "Section",
-          "Key"
+          "FilePath"
         ],
         "description": ""
       }
@@ -5935,51 +5935,51 @@
       "None": {
         "name": "None",
         "required_parameters": [
-          "SessionState",
-          "Cmdlet"
+          "Cmdlet",
+          "SessionState"
         ],
         "optional_parameters": [
-          "LogMessage",
-          "ErrorRecord"
+          "ErrorRecord",
+          "LogMessage"
         ],
         "description": ""
       },
       "ResolveErrorProperties": {
         "name": "ResolveErrorProperties",
         "required_parameters": [
-          "SessionState",
-          "Cmdlet"
+          "Cmdlet",
+          "SessionState"
         ],
         "optional_parameters": [
-          "LogMessage",
+          "ErrorRecord",
           "ResolveErrorProperties",
-          "ErrorRecord"
+          "LogMessage"
         ],
         "description": ""
       },
       "AdditionalResolveErrorProperties": {
         "name": "AdditionalResolveErrorProperties",
         "required_parameters": [
-          "SessionState",
-          "Cmdlet"
+          "Cmdlet",
+          "SessionState"
         ],
         "optional_parameters": [
-          "AdditionalResolveErrorProperties",
+          "ErrorRecord",
           "LogMessage",
-          "ErrorRecord"
+          "AdditionalResolveErrorProperties"
         ],
         "description": ""
       },
       "DisableErrorResolving": {
         "name": "DisableErrorResolving",
         "required_parameters": [
-          "SessionState",
-          "Cmdlet"
+          "Cmdlet",
+          "SessionState"
         ],
         "optional_parameters": [
-          "LogMessage",
           "DisableErrorResolving",
-          "ErrorRecord"
+          "ErrorRecord",
+          "LogMessage"
         ],
         "description": ""
       }
@@ -6295,8 +6295,8 @@
         "name": "EnableInheritance",
         "required_parameters": [],
         "optional_parameters": [
-          "Path",
-          "EnableInheritance"
+          "EnableInheritance",
+          "Path"
         ],
         "description": ""
       },
@@ -6304,13 +6304,13 @@
         "name": "DisableInheritance",
         "required_parameters": [],
         "optional_parameters": [
-          "Path",
-          "User",
           "Permission",
-          "PermissionType",
-          "Method",
+          "User",
+          "Path",
+          "Propagation",
           "Inheritance",
-          "Propagation"
+          "PermissionType",
+          "Method"
         ],
         "description": ""
       }
@@ -6494,14 +6494,14 @@
         "required_parameters": [],
         "optional_parameters": [
           "TargetObject",
-          "ErrorId",
-          "Reason",
+          "TargetName",
           "Category",
-          "TargetType",
-          "Exception",
           "RecommendedAction",
+          "Exception",
+          "ErrorId",
           "Activity",
-          "TargetName"
+          "Reason",
+          "TargetType"
         ],
         "description": ""
       }
@@ -6905,23 +6905,23 @@
           "Subtitle"
         ],
         "optional_parameters": [
-          "BlockExecution",
-          "PersistPrompt",
+          "DeferDeadline",
           "DeferDays",
           "DeploymentType",
-          "Silent",
-          "DeferDeadline",
-          "ForceCountdown",
-          "DeferTimes",
+          "ForceCloseProcessesCountdown",
+          "PromptToSave",
           "NoMinimizeWindows",
+          "Silent",
           "CloseProcesses",
+          "DeferTimes",
+          "ForceCountdown",
+          "NotTopMost",
+          "AllowDefer",
+          "PersistPrompt",
           "CustomText",
           "AllowDeferCloseProcesses",
-          "ForceCloseProcessesCountdown",
-          "NotTopMost",
-          "PromptToSave",
-          "CloseProcessesCountdown",
-          "AllowDefer"
+          "BlockExecution",
+          "CloseProcessesCountdown"
         ],
         "description": ""
       },
@@ -6932,25 +6932,25 @@
           "Subtitle"
         ],
         "optional_parameters": [
+          "DeferDays",
           "DeploymentType",
           "NoMinimizeWindows",
           "PersistPrompt",
-          "ForceCountdown",
-          "NotTopMost",
-          "DeferDeadline",
-          "CheckDiskSpace",
-          "CloseProcesses",
           "AllowDeferCloseProcesses",
-          "PromptToSave",
-          "CloseProcessesCountdown",
-          "AllowDefer",
-          "BlockExecution",
           "RequiredDiskSpace",
-          "DeferDays",
-          "Silent",
-          "DeferTimes",
+          "CloseProcessesCountdown",
+          "CheckDiskSpace",
+          "NotTopMost",
+          "AllowDefer",
           "CustomText",
-          "ForceCloseProcessesCountdown"
+          "ForceCloseProcessesCountdown",
+          "PromptToSave",
+          "CloseProcesses",
+          "BlockExecution",
+          "DeferDeadline",
+          "ForceCountdown",
+          "Silent",
+          "DeferTimes"
         ],
         "description": ""
       }
@@ -7225,9 +7225,9 @@
         "required_parameters": [],
         "optional_parameters": [
           "BalloonTipIcon",
-          "BalloonTipText",
           "BalloonTipTime",
-          "BalloonTipTitle"
+          "BalloonTipTitle",
+          "BalloonTipText"
         ],
         "description": ""
       }
@@ -7385,12 +7385,12 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "Version",
-          "Show",
-          "PassThru",
           "Name",
-          "Force",
-          "Destination"
+          "PassThru",
+          "Version",
+          "Destination",
+          "Show",
+          "Force"
         ],
         "description": ""
       }
@@ -7667,12 +7667,12 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "ExcludeDefaultUser",
-          "IncludeServiceProfiles",
-          "ExcludeNTAccount",
           "IncludeSystemProfiles",
-          "IncludeIISAppPoolProfiles",
-          "LoadProfilePaths"
+          "ExcludeNTAccount",
+          "IncludeServiceProfiles",
+          "LoadProfilePaths",
+          "ExcludeDefaultUser",
+          "IncludeIISAppPoolProfiles"
         ],
         "description": ""
       }
@@ -7934,8 +7934,8 @@
         "name": "Path",
         "required_parameters": [],
         "optional_parameters": [
-          "Path",
           "IncludeSystemProfiles",
+          "Path",
           "ExcludeNTAccount",
           "IncludeServiceProfiles",
           "ExcludeDefaultUser",
@@ -7949,10 +7949,10 @@
         "optional_parameters": [
           "IncludeSystemProfiles",
           "ExcludeNTAccount",
-          "LiteralPath",
           "IncludeServiceProfiles",
+          "Recurse",
           "ExcludeDefaultUser",
-          "Recurse"
+          "LiteralPath"
         ],
         "description": ""
       }
@@ -8013,8 +8013,8 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "SessionState",
-          "Cmdlet"
+          "Cmdlet",
+          "SessionState"
         ],
         "description": ""
       }
@@ -8167,8 +8167,8 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "To",
-          "Value"
+          "Value",
+          "To"
         ],
         "description": ""
       }
@@ -8264,8 +8264,8 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "MutexName",
-          "MutexWaitTime"
+          "MutexWaitTime",
+          "MutexName"
         ],
         "description": ""
       }
@@ -8543,9 +8543,9 @@
         "required_parameters": [],
         "optional_parameters": [
           "PendingStatusWait",
+          "Name",
           "PassThru",
-          "SkipDependentServices",
-          "Name"
+          "SkipDependentServices"
         ],
         "description": ""
       }
@@ -8645,8 +8645,8 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "Force",
-          "ExitCode"
+          "ExitCode",
+          "Force"
         ],
         "description": ""
       }
@@ -8823,9 +8823,9 @@
         "required_parameters": [],
         "optional_parameters": [
           "Retries",
-          "SleepSeconds",
           "Command",
-          "Parameters"
+          "Parameters",
+          "SleepSeconds"
         ],
         "description": ""
       }
@@ -9042,19 +9042,19 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "Path",
           "IncludeSystemProfiles",
-          "RobocopyParams",
-          "RobocopyAdditionalParams",
+          "Path",
           "ExcludeNTAccount",
-          "BasePath",
-          "IncludeServiceProfiles",
-          "ExcludeDefaultUser",
-          "Recurse",
-          "Flatten",
-          "ContinueFileCopyOnError",
           "Destination",
-          "FileCopyMode"
+          "IncludeServiceProfiles",
+          "Recurse",
+          "ExcludeDefaultUser",
+          "FileCopyMode",
+          "RobocopyParams",
+          "ContinueFileCopyOnError",
+          "RobocopyAdditionalParams",
+          "BasePath",
+          "Flatten"
         ],
         "description": ""
       }
@@ -9281,8 +9281,8 @@
         "name": "Positional",
         "required_parameters": [],
         "optional_parameters": [
-          "InputObject",
           "MethodName",
+          "InputObject",
           "ArgumentList"
         ],
         "description": ""
@@ -9291,9 +9291,9 @@
         "name": "Named",
         "required_parameters": [],
         "optional_parameters": [
+          "Parameter",
           "InputObject",
-          "MethodName",
-          "Parameter"
+          "MethodName"
         ],
         "description": ""
       }
@@ -9534,8 +9534,8 @@
         "name": "Path",
         "required_parameters": [],
         "optional_parameters": [
-          "Path",
-          "Recurse"
+          "Recurse",
+          "Path"
         ],
         "description": ""
       },
@@ -9543,8 +9543,8 @@
         "name": "LiteralPath",
         "required_parameters": [],
         "optional_parameters": [
-          "LiteralPath",
-          "Recurse"
+          "Recurse",
+          "LiteralPath"
         ],
         "description": ""
       }
@@ -9745,16 +9745,16 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "Description",
+          "IconLocation",
+          "Hotkey",
           "Path",
           "WindowStyle",
-          "TargetPath",
-          "WorkingDirectory",
-          "Hotkey",
+          "Description",
           "Arguments",
-          "RunAsAdmin",
           "IconIndex",
-          "IconLocation"
+          "RunAsAdmin",
+          "WorkingDirectory",
+          "TargetPath"
         ],
         "description": ""
       }
@@ -10214,41 +10214,41 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "AppScriptVersion",
-          "SessionState",
-          "AppVersion",
-          "DeploymentType",
-          "AllowRebootPassThru",
-          "SessionClass",
-          "AppSuccessExitCodes",
-          "DeployAppScriptVersion",
-          "DirSupportFiles",
-          "DisableDefaultMsiProcessList",
-          "DefaultMstFile",
-          "DeployMode",
-          "AppRebootExitCodes",
-          "AppArch",
-          "DeployAppScriptDate",
-          "ScriptDirectory",
           "DeployAppScriptParameters",
-          "AppName",
-          "InstallName",
-          "DisableLogging",
-          "AppScriptAuthor",
-          "AppScriptDate",
-          "InstallTitle",
-          "DefaultMsiFile",
           "AppVendor",
-          "AppLang",
           "DirFiles",
+          "AppScriptAuthor",
+          "DeploymentType",
+          "AppLang",
+          "AppRebootExitCodes",
+          "DefaultMsiFile",
           "ForceWimDetection",
-          "UnboundArguments",
+          "InstallName",
+          "InstallTitle",
+          "AllowRebootPassThru",
+          "DefaultMstFile",
           "AppRevision",
+          "DirSupportFiles",
+          "AppArch",
+          "AppSuccessExitCodes",
+          "SessionState",
+          "UnboundArguments",
           "PassThru",
-          "DefaultMspFiles",
+          "DisableLogging",
           "DeployAppScriptFriendlyName",
+          "AppName",
+          "DeployAppScriptVersion",
+          "DisableDefaultMsiProcessList",
+          "AppScriptDate",
+          "DefaultMspFiles",
+          "ScriptDirectory",
+          "AppVersion",
+          "DeployAppScriptDate",
+          "AppScriptVersion",
+          "LogName",
           "TerminalServerMode",
-          "LogName"
+          "DeployMode",
+          "SessionClass"
         ],
         "description": ""
       }
@@ -10357,10 +10357,10 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "FilePath",
+          "Key",
           "Section",
           "Value",
-          "Key"
+          "FilePath"
         ],
         "description": ""
       }
@@ -10534,15 +10534,15 @@
           "Key"
         ],
         "optional_parameters": [
-          "Description",
-          "Version",
-          "NoExecuteForCurrentUser",
           "Wow6432Node",
-          "Arguments",
-          "ExecutionPolicy",
-          "Locale",
           "DisableActiveSetup",
-          "StubExePath"
+          "Version",
+          "Description",
+          "ExecutionPolicy",
+          "Arguments",
+          "StubExePath",
+          "NoExecuteForCurrentUser",
+          "Locale"
         ],
         "description": ""
       },
@@ -10550,9 +10550,9 @@
         "name": "Purge",
         "required_parameters": [],
         "optional_parameters": [
-          "PurgeActiveSetupKey",
+          "Key",
           "Wow6432Node",
-          "Key"
+          "PurgeActiveSetupKey"
         ],
         "description": ""
       }
@@ -10702,13 +10702,13 @@
         "name": "Default",
         "required_parameters": [],
         "optional_parameters": [
-          "Icon",
           "Text",
-          "Buttons",
-          "Timeout",
+          "Icon",
           "NotTopMost",
+          "Buttons",
+          "DefaultButton",
           "Title",
-          "DefaultButton"
+          "Timeout"
         ],
         "description": ""
       }
