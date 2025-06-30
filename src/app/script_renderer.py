@@ -52,12 +52,12 @@ class ScriptRenderer:
             )
         return self._psadt_env
 
-    def render_psadt_script(self, package: Package, ai_sections: Dict[str, str]) -> str:
+    def render_psadt_script(self, package: Package, ai_sections: Dict[str, Any]) -> str:
         """Render the complete PSADT script using the template and AI-generated sections.
 
         Args:
             package: Package object with metadata
-            ai_sections: Dictionary containing AI-generated script sections
+            ai_sections: Dictionary containing AI-generated script sections (lists of strings)
 
         Returns:
             Rendered PowerShell script as string
@@ -70,35 +70,52 @@ class ScriptRenderer:
             # Get template context
             context = self.get_template_context(package, package.package_metadata)
 
-            # Add AI-generated sections to context
+            # Helper function to clean and process task lists
+            def process_task_list(tasks: Any, default_comment: str) -> list:
+                """Process a task list, ensuring each task is stripped of whitespace."""
+                if isinstance(tasks, list):
+                    # Strip whitespace from each task string
+                    return [task.strip() for task in tasks if task and task.strip()]
+                elif isinstance(tasks, str):
+                    # Handle legacy case where tasks might be a single string
+                    return [tasks.strip()] if tasks.strip() else [default_comment]
+                else:
+                    # Fallback to default comment
+                    return [default_comment]
+
+            # Add AI-generated sections to context with proper processing
             context.update(
                 {
-                    "pre_installation_tasks": ai_sections.get(
-                        "pre_installation_tasks",
+                    "pre_installation_tasks": process_task_list(
+                        ai_sections.get("pre_installation_tasks"),
                         "# No pre-installation tasks specified",
                     ),
-                    "installation_tasks": ai_sections.get(
-                        "installation_tasks", "# No installation tasks specified"
+                    "installation_tasks": process_task_list(
+                        ai_sections.get("installation_tasks"),
+                        "# No installation tasks specified",
                     ),
-                    "post_installation_tasks": ai_sections.get(
-                        "post_installation_tasks",
+                    "post_installation_tasks": process_task_list(
+                        ai_sections.get("post_installation_tasks"),
                         "# No post-installation tasks specified",
                     ),
-                    "uninstallation_tasks": ai_sections.get(
-                        "uninstallation_tasks", "# No uninstallation tasks specified"
+                    "uninstallation_tasks": process_task_list(
+                        ai_sections.get("uninstallation_tasks"),
+                        "# No uninstallation tasks specified",
                     ),
-                    "post_uninstallation_tasks": ai_sections.get(
-                        "post_uninstallation_tasks",
+                    "post_uninstallation_tasks": process_task_list(
+                        ai_sections.get("post_uninstallation_tasks"),
                         "# No post-uninstallation tasks specified",
                     ),
-                    "pre_repair_tasks": ai_sections.get(
-                        "pre_repair_tasks", "# No pre-repair tasks specified"
+                    "pre_repair_tasks": process_task_list(
+                        ai_sections.get("pre_repair_tasks"),
+                        "# No pre-repair tasks specified",
                     ),
-                    "repair_tasks": ai_sections.get(
-                        "repair_tasks", "# No repair tasks specified"
+                    "repair_tasks": process_task_list(
+                        ai_sections.get("repair_tasks"), "# No repair tasks specified"
                     ),
-                    "post_repair_tasks": ai_sections.get(
-                        "post_repair_tasks", "# No post-repair tasks specified"
+                    "post_repair_tasks": process_task_list(
+                        ai_sections.get("post_repair_tasks"),
+                        "# No post-repair tasks specified",
                     ),
                 }
             )
@@ -193,7 +210,7 @@ class ScriptRenderer:
             {
                 "package_filename": package.filename,
                 "custom_instructions": package.custom_instructions or "",
-                "package": package,  # Add the package object itself to the context
+                "package": package,  # type: ignore
             }
         )
 

@@ -17,4 +17,15 @@ Here is the list of valid PSADT v4 cmdlets. Use this as a reference to correct t
 ```
 
 Please analyze the report and the script, and provide a corrected version of the script.
-Only output the corrected script, with no additional commentary.
+Return a valid JSON object matching the PSADTScript schema. Do not include any additional commentary or text outside the JSON object.
+
+### PSADTScript Schema
+```json
+{
+  "pre_installation_tasks": ["string"],
+  "installation_tasks": ["string"],
+  "post_installation_tasks": ["string"],
+  "uninstallation_tasks": ["string"],
+  "post_uninstallation_tasks": ["string"]
+}
+```

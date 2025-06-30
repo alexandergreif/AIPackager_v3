@@ -71,7 +71,9 @@ class MCPService:
                         raise Exception(error_message)
 
                     # Parse the response properly - MCP returns TextContent objects
-                    response_data = result.structuredContent or result.content
+                    response_data: dict[str, Any] | list[Any] | str = (
+                        result.structuredContent or result.content
+                    )
 
                     # If it's a list of TextContent objects, extract the text
                     if isinstance(response_data, list) and response_data:

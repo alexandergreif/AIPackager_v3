@@ -33,14 +33,14 @@ class PackageRequest:
     def start(self) -> None:
         """Starts the processing of the package."""
         self.package.status = "processing"
-        package_logger = get_package_logger(self.package.id)
+        package_logger = get_package_logger(str(self.package.id))
         package_logger.log_step(
             "WORKFLOW_START", f"Starting package processing for {self.package.id}"
         )
 
     def set_step(self, step_name: str) -> None:
         """Sets the current step of the package."""
-        package_logger = get_package_logger(self.package.id)
+        package_logger = get_package_logger(str(self.package.id))
         old_step = self.package.current_step
         self.package.current_step = step_name
         package_logger.log_step(
@@ -63,7 +63,7 @@ class PackageRequest:
 
     def resume(self) -> None:
         """Resume processing of this package from its current step."""
-        package_logger = get_package_logger(self.package.id)
+        package_logger = get_package_logger(str(self.package.id))
         package_logger.log_step(
             "WORKFLOW_RESUME",
             f"Resuming package {self.package.id} from step {self.package.current_step}",
@@ -137,7 +137,7 @@ class PackageRequest:
                 logger.info(f"Found {len(pending_packages)} pending packages to resume")
 
                 for package in pending_packages:
-                    package_logger = get_package_logger(package.id)
+                    package_logger = get_package_logger(str(package.id))
                     package_logger.log_step(
                         "WORKFLOW_RESUME_PENDING",
                         f"Resuming package {package.id} (status: {package.status}, step: {package.current_step})",

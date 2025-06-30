@@ -61,7 +61,7 @@ class InstructionProcessor:
             },
             {"role": "user", "content": prompt},
         ]
-        model_name = "gpt-4.1-mini"
+        model_name = "gpt-4o-mini"
         response_format = {"type": "json_object"}
 
         package_logger.log_step(
