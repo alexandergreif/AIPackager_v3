@@ -269,7 +269,7 @@ class PSADTDocumentationParser:
 
         for match in re.finditer(param_pattern, syntax_line):
             param_name = match.group(1)
-            param_type = match.group(2)
+            # param_type = match.group(2)  # Currently not used
 
             # Determine if parameter is required or optional based on brackets
             param_context = syntax_line[max(0, match.start() - 5) : match.end() + 5]
@@ -287,7 +287,7 @@ class PSADTDocumentationParser:
 
     def _extract_parameters(self, content: str) -> Dict[str, ParameterDefinition]:
         """Extract parameter definitions from parameters section"""
-        parameters = {}
+        parameters: dict[str, ParameterDefinition] = {}
 
         # Find parameters section
         params_match = re.search(
@@ -380,7 +380,7 @@ class PSADTDocumentationParser:
 
     def _extract_examples(self, content: str) -> List[CmdletExample]:
         """Extract examples section"""
-        examples = []
+        examples: list[CmdletExample] = []
 
         # Find examples section
         examples_match = re.search(
@@ -449,7 +449,7 @@ class PSADTDocumentationParser:
         import json
         from dataclasses import asdict
 
-        def serialize_enum(obj):
+        def serialize_enum(obj: object) -> str | list[object]:
             if isinstance(obj, ParameterType):
                 return obj.value
             elif isinstance(obj, set):

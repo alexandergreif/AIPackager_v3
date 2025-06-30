@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from src.app.services.hallucination_detector import HallucinationDetector
 
 
-def test_v3_vs_v4_detection():
+def test_v3_vs_v4_detection() -> None:
     """Test detection of PSADT v3 vs v4 cmdlets"""
     print("🚀 Testing PSADT v3 vs v4 Cmdlet Detection")
     print("=" * 80)
@@ -171,7 +171,7 @@ def test_v3_vs_v4_detection():
     show_version_detection_summary(detector)
 
 
-def show_version_detection_summary(detector):
+def show_version_detection_summary(detector: HallucinationDetector) -> None:
     """Show summary of version detection capabilities"""
     print("\n🎯 PSADT Version Detection Capabilities:")
     print("=" * 60)
@@ -206,7 +206,7 @@ def show_version_detection_summary(detector):
     print("\n🚀 This ensures scripts use modern PSADT v4 patterns!")
 
 
-def main():
+def main() -> int:
     """Main function"""
     try:
         test_v3_vs_v4_detection()

@@ -8,6 +8,7 @@ import asyncio
 import sys
 import traceback
 from pathlib import Path
+from typing import Optional, Any
 
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -16,7 +17,7 @@ from mcp import ClientSession
 from mcp.client.sse import sse_client
 
 
-async def test_direct_mcp_call():
+async def test_direct_mcp_call() -> Optional[Any]:
     """Test the exact same MCP call that works via Cline."""
 
     url = "http://127.0.0.1:8052/sse"
@@ -66,7 +67,7 @@ async def test_direct_mcp_call():
         return None
 
 
-async def test_session_listing():
+async def test_session_listing() -> Optional[Any]:
     """Test if we can list available tools."""
 
     url = "http://127.0.0.1:8052/sse"

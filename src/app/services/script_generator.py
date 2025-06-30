@@ -359,7 +359,7 @@ class PSADTGenerator:
         ]
 
         response = ip.client.chat.completions.create(
-            model="gpt-4.1-mini",
+            model="gpt-4o-mini",
             messages=messages,
             response_format={"type": "json_object"},
         )
@@ -408,5 +408,5 @@ class PSADTGenerator:
         )
         for package in incomplete_packages:
             self.generate_script(
-                package.custom_instructions, package=package, session=session
+                package.custom_instructions or "", package=package, session=session
             )

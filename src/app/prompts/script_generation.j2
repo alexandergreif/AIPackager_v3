@@ -43,11 +43,13 @@ When generating the script, you **MUST** use the following built-in variables. D
 - **Registry Paths**: Construct registry paths dynamically (e.g., `"HKLM:\SOFTWARE\$appVendor\$appName"`).
 
 ### Method 2: Closing Applications and Processes
-When generating the `Show-ADTInstallationWelcome` command, use the correct parameter for closing applications versus processes:
-- **`-CloseApps 'AppName'`**: Use this for the friendly application name (e.g., 'Google Chrome').
-- **`-CloseProcesses 'process.exe'`**: Use this for the executable name (e.g., 'chrome.exe').
-
-If the `predicted_processes_to_close` list in the structured instructions contains executable names, you **MUST** use the `-CloseProcesses` parameter.
+When generating the `Show-ADTInstallationWelcome` command, you **MUST** adhere to the following rules:
+- **Placement**: The `Show-ADTInstallationWelcome` cmdlet **MUST** always be placed in the `pre_installation_tasks` section.
+- **Parameter Usage**:
+  - **`-CloseApps 'AppName'`**: Use this for the friendly application name (e.g., 'Google Chrome').
+  - **`-CloseProcesses 'process.exe'`**: Use this for the executable name (e.g., 'chrome.exe').
+- **Conditional Logic**: If the `predicted_processes_to_close` list in the structured instructions contains executable names, you **MUST** use the `-CloseProcesses` parameter in the `Show-ADTInstallationWelcome` command.
+- **Formatting**: Each command must be a single, complete string without any internal newlines.
 
 ### Method 3: Enterprise Best Practices
 Follow these rules to ensure the script is robust and reliable for large-scale deployments.

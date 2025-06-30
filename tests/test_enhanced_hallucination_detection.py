@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def test_enhanced_hallucination_detection():
+def test_enhanced_hallucination_detection() -> None:
     """Test the enhanced hallucination detection system"""
     print("🚀 Testing Enhanced PSADT v4 Hallucination Detection")
     print("=" * 80)
@@ -120,7 +120,7 @@ def test_enhanced_hallucination_detection():
 
         try:
             # Run hallucination detection
-            result = detector.detect(test_case["script"])
+            result = detector.detect(str(test_case["script"]))
 
             issues_found = len(result.get("issues", []))
             has_hallucinations = result.get("has_hallucinations", False)
@@ -151,9 +151,13 @@ def test_enhanced_hallucination_detection():
                     print(f"  ... and {len(recommendations) - 2} more recommendations")
 
             # Check if test passed (issues found should match expected)
+            expected_issues_val = test_case["expected_issues"]
+            expected_issues = (
+                expected_issues_val if isinstance(expected_issues_val, int) else 0
+            )
             test_passed = (
-                (issues_found >= test_case["expected_issues"])
-                if test_case["expected_issues"] > 0
+                (issues_found >= expected_issues)
+                if expected_issues > 0
                 else (issues_found == 0)
             )
             status = "✅ PASS" if test_passed else "❌ FAIL"
@@ -180,7 +184,7 @@ def test_enhanced_hallucination_detection():
     show_validation_capabilities(detector)
 
 
-def show_validation_capabilities(detector):
+def show_validation_capabilities(detector: HallucinationDetector) -> None:
     """Show the specific validation capabilities"""
     print("\n🎯 Enhanced Validation Capabilities Demonstrated:")
     print("=" * 60)
@@ -216,7 +220,7 @@ def show_validation_capabilities(detector):
     print("\n🚀 This is now the world's most comprehensive PSADT script validator!")
 
 
-def main():
+def main() -> int:
     """Main function"""
     try:
         test_enhanced_hallucination_detection()

@@ -65,7 +65,7 @@ Set-PSADTMagicRegistry -Key "HKLM:\\Software\\MyApp" -Value "test"
 Copy-ADTFile -Source "config.xml" -Destination "C:\\Program Files\\MyApp"
 Remove-HallucinatedCmdlet -Force
 """
-        script_path = self._create_test_script(invalid_script)
+        self._create_test_script(invalid_script)
 
         # Pass the script content, not the file path
         report = self.detector.detect(invalid_script)
@@ -152,7 +152,7 @@ Copy-ADTFile -Source "$dirSupportFiles\\config.xml" -Destination "C:\\Program Fi
 # Another hallucination
 Remove-AllFilesWithMagic -IncludeSystem $true
 """
-        script_path = self._create_test_script(mixed_script)
+        self._create_test_script(mixed_script)
 
         # Pass the script content, not the file path
         report = self.detector.detect(mixed_script)
@@ -182,7 +182,7 @@ Start-ADTMsiProcesss -Path "installer.msi"          # Extra 's'
 Set-ADTRegistrKey -Key "HKLM:\\Test"                # Missing 'y'
 Copy-ADTFilee -Source "file.txt"                    # Extra 'e'
 """
-        script_path = self._create_test_script(typo_script)
+        self._create_test_script(typo_script)
 
         # Pass the script content, not the file path
         report = self.detector.detect(typo_script)
