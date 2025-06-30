@@ -147,7 +147,14 @@ class PSADTGenerator:
                     instruction_result.predicted_cmdlets
                 )
             if package and session:
-                package.rag_documentation = rag_documentation
+                # Convert dict to JSON string for database storage
+                import json
+
+                package.rag_documentation = (
+                    json.dumps(rag_documentation)
+                    if isinstance(rag_documentation, dict)
+                    else rag_documentation
+                )
                 package.current_step = "rag_enrichment"
                 package.progress_pct = pct("rag_enrichment")
                 session.commit()

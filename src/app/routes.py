@@ -203,12 +203,23 @@ def register_routes(app: Flask) -> None:
         metrics_service = MetricsService(package.__dict__)
         display_metrics = metrics_service.get_display_metrics()
 
+        # Parse RAG documentation if available
+        rag_documentation = None
+        if package.rag_documentation:
+            try:
+                import json
+
+                rag_documentation = json.loads(package.rag_documentation)
+            except (json.JSONDecodeError, TypeError):
+                rag_documentation = package.rag_documentation
+
         return render_template(
             "detail.html",
             package=package,
             metadata=package.package_metadata,
             rendered_script=rendered_script,
             display_metrics=display_metrics,
+            rag_documentation=rag_documentation,
         )
 
     @app.route("/history")

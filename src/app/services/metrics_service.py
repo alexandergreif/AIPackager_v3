@@ -47,10 +47,11 @@ class MetricsService:
     def _calculate_hallucination_metrics(self) -> Dict[str, Any]:
         """Calculate metrics related to hallucination detection."""
         # Placeholder implementation
-        detected_count = self.hallucination_report.get("issue_count", 0)
+        report = self.hallucination_report or {}
+        detected_count = report.get("issue_count", 0)
         return {
             "detected_count": detected_count,
-            "issues": self.hallucination_report.get("issues", []),
+            "issues": report.get("issues", []),
         }
 
     def _calculate_advisor_metrics(self) -> Dict[str, Any]:
@@ -58,7 +59,8 @@ class MetricsService:
         # Placeholder implementation
         corrections_applied = self.corrections_applied or []
         corrections_count = len(corrections_applied)
-        detected_count = self.hallucination_report.get("issue_count", 0)
+        report = self.hallucination_report or {}
+        detected_count = report.get("issue_count", 0)
 
         effectiveness_rate = 0
         if detected_count > 0:
@@ -74,8 +76,9 @@ class MetricsService:
         # Placeholder implementation
         stage_times = self._calculate_stage_times().values()
         total_time = sum(time for time in stage_times if time is not None)
+        metadata = self.pipeline_metadata or {}
         return {
             "total_pipeline_time": round(total_time, 2),
-            "model_used": self.pipeline_metadata.get("model_used", "N/A"),
-            "pipeline_version": self.pipeline_metadata.get("pipeline_version", "N/A"),
+            "model_used": metadata.get("model_used", "N/A"),
+            "pipeline_version": metadata.get("pipeline_version", "N/A"),
         }

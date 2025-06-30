@@ -151,6 +151,24 @@ This document provides detailed information about the AIPackager v3 API endpoint
 - **Description**: Retrieves a list of all packages.
 - **Response**: JSON array of package objects.
 
+### Knowledge Base Management
+
+#### `POST /api/kb/crawl`
+**Crawl and Index a URL**
+- **Description**: Triggers the `crawl4ai-rag` MCP server to crawl and index a given URL.
+- **Request Body**:
+```json
+{
+  "url": "https://example.com"
+}
+```
+- **Response**: JSON object with the status of the crawl operation.
+
+#### `GET /api/kb/sources`
+**Get Available Knowledge Base Sources**
+- **Description**: Retrieves a list of all available sources from the `crawl4ai-rag` knowledge base.
+- **Response**: JSON array of source objects.
+
 ## 🗃️ Data Models
 
 ### Package Model

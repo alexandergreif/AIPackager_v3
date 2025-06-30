@@ -72,11 +72,12 @@ Knowledge Source Organization:
 
 ### Integration Points
 
-- **crawl4ai-rag MCP Server**: Vector database + Neo4j knowledge graph
-- **Source-based Filtering**: Targeted queries by content domain
-- **Pipeline Validation**: Hallucination detection and correction patterns
-- **Local Development**: Seamless integration with existing workflow
-- **CI/CD Future**: Automated knowledge base updates (Sprint 5+)
+- **crawl4ai-rag MCP Server**: Vector database for RAG and Neo4j knowledge graph for validation.
+- **Source-based Filtering**: Targeted queries by content domain.
+- **Pipeline Validation**: Hallucination detection and correction patterns.
+- **Local Development**: Seamless integration with existing workflow.
+- **CI/CD Future**: Automated knowledge base updates (Sprint 5+).
+- **UI Management**: A dedicated "Knowledge Base" page in the UI for crawling new sources.
 
 ## Implementation Phases
 

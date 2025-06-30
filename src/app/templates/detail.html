@@ -44,6 +44,30 @@
             <summary class="text-lg font-bold mb-2 cursor-pointer">Rendered Script (Click to expand)</summary>
             <pre class="bg-gray-200 p-4 rounded-md mt-2"><code id="script-content">{{ rendered_script | safe }}</code></pre>
         </details>
+
+        {% if rag_documentation %}
+        <details class="mt-4">
+            <summary class="text-lg font-bold mb-2 cursor-pointer">📚 Knowledge Base Documentation (Click to expand)</summary>
+            <div class="bg-blue-50 p-4 rounded-md mt-2">
+                {% if rag_documentation.results %}
+                    <p class="text-sm text-gray-600 mb-3">Retrieved {{ rag_documentation.results|length }} documentation chunks from PSADT knowledge base:</p>
+                    {% for result in rag_documentation.results %}
+                    <div class="mb-4 p-3 bg-white rounded border">
+                        <div class="text-sm font-bold text-blue-800 mb-2">
+                            📄 {{ result.url if result.url else 'PSADT Documentation' }}
+                            {% if result.similarity %}<span class="text-gray-500">(Similarity: {{ "%.2f"|format(result.similarity) }})</span>{% endif %}
+                        </div>
+                        <div class="text-sm bg-gray-100 p-2 rounded">
+                            <pre class="whitespace-pre-wrap">{{ result.content[:500] }}{% if result.content|length > 500 %}...{% endif %}</pre>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <pre class="text-sm">{{ rag_documentation }}</pre>
+                {% endif %}
+            </div>
+        </details>
+        {% endif %}
         <div class="mt-4">
             <button id="copy-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Copy</button>
             <a id="download-link" href="#" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Download</a>
