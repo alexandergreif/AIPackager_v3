@@ -11,7 +11,10 @@ Return a valid JSON object matching the PSADTScript schema.
   "installation_tasks": ["string"],
   "post_installation_tasks": ["string"],
   "uninstallation_tasks": ["string"],
-  "post_uninstallation_tasks": ["string"]
+  "post_uninstallation_tasks": ["string"],
+  "pre_repair_tasks": ["string"],
+  "repair_tasks": ["string"],
+  "post_repair_tasks": ["string"]
 }
 ```
 
@@ -42,16 +45,7 @@ When generating the script, you **MUST** use the following built-in variables. D
 - **Application Vendor**: Use the `$appVendor` variable (e.g., '{{ package.package_metadata.publisher }}').
 - **Registry Paths**: Construct registry paths dynamically (e.g., `"HKLM:\SOFTWARE\$appVendor\$appName"`).
 
-### Method 2: Closing Applications and Processes
-When generating the `Show-ADTInstallationWelcome` command, you **MUST** adhere to the following rules:
-- **Placement**: The `Show-ADTInstallationWelcome` cmdlet **MUST** always be placed in the `pre_installation_tasks` section.
-- **Parameter Usage**:
-  - **`-CloseApps 'AppName'`**: Use this for the friendly application name (e.g., 'Google Chrome').
-  - **`-CloseProcesses 'process.exe'`**: Use this for the executable name (e.g., 'chrome.exe').
-- **Conditional Logic**: If the `predicted_processes_to_close` list in the structured instructions contains executable names, you **MUST** use the `-CloseProcesses` parameter in the `Show-ADTInstallationWelcome` command.
-- **Formatting**: Each command must be a single, complete string without any internal newlines.
-
-### Method 3: Enterprise Best Practices
+### Method 2: Enterprise Best Practices
 Follow these rules to ensure the script is robust and reliable for large-scale deployments.
 
 1.  **All Steps are Critical**: Every instruction provided by the user is mandatory. If any step fails, the script must terminate. Do **NOT** use `try/catch` blocks to suppress errors or allow the script to continue on failure.
@@ -62,12 +56,34 @@ Follow these rules to ensure the script is robust and reliable for large-scale d
 ---
 
 ### Your Task
-Based on the instructions, documentation, and the context and best practices provided above, generate the PowerShell script sections.
+Your task is to generate a complete, robust PSADT script that handles installation, uninstallation, and repair. You **MUST** generate content for **ALL** sections.
+
+**Formatting Rules:**
+- Each command in the task lists must be a single, distinct PowerShell command.
+- Do not combine multiple commands or logic (like If/Else) into a single string. Break them down into individual lines in the list.
+- For example, an If/Else block should be represented as a list of strings: `["If (Test-Path -Path 'C:\\Path')) {", "    Write-Host 'Exists'", "} Else {", "    Write-Host 'Does not exist'", "}" ]`
+
+**Generation Logic:**
+- **Default Behavior**: Generate full, best-practice logic for all three deployment types (Install, Uninstall, Repair).
+- **Installation Section**: Use the `structured_instructions` to customize the installation logic.
+- **Post-Installation Section**:
+    - Iterate through the `structured_instructions.post_install_actions` list.
+    - For each action of type `set_registry_key`, generate the corresponding `Set-ADTRegistryKey` command using the provided key, name, and value.
+- **Uninstallation Section**:
+    - Generate the command to uninstall the application using its ProductCode: `Uninstall-ADTApplication -ProductCode "{{ package.package_metadata.product_code }}"`.
+    - Iterate through the `structured_instructions.post_install_actions` list.
+    - For each action of type `set_registry_key`, generate a `Remove-ADTRegistryKey` command to clean up the key.
+- **Repair Section**: Generate standard repair logic. For MSI packages, use `Start-ADTMsiProcess -FilePath (Join-Path $dirFiles '{{ package.filename }}') -Action 'Repair'`.
+
+**Important Note on `Show-ADTInstallationWelcome`**: This cmdlet, including the `-CloseProcesses` parameter (if `predicted_processes_to_close` is available), is handled by the main PSADT template (`Invoke-AppDeployToolkit.ps1.j2`). **DO NOT** generate `Show-ADTInstallationWelcome` in any of the task sections. Your role is to generate only the *additional, dynamic* tasks for each section.
+
 Remember to only output a valid JSON object containing the lists of tasks.
 
 ### CRITICAL RULES
 - **DO NOT** hard-code filenames. Use the `{{ package.filename }}` variable.
 - **DO NOT** hard-code application names or vendors. Use the `$appName` and `$appVendor` variables.
 - **ALWAYS** construct the installer path using `Join-Path $dirFiles '{{ package.filename }}'`.
-- **EVERY** step is critical. If a step fails, the script must terminate. Do **NOT** use `try/catch` blocks to suppress errors.
-- If the `predicted_processes_to_close` list is not empty, you **MUST** use the `-CloseProcesses` parameter in `Show-ADTInstallationWelcome`.
+- **EVERY** step is critical. If a step fails, the script must terminate. Do **NOT** use `try/catch` blocks or manual `$LASTEXITCODE` checks to suppress or handle errors. Rely on PSADT's built-in error handling.
+- The `Show-ADTInstallationWelcome` cmdlet is handled by the main template. **DO NOT** generate it in any task section.
+- **Pre-installation**: Do not check if the application is already installed. This logic is handled by PSADT. Focus on other prerequisites if any.
+- **Registry Keys**: When creating registry keys as requested by the user, you **MUST** use the `$appName` and `$appVersion` variables for the key paths and values. **DO NOT** use placeholder text like 'Application' or '1.0.0'.

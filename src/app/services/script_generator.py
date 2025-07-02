@@ -15,6 +15,7 @@ from ..logging_cmtrace import get_cmtrace_logger
 from ..package_logger import get_package_logger
 from typing import ContextManager
 import queue
+from ..config import Config  # Import Config
 
 try:
     from prometheus_client import Summary  # type: ignore
@@ -359,7 +360,7 @@ class PSADTGenerator:
         ]
 
         response = ip.client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=Config.AI_MODEL,  # Use Config.AI_MODEL
             messages=messages,
             response_format={"type": "json_object"},
         )
@@ -396,6 +397,21 @@ class PSADTGenerator:
         if script.post_uninstallation_tasks:
             sections.append("# Post-Uninstallation Tasks")
             sections.extend(script.post_uninstallation_tasks)
+            sections.append("")
+
+        if script.pre_repair_tasks:
+            sections.append("# Pre-Repair Tasks")
+            sections.extend(script.pre_repair_tasks)
+            sections.append("")
+
+        if script.repair_tasks:
+            sections.append("# Repair Tasks")
+            sections.extend(script.repair_tasks)
+            sections.append("")
+
+        if script.post_repair_tasks:
+            sections.append("# Post-Repair Tasks")
+            sections.extend(script.post_repair_tasks)
 
         return "\n".join(sections)
 

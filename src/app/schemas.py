@@ -20,5 +20,8 @@ class PSADTScript(BaseModel):
     post_installation_tasks: List[str]
     uninstallation_tasks: List[str]
     post_uninstallation_tasks: List[str]
+    pre_repair_tasks: List[str]
+    repair_tasks: List[str]
+    post_repair_tasks: List[str]
     hallucination_report: Optional[Dict[str, Any]] = None
     corrections_applied: Optional[List[str]] = None
