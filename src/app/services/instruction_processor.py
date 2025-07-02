@@ -13,19 +13,16 @@ from openai import (
     APITimeoutError,
     AuthenticationError,
 )
-from dotenv import load_dotenv
 from ..schemas import InstructionResult
 from ..package_logger import get_package_logger
 from .cmdlet_discovery import cmdlet_discovery_service
+from ..config import Config  # Import Config
 
 from jinja2 import Environment, FileSystemLoader
 
 
 class InstructionProcessor:
     def __init__(self) -> None:
-        load_dotenv(
-            override=True
-        )  # Load environment variables from .env file, overriding existing ones
         self.client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
         self.jinja_env = Environment(loader=FileSystemLoader("src/app/prompts"))
 
@@ -61,7 +58,7 @@ class InstructionProcessor:
             },
             {"role": "user", "content": prompt},
         ]
-        model_name = "gpt-4o-mini"
+        model_name = Config.AI_MODEL  # Use Config.AI_MODEL
         response_format = {"type": "json_object"}
 
         package_logger.log_step(

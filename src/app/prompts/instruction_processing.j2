@@ -2,10 +2,10 @@
 
 Convert the following user instructions into structured deployment instructions and predict the required PSADT cmdlets.
 
-### Example 1: Simple Silent Install
+### Example 1: Install with Registry Key Creation
 
 **User Instructions:**
-"Silently install the application."
+"Silently install the application and create a registry key at 'HKLM:\Software\MyCompany' with the name 'InstallDir' and the value 'C:\Program Files\MyCompany'."
 
 **Application Metadata:**
 - **Name**: "My App"
@@ -21,12 +21,20 @@ Convert the following user instructions into structured deployment instructions 
     "installation_method": "silent",
     "custom_parameters": null,
     "prerequisites": [],
-    "post_install_actions": [],
+    "post_install_actions": [
+      {
+        "type": "set_registry_key",
+        "key": "HKLM:\\Software\\MyCompany",
+        "name": "InstallDir",
+        "value": "C:\\Program Files\\MyCompany"
+      }
+    ],
     "special_requirements": []
   },
   "predicted_cmdlets": [
     "Start-ADTMsiProcess",
-    "Write-ADTLogEntry"
+    "Write-ADTLogEntry",
+    "Set-ADTRegistryKey"
   ],
   "confidence_score": 0.95
 }
@@ -63,6 +71,134 @@ Convert the following user instructions into structured deployment instructions 
 }
 ```
 
+### Example 3: Silent Install with Process Closure (Firefox)
+
+**User Instructions:**
+"Silently install Mozilla Firefox."
+
+**Application Metadata:**
+- **Name**: "Mozilla Firefox"
+- **Version**: "139.0.1"
+- **File Type**: "msi"
+- **Architecture**: "x64"
+
+**Expected Output:**
+```json
+{
+  "structured_instructions": {
+    "primary_action": "install",
+    "installation_method": "silent",
+    "custom_parameters": null,
+    "prerequisites": [],
+    "post_install_actions": [],
+    "special_requirements": []
+  },
+  "predicted_cmdlets": [
+    "Start-ADTMsiProcess",
+    "Write-ADTLogEntry",
+    "Show-ADTInstallationWelcome"
+  ],
+  "confidence_score": 0.95,
+  "predicted_processes_to_close": ["firefox.exe"]
+}
+```
+
+### Example 4: Silent Install with Process Closure (Google Chrome)
+
+**User Instructions:**
+"Silently install Google Chrome."
+
+**Application Metadata:**
+- **Name**: "Google Chrome"
+- **Version**: "120.0.6099.109"
+- **File Type**: "msi"
+- **Architecture**: "x64"
+
+**Expected Output:**
+```json
+{
+  "structured_instructions": {
+    "primary_action": "install",
+    "installation_method": "silent",
+    "custom_parameters": null,
+    "prerequisites": [],
+    "post_install_actions": [],
+    "special_requirements": []
+  },
+  "predicted_cmdlets": [
+    "Start-ADTMsiProcess",
+    "Write-ADTLogEntry",
+    "Show-ADTInstallationWelcome"
+  ],
+  "confidence_score": 0.95,
+  "predicted_processes_to_close": ["chrome.exe"]
+}
+```
+
+### Example 5: Silent Install with Process Closure (VLC Media Player)
+
+**User Instructions:**
+"Silently install VLC Media Player."
+
+**Application Metadata:**
+- **Name**: "VLC Media Player"
+- **Version**: "3.0.20"
+- **File Type**: "msi"
+- **Architecture**: "x64"
+
+**Expected Output:**
+```json
+{
+  "structured_instructions": {
+    "primary_action": "install",
+    "installation_method": "silent",
+    "custom_parameters": null,
+    "prerequisites": [],
+    "post_install_actions": [],
+    "special_requirements": []
+  },
+  "predicted_cmdlets": [
+    "Start-ADTMsiProcess",
+    "Write-ADTLogEntry",
+    "Show-ADTInstallationWelcome"
+  ],
+  "confidence_score": 0.95,
+  "predicted_processes_to_close": ["vlc.exe"]
+}
+```
+
+### Example 6: Silent Install with Process Closure (7-Zip)
+
+**User Instructions:**
+"Silently install 7-Zip."
+
+**Application Metadata:**
+- **Name**: "7-Zip"
+- **Version**: "22.01"
+- **File Type**: "msi"
+- **Architecture**: "x64"
+
+**Expected Output:**
+```json
+{
+  "structured_instructions": {
+    "primary_action": "install",
+    "installation_method": "silent",
+    "custom_parameters": null,
+    "prerequisites": [],
+    "post_install_actions": [],
+    "special_requirements": []
+  },
+  "predicted_cmdlets": [
+    "Start-ADTMsiProcess",
+    "Write-ADTLogEntry",
+    "Show-ADTInstallationWelcome"
+  ],
+  "confidence_score": 0.95,
+  "predicted_processes_to_close": ["7zFM.exe"]
+}
+```
+
 ---
 
 ### Your Task
@@ -84,7 +220,14 @@ Convert the following user instructions into structured deployment instructions 
     "installation_method": "silent|interactive|custom",
     "custom_parameters": "string or null",
     "prerequisites": ["list of requirements"],
-    "post_install_actions": ["list of actions"],
+    "post_install_actions": [
+      {
+        "type": "set_registry_key",
+        "key": "string",
+        "name": "string",
+        "value": "string"
+      }
+    ],
     "special_requirements": ["list of special needs"]
   },
   "predicted_cmdlets": [
@@ -105,4 +248,20 @@ This is the list of available cmdlets. Use these to make your predictions.
 {% endfor %}
 
 Analyze the instructions and provide structured output with predicted cmdlets.
-Based on the `Application Metadata` (especially `Name` and `File Type`), predict the most likely executable names (e.g., `chrome.exe`, `firefox.exe`) that might need to be closed during installation. Return these in the `predicted_processes_to_close` field. If no specific executables can be predicted, return an empty list or null.
+
+**CRITICAL INSTRUCTIONS**:
+1.  Based on the `Application Metadata` (especially `Name`), you **MUST** predict the most common executable name for the application and return it in the `predicted_processes_to_close` field.
+2.  Any user request to create, modify, or delete registry keys **MUST** be classified as a `post_install_action` and structured as a list of objects as shown in the examples.
+
+**MANDATORY EXECUTABLE PREDICTIONS**:
+- If the `Name` contains "Google Chrome" or "Chrome", you **MUST** return `["chrome.exe"]`.
+- If the `Name` contains "Mozilla Firefox" or "Firefox", you **MUST** return `["firefox.exe"]`.
+- If the `Name` contains "VLC Media Player" or "VLC", you **MUST** return `["vlc.exe"]`.
+- If the `Name` contains "7-Zip", you **MUST** return `["7zFM.exe"]`.
+- If the `Name` contains "Adobe Acrobat" or "Acrobat", you **MUST** return `["AcroRd32.exe", "Acrobat.exe"]`.
+- If the `Name` contains "Microsoft Office" or "Office", you **MUST** return `["winword.exe", "excel.exe", "powerpnt.exe", "outlook.exe"]`.
+- If the `Name` contains "Notepad++", you **MUST** return `["notepad++.exe"]`.
+
+**IMPORTANT**: Even if the exact application name doesn't match the examples above, you should still attempt to predict the most likely executable name based on the application name. For example, if the name is "MyCustomApp", predict `["mycustomapp.exe"]` or similar.
+
+This is a mandatory step and cannot be skipped.
