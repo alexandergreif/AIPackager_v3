@@ -23,10 +23,28 @@ from .script_renderer import ScriptRenderer
 from .services.metrics_service import MetricsService
 from .models import Package
 from .package_logger import get_package_logger
+from .crawl_logger import get_crawl_logger
+from .extensions import socketio
 import queue
 import json
+import concurrent.futures
+import anyio
 
-progress_queues: dict[str, queue.Queue] = {}
+progress_queues: dict[str, queue.Queue[Any]] = {}
+
+
+def run_mcp_in_thread(async_func: Any, *args: Any, **kwargs: Any) -> Any:
+    """Run async MCP function in a separate thread to avoid asyncio conflicts."""
+
+    async def async_wrapper() -> Any:
+        return await async_func(*args, **kwargs)
+
+    def run_async() -> Any:
+        return anyio.run(async_wrapper)
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(run_async)
+        return future.result(timeout=30)
 
 
 def register_routes(app: Flask) -> None:
@@ -227,6 +245,11 @@ def register_routes(app: Flask) -> None:
         """Upload history page."""
         packages = get_all_packages()
         return render_template("history.html", packages=packages)
+
+    @app.route("/tools")
+    def tools() -> str:
+        """Render the maintenance and tools page."""
+        return render_template("tools.html")
 
     @app.route("/api/packages", methods=["POST"])
     def api_create_package() -> Response | tuple[Response, int]:
@@ -561,6 +584,377 @@ def register_routes(app: Flask) -> None:
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/kb/sources", methods=["GET"])
+    def api_get_kb_sources() -> Response | tuple[Response, int]:
+        """API endpoint to get available knowledge base sources."""
+        logger = get_crawl_logger()
+        try:
+            from .services.mcp_service import MCPService
+
+            mcp_service = MCPService()
+            # Use thread-safe wrapper to avoid asyncio conflicts
+            sources = run_mcp_in_thread(mcp_service.get_available_sources)
+            logger.info("Successfully retrieved KB sources from MCP server")
+
+            # Extract sources array from MCP response
+            if isinstance(sources, dict) and "sources" in sources:
+                return jsonify(sources["sources"])
+            elif isinstance(sources, list):
+                return jsonify(sources)
+            else:
+                # Fallback to empty array if unexpected format
+                logger.warning(f"Unexpected sources format: {type(sources)}")
+                return jsonify([])
+        except Exception as e:
+            logger.error(f"Failed to get KB sources: {e}")
+            return jsonify(
+                {
+                    "error": "MCP server connection failed",
+                    "details": str(e),
+                    "suggestion": "Ensure crawl4ai-rag server is running on port 8052",
+                }
+            ), 500
+
+    @app.route("/api/kb/crawl", methods=["POST"])
+    def api_crawl_url() -> Response | tuple[Response, int]:
+        """API endpoint to crawl a single URL."""
+        logger = get_crawl_logger()
+        data = request.get_json()
+        if not data or "url" not in data:
+            logger.error("Crawl request failed: URL is required")
+            return jsonify({"error": "URL is required"}), 400
+
+        url = data["url"]
+        logger.info(f"Starting crawl for URL: {url}")
+
+        def crawl_task(url: str) -> None:
+            try:
+                from .services.mcp_service import MCPService
+
+                # Emit progress start
+                socketio.emit(
+                    "progress",
+                    {"progress": 10, "status": "Connecting to MCP server..."},
+                )
+
+                mcp_service = MCPService()
+
+                # Emit progress
+                socketio.emit(
+                    "progress",
+                    {"progress": 30, "status": f"Starting crawl for {url}..."},
+                )
+
+                # Perform actual MCP call using thread-safe wrapper
+                result = run_mcp_in_thread(mcp_service.crawl_single_page, url)
+
+                # Emit progress
+                socketio.emit(
+                    "progress",
+                    {"progress": 80, "status": "Processing crawl results..."},
+                )
+
+                # Emit completion
+                socketio.emit(
+                    "progress",
+                    {"progress": 100, "status": f"Successfully crawled {url}"},
+                )
+                logger.info(f"Successfully crawled URL: {url}, Result: {result}")
+
+            except Exception as e:
+                logger.error(f"Crawl failed for URL {url}: {e}")
+                socketio.emit(
+                    "progress",
+                    {
+                        "progress": 100,
+                        "status": f"Failed to crawl {url}: {str(e)}",
+                        "error": True,
+                    },
+                )
+
+        socketio.start_background_task(crawl_task, url)
+        return jsonify({"message": f"Crawling {url}", "status": "started"})
+
+    @app.route("/api/kb/smart_crawl", methods=["POST"])
+    def api_smart_crawl_url() -> Response | tuple[Response, int]:
+        """API endpoint to smart crawl a URL."""
+        logger = get_crawl_logger()
+        data = request.get_json()
+        if not data or "url" not in data:
+            logger.error("Smart crawl request failed: URL is required")
+            return jsonify({"error": "URL is required"}), 400
+
+        url = data["url"]
+        max_depth = data.get("max_depth", 3)
+        max_concurrent = data.get("max_concurrent", 10)
+        chunk_size = data.get("chunk_size", 5000)
+
+        logger.info(
+            f"Starting smart crawl for URL: {url} (depth: {max_depth}, concurrent: {max_concurrent}, chunk: {chunk_size})"
+        )
+
+        def smart_crawl_task(
+            url: str, max_depth: int, max_concurrent: int, chunk_size: int
+        ) -> None:
+            try:
+                from .services.mcp_service import MCPService
+
+                # Emit progress start
+                socketio.emit(
+                    "progress",
+                    {"progress": 10, "status": "Connecting to MCP server..."},
+                )
+
+                mcp_service = MCPService()
+
+                # Emit progress
+                socketio.emit(
+                    "progress",
+                    {
+                        "progress": 30,
+                        "status": f"Starting smart crawl for {url} (depth: {max_depth})...",
+                    },
+                )
+
+                # Perform actual MCP call using thread-safe wrapper with parameters
+                result = run_mcp_in_thread(
+                    mcp_service.smart_crawl_url,
+                    url,
+                    max_depth=max_depth,
+                    max_concurrent=max_concurrent,
+                    chunk_size=chunk_size,
+                )
+
+                # Emit progress
+                socketio.emit(
+                    "progress",
+                    {"progress": 80, "status": "Processing smart crawl results..."},
+                )
+
+                # Emit completion
+                socketio.emit(
+                    "progress",
+                    {"progress": 100, "status": f"Successfully smart crawled {url}"},
+                )
+                logger.info(f"Successfully smart crawled URL: {url}, Result: {result}")
+
+            except Exception as e:
+                logger.error(f"Smart crawl failed for URL {url}: {e}")
+                socketio.emit(
+                    "progress",
+                    {
+                        "progress": 100,
+                        "status": f"Failed to smart crawl {url}: {str(e)}",
+                        "error": True,
+                    },
+                )
+
+        socketio.start_background_task(
+            smart_crawl_task, url, max_depth, max_concurrent, chunk_size
+        )
+        return jsonify(
+            {
+                "message": f"Smart crawling {url} with depth {max_depth}",
+                "status": "started",
+                "options": {
+                    "max_depth": max_depth,
+                    "max_concurrent": max_concurrent,
+                    "chunk_size": chunk_size,
+                },
+            }
+        )
+
+    @app.route("/api/kb/parse_github_repository", methods=["POST"])
+    def api_parse_github_repository() -> Response | tuple[Response, int]:
+        """API endpoint to parse a GitHub repository."""
+        logger = get_crawl_logger()
+        data = request.get_json()
+        if not data or "url" not in data:
+            logger.error("GitHub repository parse request failed: URL is required")
+            return jsonify({"error": "URL is required"}), 400
+
+        url = data["url"]
+        logger.info(f"Starting GitHub repository parse for URL: {url}")
+
+        def parse_github_task(url: str) -> None:
+            try:
+                from .services.mcp_service import MCPService
+
+                # Emit progress start
+                socketio.emit(
+                    "progress",
+                    {"progress": 10, "status": "Connecting to MCP server..."},
+                )
+
+                mcp_service = MCPService()
+
+                # Emit progress
+                socketio.emit(
+                    "progress",
+                    {
+                        "progress": 30,
+                        "status": f"Starting GitHub repository parse for {url}...",
+                    },
+                )
+
+                # Perform actual MCP call using thread-safe wrapper
+                result = run_mcp_in_thread(mcp_service.parse_github_repository, url)
+
+                # Emit progress
+                socketio.emit(
+                    "progress",
+                    {
+                        "progress": 80,
+                        "status": "Processing repository parse results...",
+                    },
+                )
+
+                # Emit completion
+                socketio.emit(
+                    "progress",
+                    {
+                        "progress": 100,
+                        "status": f"Successfully parsed repository {url}",
+                    },
+                )
+                logger.info(f"Successfully parsed repository: {url}, Result: {result}")
+
+            except Exception as e:
+                logger.error(f"Failed to parse repository {url}: {e}")
+                socketio.emit(
+                    "progress",
+                    {
+                        "progress": 100,
+                        "status": f"Failed to parse repository {url}: {str(e)}",
+                        "error": True,
+                    },
+                )
+
+        socketio.start_background_task(parse_github_task, url)
+        return jsonify({"message": f"Parsing repository {url}", "status": "started"})
+
+    @app.route("/api/health/mcp", methods=["GET"])
+    def api_health_mcp() -> Response | tuple[Response, int]:
+        """API endpoint to check MCP server health."""
+        logger = get_crawl_logger()
+        try:
+            from .services.mcp_service import MCPService
+
+            mcp_service = MCPService()
+            health_status = run_mcp_in_thread(mcp_service.check_infrastructure_health)
+
+            logger.info(
+                f"MCP health check completed: {health_status['overall']['status']}"
+            )
+
+            # Return appropriate HTTP status based on health
+            if health_status["overall"]["healthy"]:
+                return jsonify(health_status), 200
+            elif health_status["overall"]["status"] == "degraded":
+                return jsonify(health_status), 206  # Partial Content
+            else:
+                return jsonify(health_status), 503  # Service Unavailable
+
+        except Exception as e:
+            logger.error(f"MCP health check failed: {e}")
+            error_response = {
+                "overall": {
+                    "status": "unhealthy",
+                    "healthy": False,
+                    "message": f"Health check failed: {str(e)}",
+                },
+                "error": str(e),
+            }
+            return jsonify(error_response), 503
+
+    @app.route("/api/health/infrastructure", methods=["GET"])
+    def api_health_infrastructure() -> Response | tuple[Response, int]:
+        """API endpoint to check all infrastructure components."""
+        logger = get_crawl_logger()
+        try:
+            from .services.mcp_service import MCPService
+
+            mcp_service = MCPService()
+            health_status = run_mcp_in_thread(mcp_service.check_infrastructure_health)
+
+            # Add additional Flask app health info
+            health_status["flask_app"] = {
+                "status": "healthy",
+                "message": "Flask application responding",
+                "timestamp": datetime.now().isoformat(),
+            }
+
+            # Add database health info
+            try:
+                from .database import get_database_service
+
+                db_service = get_database_service()
+                session = db_service.get_session()
+                session.execute("SELECT 1")
+                session.close()
+                health_status["database"] = {
+                    "status": "healthy",
+                    "message": "Database connection successful",
+                }
+            except Exception as e:
+                health_status["database"] = {
+                    "status": "unhealthy",
+                    "message": f"Database connection failed: {str(e)}",
+                }
+
+            # Update overall health with additional components
+            healthy_components = sum(
+                1
+                for component in [
+                    "mcp_server",
+                    "neo4j",
+                    "supabase",
+                    "flask_app",
+                    "database",
+                ]
+                if health_status.get(component, {}).get("status") == "healthy"
+            )
+
+            total_components = 5
+            if healthy_components == total_components:
+                health_status["overall"] = {
+                    "status": "healthy",
+                    "healthy": True,
+                    "message": "All infrastructure components are healthy",
+                }
+                status_code = 200
+            elif healthy_components >= 3:
+                health_status["overall"] = {
+                    "status": "degraded",
+                    "healthy": False,
+                    "message": f"{healthy_components}/{total_components} infrastructure components are healthy",
+                }
+                status_code = 206
+            else:
+                health_status["overall"] = {
+                    "status": "unhealthy",
+                    "healthy": False,
+                    "message": f"Only {healthy_components}/{total_components} infrastructure components are healthy",
+                }
+                status_code = 503
+
+            logger.info(
+                f"Infrastructure health check completed: {health_status['overall']['status']}"
+            )
+            return jsonify(health_status), status_code
+
+        except Exception as e:
+            logger.error(f"Infrastructure health check failed: {e}")
+            error_response = {
+                "overall": {
+                    "status": "unhealthy",
+                    "healthy": False,
+                    "message": f"Health check failed: {str(e)}",
+                },
+                "error": str(e),
+            }
+            return jsonify(error_response), 503
 
     @app.route("/api/packages", methods=["GET"])
     def api_list_packages() -> Response | tuple[Response, int]:

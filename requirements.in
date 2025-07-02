@@ -1,29 +1,21 @@
-# Core dependencies
-PyYAML>=6.0.0
-openai>=1.0.0
-pydantic>=2.0.0
-mcp
+#
+# This file is used to specify the dependencies of the project.
+#
+# To update the requirements.txt file, run:
+#
+#   pip-compile requirements.in
+#
+# To install the dependencies, run:
+#
+#   pip install -r requirements.txt
+#
+# Note: msitools is a system dependency and must be installed separately.
+# See docs/deployment.md for installation instructions.
+#
+flask
+python-dotenv
+flask-socketio
 
-# Flask web framework
-Flask>=2.3.0
-Werkzeug>=2.3.0
-Jinja2>=3.1.0
-
-# Database
-SQLAlchemy>=2.0.0
-Alembic>=1.12.0
-
-# Development and testing tools
-pytest>=7.0.0
-ruff>=0.1.0
-mypy>=1.0.0
-black>=22.0.0
-pre-commit>=3.0.0
-
-# Documentation
-sphinx>=5.0.0
-
-# Environment Management
-python-dotenv>=1.0.0
-
-# MSI parsing
+# MCP Integration
+mcp>=1.0.0
+anyio>=4.0.0
