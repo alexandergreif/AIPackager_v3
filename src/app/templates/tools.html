@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Tools - AIPackager{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Maintenance & Tools</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Simple Crawl URL -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Quick Crawl a Page</h2>
+            <p class="text-gray-600 mb-4">Quickly crawl a single page and add to the knowledge base.</p>
+            <div class="flex space-x-2">
+                <input type="url" id="crawl-url" placeholder="https://example.com/page" class="flex-grow p-2 border rounded-md">
+                <button id="crawl-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">
+                    Quick Crawl
+                </button>
+            </div>
+        </div>
+
+        <!-- Smart Crawl Website -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Smart Crawl a Website</h2>
+            <p class="text-gray-600 mb-4">Advanced crawling with depth and performance options.</p>
+            <div class="space-y-3">
+                <input type="url" id="smart-crawl-url" placeholder="https://example.com" class="w-full p-2 border rounded-md">
+                <div class="grid grid-cols-3 gap-2 text-sm">
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Max Depth</label>
+                        <input type="number" id="max-depth" value="3" min="1" max="5" class="w-full p-1 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Concurrent</label>
+                        <input type="number" id="max-concurrent" value="10" min="1" max="20" class="w-full p-1 border rounded">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-600 mb-1">Chunk Size</label>
+                        <input type="number" id="chunk-size" value="5000" min="1000" max="10000" step="1000" class="w-full p-1 border rounded">
+                    </div>
+                </div>
+                <button id="smart-crawl-btn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md">
+                    Smart Crawl
+                </button>
+            </div>
+        </div>
+
+        <!-- Crawl GitHub Repository -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Parse GitHub Repository</h2>
+            <p class="text-gray-600 mb-4">Parse a GitHub repository into the knowledge graph for code validation.</p>
+            <div class="flex space-x-2">
+                <input type="url" id="repo-url" placeholder="https://github.com/user/repo" class="flex-grow p-2 border rounded-md">
+                <button id="repo-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-md">
+                    Parse Repository
+                </button>
+            </div>
+        </div>
+
+        <!-- Available Sources -->
+        <div class="bg-white p-6 rounded-lg shadow-md col-span-1 md:col-span-2">
+            <h2 class="text-xl font-semibold mb-4">Available Knowledge Base Sources</h2>
+            <button id="get-sources-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md mb-4">
+                Get Available Sources
+            </button>
+            <div id="sources-container" class="text-gray-700">
+                <!-- Sources will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress and Logs -->
+    <div class="mt-8">
+        <h2 class="text-2xl font-bold mb-4">Operations</h2>
+        <div id="progress-container" class="space-y-4">
+            <!-- Progress bars will be dynamically added here -->
+        </div>
+        <div class="mt-6 bg-gray-100 p-4 rounded-lg">
+            <h3 class="text-lg font-semibold mb-2">Logs</h3>
+            <pre id="log-output" class="text-sm text-gray-800 bg-white p-4 rounded-md h-64 overflow-y-auto"></pre>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const socket = io();
+
+        socket.on('progress', function(data) {
+            const progressContainer = document.getElementById('progress-container');
+            let progressBar = document.getElementById(`progress-${data.url}`);
+            if (!progressBar) {
+                progressBar = document.createElement('div');
+                progressBar.id = `progress-${data.url}`;
+                progressBar.className = 'w-full bg-gray-200 rounded-full';
+                progressBar.innerHTML = `
+                    <div class="bg-blue-600 text-xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full" style="width: ${data.progress}%">
+                        ${data.progress}%
+                    </div>
+                `;
+                progressContainer.appendChild(progressBar);
+            } else {
+                const innerBar = progressBar.querySelector('div');
+                innerBar.style.width = `${data.progress}%`;
+                innerBar.textContent = `${data.progress}%`;
+            }
+            log(data.status);
+        });
+
+        const crawlBtn = document.getElementById('crawl-btn');
+        const smartCrawlBtn = document.getElementById('smart-crawl-btn');
+        const repoBtn = document.getElementById('repo-btn');
+        const getSourcesBtn = document.getElementById('get-sources-btn');
+        const logOutput = document.getElementById('log-output');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logOutput.textContent += `[${timestamp}] ${message}\n`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        // Quick Crawl (single page)
+        crawlBtn.addEventListener('click', function () {
+            const url = document.getElementById('crawl-url').value;
+            if (!url) {
+                alert('Please enter a URL.');
+                return;
+            }
+            log(`Starting quick crawl for: ${url}`);
+            fetch('/api/kb/crawl', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                log(`Quick crawl status for ${url}: ${data.status}`);
+            })
+            .catch(error => {
+                log(`Error with quick crawl ${url}: ${error}`);
+            });
+        });
+
+        // Smart Crawl (advanced options)
+        smartCrawlBtn.addEventListener('click', function () {
+            const url = document.getElementById('smart-crawl-url').value;
+            const maxDepth = parseInt(document.getElementById('max-depth').value) || 3;
+            const maxConcurrent = parseInt(document.getElementById('max-concurrent').value) || 10;
+            const chunkSize = parseInt(document.getElementById('chunk-size').value) || 5000;
+
+            if (!url) {
+                alert('Please enter a URL.');
+                return;
+            }
+
+            log(`Starting smart crawl for: ${url} (depth: ${maxDepth}, concurrent: ${maxConcurrent}, chunk: ${chunkSize})`);
+            fetch('/api/kb/smart_crawl', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    url: url,
+                    max_depth: maxDepth,
+                    max_concurrent: maxConcurrent,
+                    chunk_size: chunkSize
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                log(`Smart crawl status for ${url}: ${data.status}`);
+            })
+            .catch(error => {
+                log(`Error with smart crawl ${url}: ${error}`);
+            });
+        });
+
+        // Repository Parse
+        repoBtn.addEventListener('click', function () {
+            const url = document.getElementById('repo-url').value;
+            if (!url) {
+                alert('Please enter a repository URL.');
+                return;
+            }
+            log(`Starting repository parse for: ${url}`);
+            fetch('/api/kb/parse_github_repository', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                log(`Parse status for ${url}: ${data.status}`);
+            })
+            .catch(error => {
+                log(`Error parsing repository ${url}: ${error}`);
+            });
+        });
+
+        getSourcesBtn.addEventListener('click', function () {
+            log('Fetching available sources...');
+            fetch('/api/kb/sources')
+            .then(response => response.json())
+            .then(data => {
+                const sourcesContainer = document.getElementById('sources-container');
+                sourcesContainer.innerHTML = '';
+                data.forEach(source => {
+                    const sourceEl = document.createElement('div');
+                    sourceEl.className = 'p-2 border-b';
+                    sourceEl.textContent = `${source.source_id} - ${source.summary}`;
+                    sourcesContainer.appendChild(sourceEl);
+                });
+                log('Successfully fetched sources.');
+            })
+            .catch(error => {
+                log(`Error fetching sources: ${error}`);
+            });
+        });
+    });
+</script>
+{% endblock %}
