@@ -1,37 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}Package Logs - {{ package.filename }}{% endblock %}
+{% block title %}Logs - {{ package.filename }}{% endblock %}
 
 {% block content %}
-<div class="bg-white p-8 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-6">Package Logs</h2>
-
-    <div class="mb-4">
-        <h3 class="text-lg font-bold">Package: {{ package.filename }}</h3>
-        <p class="text-gray-600">Status: {{ package.status }}</p>
-        <p class="text-gray-600">Upload Time: {{ package.upload_time }}</p>
-        {% if log_file_path %}
-        <p class="text-gray-600">Log File: {{ log_file_path }}</p>
-        {% endif %}
+<div class="glass-card p-8">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-3xl font-bold text-accent-blue">Package Logs</h2>
+            <p class="text-text-secondary">Package: {{ package.filename }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('detail', id=package.id) }}" class="btn-primary text-sm">← Back to Details</a>
+            <button onclick="location.reload()" class="btn-primary bg-gray-700 hover:bg-gray-600 text-sm ml-2">Refresh Logs</button>
+        </div>
     </div>
 
-    <div class="bg-gray-900 text-green-400 p-4 rounded-md overflow-auto" style="max-height: 600px;">
-        <h4 class="text-white font-bold mb-2">Processing Logs:</h4>
+    <div class="bg-secondary-bg p-4 rounded-md font-mono text-sm text-text-secondary overflow-auto" style="max-height: 70vh;">
         {% if logs %}
-        <pre class="text-sm whitespace-pre-wrap">{{ logs }}</pre>
+        <pre class="whitespace-pre-wrap">{{ logs }}</pre>
         {% else %}
-        <p class="text-gray-400">No logs available yet.</p>
+        <p>No logs available for this package yet.</p>
         {% endif %}
-    </div>
-
-    <div class="mt-6">
-        <a href="{{ url_for('detail', id=package.id) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-            ← Back to Package Details
-        </a>
-
-        <button onclick="location.reload()" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded ml-2">
-            🔄 Refresh Logs
-        </button>
     </div>
 </div>
 {% endblock %}

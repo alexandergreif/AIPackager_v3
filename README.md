@@ -27,6 +27,7 @@ A web application that generates PowerShell App Deployment Toolkit (PSADT) scrip
    cp .env.example .env
    ```
    - Edit the `.env` file and add your OpenAI API key.
+   - **For full AI capabilities (5-stage pipeline, knowledge base), you will also need to set up Neo4j, Supabase, and the `crawl4ai-rag` MCP server.** Refer to the [Deployment Guide](docs/deployment.md) for detailed instructions.
 
 3. **Run the application:**
    ```bash
@@ -85,24 +86,32 @@ AIPackager_v3/
 - **id**: UUID primary key
 - **filename**: Original installer filename
 - **file_path**: Stored file location
-- **status**: Current processing status
-- **current_step**: Current workflow step
-- **progress_pct**: Completion percentage
 - **upload_time**: Timestamp of upload
+- **status**: Current processing status (`uploading`, `processing`, `completed`, `failed`)
+- **current_step**: Current workflow step (e.g., `instruction_processing`, `targeted_rag`)
+- **progress_pct**: Completion percentage
 - **custom_instructions**: User-provided notes
-- **generated_script**: JSON object with the generated script sections.
-- **hallucination_report**: JSON object with the hallucination detection results.
-- **corrections_applied**: JSON object with any corrections applied by the advisor.
-- **pipeline_metadata**: JSON object with metadata about the pipeline execution.
+- **instruction_result**: JSON object with structured instructions and predicted cmdlets (Stage 1 output).
+- **rag_documentation**: String with documentation retrieved from RAG (Stage 2 output).
+- **initial_script**: JSON object with the initial generated script sections (Stage 3 output).
+- **generated_script**: JSON object with the final generated script sections (after Stage 5 correction if applicable).
+- **hallucination_report**: JSON object with the hallucination detection results (Stage 4 output).
+- **pipeline_metadata**: JSON object with metadata about the pipeline execution (e.g., model used, version).
+- **corrections_applied**: List of strings detailing corrections applied by the advisor (Stage 5 output).
 
 ### Metadata Model
 - **package_id**: Foreign key to Package
 - **product_name**: Extracted product name
 - **version**: Product version
 - **publisher**: Software publisher/manufacturer
-- **architecture**: Target architecture (x86/x64/arm64)
+- **install_date**: Installation date string
+- **uninstall_string**: Command string for uninstallation
+- **estimated_size**: Estimated size of the application in bytes
 - **product_code**: MSI Product Code GUID
+- **upgrade_code**: MSI Upgrade Code GUID
 - **language**: Installation language
+- **architecture**: Target architecture (x86/x64/arm64)
+- **executable_names**: List of executable names found within the installer.
 
 ## 🧪 Development
 
@@ -180,10 +189,13 @@ alembic downgrade -1
 ## 📚 Documentation
 
 See the [docs/](docs/) directory for detailed documentation:
-- [Workflow Diagram](docs/workflow-diagram.md)
+- [Architecture Overview](docs/architecture-overview.md)
+- [Implementation Summary](docs/implementation-summary.md)
+- [Application Functions Reference](docs/application-functions.mdx)
 - [API Reference](docs/api-reference.md)
 - [Deployment Guide](docs/deployment.md)
 - [Contributing Guidelines](docs/contributing.md)
+- **Note**: The [Workflow Diagram](docs/workflow-diagram.md) content is now integrated into the [Architecture Overview](docs/architecture-overview.md).
 
 ## 🤝 Contributing
 
