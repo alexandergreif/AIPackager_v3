@@ -3,29 +3,38 @@
 {% block title %}Package History{% endblock %}
 
 {% block content %}
-<div class="bg-white p-8 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-6">Package History</h2>
-    <table class="table-auto w-full">
-        <thead>
-            <tr>
-                <th class="px-4 py-2">Filename</th>
-                <th class="px-4 py-2">Upload Time</th>
-                <th class="px-4 py-2">Status</th>
-                <th class="px-4 py-2"></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for package in packages %}
-            <tr>
-                <td class="border px-4 py-2">{{ package.filename }}</td>
-                <td class="border px-4 py-2">{{ package.upload_time }}</td>
-                <td class="border px-4 py-2">{{ package.status }}</td>
-                <td class="border px-4 py-2">
-                    <a href="{{ url_for('detail', id=package.id) }}" class="text-blue-500 hover:text-blue-700">View</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="glass-card p-8">
+    <h2 class="text-3xl font-bold text-accent-blue mb-6">Package History</h2>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead class="border-b-2 border-border-color">
+                <tr>
+                    <th class="p-4">Filename</th>
+                    <th class="p-4">Upload Time</th>
+                    <th class="p-4">Status</th>
+                    <th class="p-4"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for package in packages %}
+                <tr class="border-b border-border-color hover:bg-secondary-bg">
+                    <td class="p-4 font-mono">{{ package.filename }}</td>
+                    <td class="p-4">{{ package.upload_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 rounded-full text-sm font-bold
+                            {% if package.status == 'completed' %} bg-green-500 text-green-900
+                            {% elif package.status == 'failed' %} bg-red-500 text-red-900
+                            {% else %} bg-yellow-500 text-yellow-900 {% endif %}">
+                            {{ package.status }}
+                        </span>
+                    </td>
+                    <td class="p-4">
+                        <a href="{{ url_for('detail', id=package.id) }}" class="btn-primary text-sm py-1 px-3">View Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

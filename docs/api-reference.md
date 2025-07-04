@@ -164,10 +164,47 @@ This document provides detailed information about the AIPackager v3 API endpoint
 ```
 - **Response**: JSON object with the status of the crawl operation.
 
+#### `POST /api/kb/smart_crawl`
+**Smart Crawl a URL**
+- **Description**: Intelligently crawls a URL based on its type (webpage, sitemap, text file) and stores content in the knowledge base.
+- **Request Body**:
+```json
+{
+  "url": "https://example.com/sitemap.xml",
+  "max_depth": 3,
+  "max_concurrent": 10,
+  "chunk_size": 5000
+}
+```
+- **Response**: JSON object with the status of the smart crawl operation.
+
+#### `POST /api/kb/parse_github_repository`
+**Parse GitHub Repository**
+- **Description**: Clones a GitHub repository, analyzes its Python files, and stores the code structure in the knowledge graph for hallucination detection.
+- **Request Body**:
+```json
+{
+  "url": "https://github.com/user/repo.git"
+}
+```
+- **Response**: JSON object with the status of the parsing operation.
+
 #### `GET /api/kb/sources`
 **Get Available Knowledge Base Sources**
 - **Description**: Retrieves a list of all available sources from the `crawl4ai-rag` knowledge base.
 - **Response**: JSON array of source objects.
+
+### Health & Monitoring
+
+#### `GET /api/health/mcp`
+**Check MCP Server Health**
+- **Description**: Checks the health status of the `crawl4ai-rag` MCP server and its integrated components (Neo4j, Supabase).
+- **Response**: JSON object detailing the health status of each component.
+
+#### `GET /api/health/infrastructure`
+**Check All Infrastructure Health**
+- **Description**: Provides a comprehensive health check for all critical infrastructure components, including the Flask application, database, and MCP services.
+- **Response**: JSON object with the health status of all components and an overall status.
 
 ## 🗃️ Data Models
 
@@ -200,6 +237,7 @@ class Package(Base):
     hallucination_report: Optional[dict] = mapped_column(JSON)
     corrections_applied: Optional[dict] = mapped_column(JSON)
     pipeline_metadata: Optional[dict] = mapped_column(JSON)
+    rag_documentation: Optional[str] = mapped_column(Text) # Added for RAG context
 
     # Relationship
     package_metadata: Optional["Metadata"] = relationship(...)
@@ -236,6 +274,7 @@ class Metadata(Base):
     upgrade_code: Optional[str] = mapped_column(String(100))
     language: Optional[str] = mapped_column(String(50))
     architecture: Optional[str] = mapped_column(String(20))
+    executable_names: Optional[list[str]] = mapped_column(JSON) # Added for executable names
 ```
 
 ### WorkflowStep Enum
@@ -244,10 +283,11 @@ class Metadata(Base):
 class WorkflowStep(enum.Enum):
     UPLOAD = "upload"
     EXTRACT_METADATA = "extract_metadata"
-    PREPROCESS = "preprocess"
-    GENERATE_PROMPT = "generate_prompt"
-    CALL_AI = "call_ai"
-    RENDER_SCRIPT = "render_script"
+    STAGE_1_INSTRUCTION_PROCESSING = "stage_1_instruction_processing"
+    STAGE_2_TARGETED_RAG = "stage_2_targeted_rag"
+    STAGE_3_SCRIPT_GENERATION = "stage_3_script_generation"
+    STAGE_4_HALLUCINATION_DETECTION = "stage_4_hallucination_detection"
+    STAGE_5_ADVISOR_CORRECTION = "stage_5_advisor_correction"
     COMPLETED = "completed"
     FAILED = "failed"
 ```
@@ -274,6 +314,17 @@ class WorkflowStep(enum.Enum):
 - **Key Methods**:
   - `extract_file_metadata()`: Main entry point for metadata extraction.
   - `get_psadt_variables()`: Maps extracted metadata to PSADT template variables.
+  - `extract_executable_names()`: Extracts executable names from installer files.
+
+### MCPService
+- **Description**: Manages communication with the `crawl4ai-rag` MCP server, providing an interface for knowledge base operations.
+- **Key Methods**:
+  - `get_available_sources()`: Retrieves a list of available knowledge base sources.
+  - `crawl_single_page()`: Crawls and indexes a single URL.
+  - `smart_crawl_url()`: Intelligently crawls a URL based on its type.
+  - `parse_github_repository()`: Parses a GitHub repository into the knowledge graph.
+  - `query_knowledge_graph()`: Executes a custom query against the knowledge graph.
+  - `check_infrastructure_health()`: Checks the health of MCP-related infrastructure.
 
 ## 🗄️ Database Service
 
@@ -302,9 +353,11 @@ def get_all_packages() -> list[Package]
 ### File Persistence
 
 ```python
-def save_uploaded_file(file: FileStorage) -> Tuple[str, str]
-def get_upload_path(filename: str) -> str
-def ensure_upload_directory() -> Path
+def save_uploaded_file(file: FileStorage) -> Tuple[UUID, str] # Updated return type
+def get_file_path(file_id: UUID, filename: str, instance_dir: Path) -> str # Updated parameters
+def delete_file(file_path: str) -> bool
+def get_file_size(file_path: str) -> int
+def file_exists(file_path: str) -> bool
 ```
 
 **File Storage**:

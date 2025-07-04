@@ -1,41 +1,58 @@
 {% extends "base.html" %}
 
-{% block title %}Generating Script...{% endblock %}
+{% block title %}Processing Package...{% endblock %}
 
 {% block content %}
-<div class="bg-white p-8 rounded-lg shadow-md">
+<div class="glass-card p-8 max-w-4xl mx-auto">
+    <h2 class="text-3xl font-bold text-accent-blue mb-8 text-center">5-Stage Pipeline Active</h2>
 
-    <h2 class="text-2xl font-bold mb-6">Processing Progress</h2>
-
-    <div class="mb-4">
-        <div id="stages" class="flex justify-between">
-            <div class="stage" id="stage-1">1. Instruction Processing</div>
-            <div class="stage" id="stage-2">2. Targeted RAG</div>
-            <div class="stage" id="stage-3">3. Script Generation</div>
-            <div class="stage" id="stage-4">4. Hallucination Detection</div>
-            <div class="stage" id="stage-5">5. Advisor Correction</div>
-        </div>
+    <div id="stages" class="flex items-center justify-center space-x-2 md:space-x-4 mb-8">
+        <!-- Stages will be dynamically updated -->
+        <div class="stage" id="stage-1">1. Process</div>
+        <div class="connector"></div>
+        <div class="stage" id="stage-2">2. RAG</div>
+        <div class="connector"></div>
+        <div class="stage" id="stage-3">3. Generate</div>
+        <div class="connector"></div>
+        <div class="stage" id="stage-4">4. Validate</div>
+        <div class="connector"></div>
+        <div class="stage" id="stage-5">5. Correct</div>
     </div>
 
-    <div class="w-full bg-gray-200 rounded-full">
-        <div id="progress-bar" class="bg-blue-500 text-xs font-medium text-blue-100 text-center p-0.5 leading-none rounded-full" style="width: 0%">0%</div>
+    <div class="w-full bg-secondary-bg rounded-full h-4 mb-4">
+        <div id="progress-bar" class="bg-gradient-to-r from-accent-blue to-accent-purple h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
     </div>
-    <p id="progress-message" class="mt-4 text-gray-600">Preparing...</p>
-    <p id="error-message" class="mt-2 text-red-600"></p>
+    <p id="progress-message" class="mt-4 text-text-secondary text-center">Initializing pipeline...</p>
+    <p id="error-message" class="mt-2 text-red-500 text-center"></p>
 </div>
 
 <style>
     .stage {
         flex: 1;
         text-align: center;
-        padding: 0.5rem;
-        border-bottom: 2px solid #e5e7eb; /* gray-200 */
-        color: #6b7280; /* gray-500 */
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 9999px;
+        color: var(--text-secondary);
+        transition: all 0.5s ease;
+        position: relative;
     }
     .stage.active {
-        border-bottom-color: #3b82f6; /* blue-500 */
+        background-color: var(--accent-blue);
+        color: var(--primary-bg);
         font-weight: bold;
-        color: #1f2937; /* gray-800 */
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+    }
+    .stage.completed {
+        background-color: var(--accent-green);
+        color: var(--primary-bg);
+        border-color: var(--accent-green);
+    }
+    .connector {
+        flex-grow: 1;
+        height: 2px;
+        background-color: var(--border-color);
     }
 </style>
 
@@ -43,36 +60,46 @@
 const jobId = "{{ job_id }}";
 const eventSource = new EventSource(`/stream-progress/${jobId}`);
 
+const stages = document.querySelectorAll('.stage');
+
 eventSource.onmessage = function(event) {
     const data = JSON.parse(event.data);
     const bar = document.getElementById('progress-bar');
     const message = document.getElementById('progress-message');
+
     bar.style.width = `${data.progress}%`;
-    bar.textContent = `${data.progress}%`;
     message.textContent = data.current_step;
 
-    // Update stage indicator
-    const stages = document.querySelectorAll('.stage');
-    stages.forEach(stage => stage.classList.remove('active'));
-    if (data.stage_number) {
-        const activeStage = document.getElementById(`stage-${data.stage_number}`);
-        if (activeStage) {
-            activeStage.classList.add('active');
+    // Update stage indicators
+    const stageNumber = data.stage_number || 0;
+    stages.forEach((stage, index) => {
+        stage.classList.remove('active', 'completed');
+        if (index < stageNumber - 1) {
+            stage.classList.add('completed');
+        } else if (index === stageNumber - 1) {
+            stage.classList.add('active');
         }
-    }
+    });
 
     if (data.status === 'completed') {
         eventSource.close();
-        window.location.href = `/detail/${jobId}`;
+        stages.forEach(stage => stage.classList.add('completed'));
+        message.textContent = 'Pipeline completed! Redirecting...';
+        setTimeout(() => {
+            window.location.href = `/detail/${jobId}`;
+        }, 1500);
     } else if (data.status === 'failed') {
         eventSource.close();
-        document.getElementById('error-message').textContent = 'Script generation failed. Please try again.';
+        document.getElementById('error-message').textContent = 'Script generation failed. Please check logs for details.';
+        const activeStage = document.querySelector('.stage.active');
+        if(activeStage) activeStage.style.backgroundColor = '#EF4444'; // red-500
     }
 };
 
 eventSource.onerror = function(err) {
     console.error("EventSource failed:", err);
     eventSource.close();
+    document.getElementById('error-message').textContent = 'Connection to server lost. Please refresh.';
 };
 </script>
 {% endblock %}

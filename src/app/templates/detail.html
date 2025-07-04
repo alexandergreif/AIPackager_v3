@@ -1,155 +1,118 @@
 {% extends "base.html" %}
 
-{% block title %}Package Details{% endblock %}
+{% block title %}Package Details - {{ package.filename }}{% endblock %}
 
 {% block content %}
-<div class="bg-white p-8 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-6">Package Details</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="glass-card p-8">
+    <div class="flex justify-between items-start mb-6">
         <div>
-            <h3 class="text-lg font-bold mb-2">Summary</h3>
-            <dl>
-                <dt class="font-bold">Filename:</dt>
-                <dd>{{ package.filename }}</dd>
-                <dt class="font-bold">Status:</dt>
-                <dd>{{ package.status }}</dd>
-                <dt class="font-bold">Upload Time:</dt>
-                <dd>{{ package.upload_time }}</dd>
-                <dt class="font-bold">Notes:</dt>
-                <dd>{{ package.custom_instructions }}</dd>
-            </dl>
+            <h2 class="text-3xl font-bold text-accent-blue">{{ package.filename }}</h2>
+            <p class="text-text-secondary">Status: <span class="font-bold text-accent-green">{{ package.status }}</span> | Uploaded: {{ package.upload_time.strftime('%Y-%m-%d %H:%M') }}</p>
         </div>
-        <div>
-            <h3 class="text-lg font-bold mb-2">Metadata</h3>
-            {% if metadata %}
-            <table class="table-auto w-full">
-                <tbody>
-                    {% for key, value in metadata.__dict__.items() %}
-                    {% if not key.startswith('_') %}
-                    <tr>
-                        <td class="font-bold pr-4">{{ key }}</td>
-                        <td>{{ value }}</td>
-                    </tr>
-                    {% endif %}
+        <div class="flex space-x-2">
+            <button id="copy-button" class="btn-primary">Copy Script</button>
+            <a id="download-link" href="#" class="btn-primary bg-gray-700 hover:bg-gray-600">Download</a>
+            <a href="{{ url_for('view_logs', package_id=package.id) }}" class="btn-primary bg-purple-600 hover:bg-purple-500">View Logs</a>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="mb-6 border-b border-border-color" x-data="{ activeTab: 'script' }">
+        <nav class="flex space-x-4">
+            <button @click="activeTab = 'script'" :class="{ 'border-accent-blue text-accent-blue': activeTab === 'script', 'border-transparent': activeTab !== 'script' }" class="py-2 px-1 border-b-2 font-medium">Rendered Script</button>
+            <button @click="activeTab = 'metrics'" :class="{ 'border-accent-blue text-accent-blue': activeTab === 'metrics', 'border-transparent': activeTab !== 'metrics' }" class="py-2 px-1 border-b-2 font-medium">Pipeline Metrics</button>
+            <button @click="activeTab = 'metadata'" :class="{ 'border-accent-blue text-accent-blue': activeTab === 'metadata', 'border-transparent': activeTab !== 'metadata' }" class="py-2 px-1 border-b-2 font-medium">Metadata</button>
+            {% if package.custom_instructions %}
+            <button @click="activeTab = 'notes'" :class="{ 'border-accent-blue text-accent-blue': activeTab === 'notes', 'border-transparent': activeTab !== 'notes' }" class="py-2 px-1 border-b-2 font-medium">Notes</button>
+            {% endif %}
+            {% if rag_documentation %}
+            <button @click="activeTab = 'rag'" :class="{ 'border-accent-blue text-accent-blue': activeTab === 'rag', 'border-transparent': activeTab !== 'rag' }" class="py-2 px-1 border-b-2 font-medium">Knowledge Base</button>
+            {% endif %}
+        </nav>
+
+        <!-- Tab Content -->
+        <div class="pt-6">
+            <div x-show="activeTab === 'script'">
+                <h3 class="text-xl font-bold mb-4">Generated PSADT Script</h3>
+                <pre class="bg-secondary-bg p-4 rounded-md font-mono text-sm overflow-auto max-h-96"><code id="script-content">{{ rendered_script | safe }}</code></pre>
+            </div>
+            <div x-show="activeTab === 'metrics'">
+                <h3 class="text-xl font-bold mb-4">Performance & Validation Metrics</h3>
+                {% if display_metrics %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Overall Performance -->
+                    <div class="glass-card p-4">
+                        <h4 class="font-bold text-accent-green mb-2">Overall Performance</h4>
+                        <dl>{% for key, value in display_metrics.overall_performance.items() %}<dt class="float-left font-bold w-1/2">{{ key|title }}</dt><dd class="overflow-hidden">{{ value }}</dd>{% endfor %}</dl>
+                    </div>
+                    <!-- Stage Times -->
+                    <div class="glass-card p-4">
+                        <h4 class="font-bold text-accent-green mb-2">Stage Times (seconds)</h4>
+                        <dl>{% for stage, time in display_metrics.stage_times.items() %}<dt class="float-left font-bold w-1/2">{{ stage|title|replace('_', ' ') }}</dt><dd class="overflow-hidden">{{ time }}</dd>{% endfor %}</dl>
+                    </div>
+                    <!-- Hallucination Detection -->
+                    <div class="glass-card p-4">
+                        <h4 class="font-bold text-accent-green mb-2">Hallucination Detection</h4>
+                        <dl><dt class="float-left font-bold w-1/2">Detected Issues</dt><dd class="overflow-hidden">{{ display_metrics.hallucination_metrics.detected_count }}</dd></dl>
+                    </div>
+                    <!-- Advisor AI -->
+                    <div class="glass-card p-4">
+                        <h4 class="font-bold text-accent-green mb-2">Advisor AI</h4>
+                        <dl>
+                            <dt class="float-left font-bold w-1/2">Corrections Applied</dt><dd class="overflow-hidden">{{ display_metrics.advisor_metrics.corrections_count }}</dd>
+                            <dt class="float-left font-bold w-1/2">Effectiveness Rate</dt><dd class="overflow-hidden">{{ display_metrics.advisor_metrics.effectiveness_rate }}%</dd>
+                        </dl>
+                    </div>
+                </div>
+                {% else %}<p class="text-text-secondary">No pipeline metrics available.</p>{% endif %}
+            </div>
+            <div x-show="activeTab === 'metadata'">
+                <h3 class="text-xl font-bold mb-4">Extracted Metadata</h3>
+                {% if metadata %}
+                <div class="glass-card p-4">
+                    <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                        {% for key, value in metadata.__dict__.items() if not key.startswith('_') %}
+                        <div><dt class="font-bold text-text-secondary">{{ key }}</dt><dd class="font-mono">{{ value }}</dd></div>
+                        {% endfor %}
+                    </dl>
+                </div>
+                {% else %}<p class="text-text-secondary">No metadata available.</p>{% endif %}
+            </div>
+            {% if package.custom_instructions %}
+            <div x-show="activeTab === 'notes'">
+                <h3 class="text-xl font-bold mb-4">Custom Instructions</h3>
+                <div class="glass-card p-4">
+                    <pre class="font-mono text-sm whitespace-pre-wrap">{{ package.custom_instructions }}</pre>
+                </div>
+            </div>
+            {% endif %}
+            {% if rag_documentation %}
+            <div x-show="activeTab === 'rag'">
+                <h3 class="text-xl font-bold mb-4">Knowledge Base Documentation</h3>
+                <div class="space-y-4">
+                {% if rag_documentation.results %}
+                    {% for result in rag_documentation.results %}
+                    <div class="glass-card p-4">
+                        <div class="text-sm font-bold text-accent-blue mb-2">📄 {{ result.url if result.url else 'PSADT Documentation' }} {% if result.similarity %}<span class="text-text-secondary">(Similarity: {{ "%.2f"|format(result.similarity) }})</span>{% endif %}</div>
+                        <pre class="text-sm bg-secondary-bg p-2 rounded font-mono whitespace-pre-wrap max-h-40 overflow-auto">{{ result.content[:500] }}{% if result.content|length > 500 %}...{% endif %}</pre>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p>No metadata available.</p>
+                {% else %}<pre class="text-sm">{{ rag_documentation }}</pre>{% endif %}
+                </div>
+            </div>
             {% endif %}
         </div>
     </div>
-    <div class="mt-6">
-        <details>
-            <summary class="text-lg font-bold mb-2 cursor-pointer">Rendered Script (Click to expand)</summary>
-            <pre class="bg-gray-200 p-4 rounded-md mt-2"><code id="script-content">{{ rendered_script | safe }}</code></pre>
-        </details>
-
-        {% if rag_documentation %}
-        <details class="mt-4">
-            <summary class="text-lg font-bold mb-2 cursor-pointer">📚 Knowledge Base Documentation (Click to expand)</summary>
-            <div class="bg-blue-50 p-4 rounded-md mt-2">
-                {% if rag_documentation.results %}
-                    <p class="text-sm text-gray-600 mb-3">Retrieved {{ rag_documentation.results|length }} documentation chunks from PSADT knowledge base:</p>
-                    {% for result in rag_documentation.results %}
-                    <div class="mb-4 p-3 bg-white rounded border">
-                        <div class="text-sm font-bold text-blue-800 mb-2">
-                            📄 {{ result.url if result.url else 'PSADT Documentation' }}
-                            {% if result.similarity %}<span class="text-gray-500">(Similarity: {{ "%.2f"|format(result.similarity) }})</span>{% endif %}
-                        </div>
-                        <div class="text-sm bg-gray-100 p-2 rounded">
-                            <pre class="whitespace-pre-wrap">{{ result.content[:500] }}{% if result.content|length > 500 %}...{% endif %}</pre>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <pre class="text-sm">{{ rag_documentation }}</pre>
-                {% endif %}
-            </div>
-        </details>
-        {% endif %}
-        <div class="mt-4">
-            <button id="copy-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Copy</button>
-            <a id="download-link" href="#" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Download</a>
-
-            <a href="{{ url_for('view_logs', package_id=package.id) }}" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded ml-2">🔍 View Logs</a>
-
-        </div>
-    </div>
-    <div class="mt-6">
-        <h3 class="text-lg font-bold mb-2">Pipeline Metrics</h3>
-        {% if display_metrics %}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h4 class="font-bold">Overall Performance</h4>
-                <table class="table-auto w-full">
-                    <tbody>
-                        {% for key, value in display_metrics.overall_performance.items() %}
-                        <tr>
-                            <td class="font-bold pr-4">{{ key | title }}</td>
-                            <td>{{ value }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div>
-                <h4 class="font-bold">Stage Times (seconds)</h4>
-                <table class="table-auto w-full">
-                    <tbody>
-                        {% for stage, time in display_metrics.stage_times.items() %}
-                        <tr>
-                            <td class="font-bold pr-4">{{ stage | title | replace('_', ' ') }}</td>
-                            <td>{{ time }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div>
-                <h4 class="font-bold">Hallucination Detection</h4>
-                <table class="table-auto w-full">
-                    <tbody>
-                        <tr>
-                            <td class="font-bold pr-4">Detected Issues</td>
-                            <td>{{ display_metrics.hallucination_metrics.detected_count }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div>
-                <h4 class="font-bold">Advisor AI</h4>
-                <table class="table-auto w-full">
-                    <tbody>
-                        <tr>
-                            <td class="font-bold pr-4">Corrections Applied</td>
-                            <td>{{ display_metrics.advisor_metrics.corrections_count }}</td>
-                        </tr>
-                        <tr>
-                            <td class="font-bold pr-4">Effectiveness Rate</td>
-                            <td>{{ display_metrics.advisor_metrics.effectiveness_rate }}%</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {% else %}
-        <p>No pipeline metrics available.</p>
-        {% endif %}
-    </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 <script>
 document.getElementById('copy-button').addEventListener('click', function() {
     const scriptContent = document.getElementById('script-content').innerText;
-    navigator.clipboard.writeText(scriptContent).then(function() {
-        alert('Script copied to clipboard!');
-    }, function(err) {
-        console.error('Could not copy text: ', err);
-    });
+    navigator.clipboard.writeText(scriptContent).then(() => alert('Script copied to clipboard!'), () => alert('Failed to copy script.'));
 });
 
-document.getElementById('download-link').addEventListener('click', function() {
+document.getElementById('download-link').addEventListener('click', function(e) {
     const scriptContent = document.getElementById('script-content').innerText;
     const blob = new Blob([scriptContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);

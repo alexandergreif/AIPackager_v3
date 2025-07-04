@@ -3,20 +3,20 @@
 {% block title %}Upload Installer{% endblock %}
 
 {% block content %}
-<div class="bg-white p-8 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-6">Upload Installer File</h2>
+<div class="glass-card p-8 max-w-2xl mx-auto">
+    <h2 class="text-3xl font-bold text-accent-blue mb-6 text-center">Initiate New Package</h2>
     <form enctype="multipart/form-data" id="upload-form">
-        <div class="mb-4">
-            <label for="installer" class="block text-gray-700 text-sm font-bold mb-2">Select file (MSI or EXE):</label>
-            <input type="file" name="installer" id="installer" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" accept=".msi,.exe">
+        <div class="mb-6">
+            <label for="installer" class="block text-text-secondary text-sm font-bold mb-2">Select Installer (MSI or EXE):</label>
+            <input type="file" name="installer" id="installer" class="w-full text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-secondary-bg file:text-text-primary hover:file:bg-accent-purple" accept=".msi,.exe" required>
         </div>
-        <div class="mb-4">
-            <label for="custom_instructions" class="block text-gray-700 text-sm font-bold mb-2">Notes:</label>
-            <textarea name="custom_instructions" id="custom_instructions" rows="4" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+        <div class="mb-6">
+            <label for="custom_instructions" class="block text-text-secondary text-sm font-bold mb-2">Custom Instructions & Notes:</label>
+            <textarea name="custom_instructions" id="custom_instructions" rows="4" class="w-full p-3 bg-secondary-bg border border-border-color rounded-md focus:outline-none focus:ring-2 focus:ring-accent-blue" placeholder="e.g., install silently, add desktop shortcut..."></textarea>
         </div>
-        <div class="flex items-center justify-between">
-            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                Upload and Generate Script
+        <div class="text-center">
+            <button type="submit" class="btn-primary">
+                Upload & Generate Script
             </button>
         </div>
     </form>
@@ -26,6 +26,9 @@
 document.getElementById('upload-form').addEventListener('submit', function(event) {
     event.preventDefault();
     const formData = new FormData(this);
+    const submitButton = this.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Uploading...';
 
     fetch('/api/packages', {
         method: 'POST',
@@ -37,11 +40,15 @@ document.getElementById('upload-form').addEventListener('submit', function(event
             window.location.href = `/progress/${data.package_id}`;
         } else {
             alert('Error: ' + (data.error || 'Unknown error'));
+            submitButton.disabled = false;
+            submitButton.textContent = 'Upload & Generate Script';
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('An error occurred during upload.');
+        submitButton.disabled = false;
+        submitButton.textContent = 'Upload & Generate Script';
     });
 });
 </script>

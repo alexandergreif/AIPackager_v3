@@ -1,0 +1,6175 @@
+---
+id: application-functions
+title: Application Functions Reference
+hide_title: false
+hide_table_of_contents: false
+---
+
+# AIPackager v3 - Application Functions Reference
+
+This document provides detailed information about the public Python functions and methods used within the AIPackager v3 application. It serves as a comprehensive reference for developers to understand the internal workings and API of various components.
+
+---
+
+## `create_app`
+
+## SYNOPSIS
+
+Creates and configures the Flask application instance.
+
+## SYNTAX
+
+```python
+create_app(config: Optional[dict] = None) -> Tuple[Flask, SocketIO]
+```
+
+## DESCRIPTION
+
+This function serves as the Flask application factory for AIPackager v3. It initializes the Flask app, applies an optional configuration, initializes Flask extensions like SocketIO, registers all application routes, and attempts to resume any pending jobs on startup.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+app, socketio = create_app()
+```
+
+Creates a Flask application instance with default configuration and initializes SocketIO.
+
+### EXAMPLE 2
+
+```python
+custom_config = {"DEBUG": True, "SECRET_KEY": "my-secret"}
+app, socketio = create_app(config=custom_config)
+```
+
+Creates a Flask application instance with a custom configuration dictionary.
+
+## PARAMETERS
+
+### -config
+
+Optional configuration dictionary to apply to the Flask application. This can include settings like `DEBUG`, `SECRET_KEY`, `DATABASE_URL`, etc.
+
+```yaml
+Type: Optional[dict]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### Tuple[Flask, SocketIO]
+
+Returns a tuple containing the configured Flask application instance and the SocketIO instance.
+
+## NOTES
+This function is the entry point for creating the Flask application.
+It also attempts to resume any interrupted package processing jobs on startup.
+
+Tags: Flask, Application, Initialization, SocketIO, Workflow<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+## RELATED LINKS
+
+[https://flask.palletsprojects.com/en/latest/patterns/appfactories/](https://flask.palletsprojects.com/en/latest/patterns/appfactories/)
+[https://flask-socketio.readthedocs.io/en/latest/](https://flask-socketio.readthedocs.io/en/latest/)
+
+---
+
+## `Config`
+
+## SYNOPSIS
+
+Base configuration class for the AIPackager application.
+
+## SYNTAX
+
+```python
+class Config:
+    SECRET_KEY: str
+    DATABASE_URL: str
+    UPLOAD_FOLDER: str
+    MAX_CONTENT_LENGTH: int
+    AI_MODEL: str
+```
+
+## DESCRIPTION
+
+This class defines the base configuration settings for the AIPackager v3 application. It loads environment variables and provides default values for critical settings such as `SECRET_KEY`, `DATABASE_URL`, `UPLOAD_FOLDER`, `MAX_CONTENT_LENGTH`, and `AI_MODEL`.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+# Accessing configuration values
+from src.app.config import Config
+
+secret_key = Config.SECRET_KEY
+database_url = Config.DATABASE_URL
+```
+
+Accesses the `SECRET_KEY` and `DATABASE_URL` from the base `Config` class.
+
+## PARAMETERS
+
+### -SECRET_KEY
+
+The secret key used for session management and cryptographic operations. Loaded from the `SECRET_KEY` environment variable or defaults to "dev-secret-key".
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: "dev-secret-key"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DATABASE_URL
+
+The SQLAlchemy database URL. Loaded from the `DATABASE_URL` environment variable or defaults to "sqlite:///instance/aipackager.db".
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: "sqlite:///instance/aipackager.db"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -UPLOAD_FOLDER
+
+The directory where uploaded files will be stored. Loaded from the `UPLOAD_FOLDER` environment variable or defaults to "instance/uploads".
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: "instance/uploads"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MAX_CONTENT_LENGTH
+
+The maximum allowed size for uploaded files in bytes. Loaded from the `MAX_CONTENT_LENGTH` environment variable or defaults to 209715200 (200 MB).
+
+```yaml
+Type: int
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: 209715200
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AI_MODEL
+
+The name of the AI model to be used for generation tasks. Loaded from the `AI_MODEL` environment variable or defaults to "gpt-4o-mini".
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: "gpt-4o-mini"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This class does not generate any direct output. Its attributes are accessed directly.
+
+## NOTES
+This class serves as the foundation for environment-specific configurations (Production, Development, Testing).
+It ensures that sensitive information and configurable paths are managed via environment variables.
+
+Tags: Configuration, Environment Variables, Flask<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `ProductionConfig`
+
+## SYNOPSIS
+
+Production-specific configuration settings.
+
+## SYNTAX
+
+```python
+class ProductionConfig(Config):
+    DEBUG: bool
+    TESTING: bool
+```
+
+## DESCRIPTION
+
+This class inherits from `Config` and sets `DEBUG` and `TESTING` to `False`, which are typical settings for a production environment.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.config import ProductionConfig
+
+is_debug = ProductionConfig.DEBUG # This will be False
+```
+
+Accesses the `DEBUG` setting for the production configuration.
+
+## PARAMETERS
+
+### -DEBUG
+
+Indicates whether debug mode is enabled. Set to `False` for production.
+
+```yaml
+Type: bool
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -TESTING
+
+Indicates whether testing mode is enabled. Set to `False` for production.
+
+```yaml
+Type: bool
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This class does not generate any direct output. Its attributes are accessed directly.
+
+## NOTES
+This configuration is intended for live deployments where debugging features should be disabled for security and performance.
+
+Tags: Configuration, Production, Flask<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `DevelopmentConfig`
+
+## SYNOPSIS
+
+Development-specific configuration settings.
+
+## SYNTAX
+
+```python
+class DevelopmentConfig(Config):
+    DEBUG: bool
+    TESTING: bool
+```
+
+## DESCRIPTION
+
+This class inherits from `Config` and sets `DEBUG` to `True` and `TESTING` to `False`, which are typical settings for a development environment to enable debugging features.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.config import DevelopmentConfig
+
+is_debug = DevelopmentConfig.DEBUG # This will be True
+```
+
+Accesses the `DEBUG` setting for the development configuration.
+
+## PARAMETERS
+
+### -DEBUG
+
+Indicates whether debug mode is enabled. Set to `True` for development.
+
+```yaml
+Type: bool
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: True
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -TESTING
+
+Indicates whether testing mode is enabled. Set to `False` for development.
+
+```yaml
+Type: bool
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This class does not generate any direct output. Its attributes are accessed directly.
+
+## NOTES
+This configuration is designed for local development, providing verbose logging and debugging capabilities.
+
+Tags: Configuration, Development, Flask<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `TestingConfig`
+
+## SYNOPSIS
+
+Testing-specific configuration settings.
+
+## SYNTAX
+
+```python
+class TestingConfig(Config):
+    TESTING: bool
+    DATABASE_URL: str
+```
+
+## DESCRIPTION
+
+This class inherits from `Config` and sets `TESTING` to `True`. It also overrides `DATABASE_URL` to use an in-memory SQLite database, which is ideal for isolated and fast tests.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.config import TestingConfig
+
+is_testing = TestingConfig.TESTING # This will be True
+db_url = TestingConfig.DATABASE_URL # This will be 'sqlite:///:memory:'
+```
+
+Accesses the `TESTING` and `DATABASE_URL` settings for the testing configuration.
+
+## PARAMETERS
+
+### -TESTING
+
+Indicates whether testing mode is enabled. Set to `True` for testing.
+
+```yaml
+Type: bool
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: True
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DATABASE_URL
+
+The SQLAlchemy database URL for testing. Overridden to use an in-memory SQLite database (`sqlite:///:memory:`).
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: "sqlite:///:memory:"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This class does not generate any direct output. Its attributes are accessed directly.
+
+## NOTES
+This configuration is crucial for running automated tests, ensuring that tests do not interfere with development or production databases.
+
+Tags: Configuration, Testing, Flask, Database<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `MCPConfigLoader`
+
+## SYNOPSIS
+
+Configuration loader for MCP servers.
+
+## SYNTAX
+
+```python
+class MCPConfigLoader:
+    def __init__(self, config_path: str = "mcp_config.json")
+    def get_server_config(self, server_name: str) -> Dict[str, Any]
+    def is_server_enabled(self, server_name: str) -> bool
+    def get_server_url(self, server_name: str) -> str
+    def get_server_env(self, server_name: str) -> Dict[str, str]
+```
+
+## DESCRIPTION
+
+This class is responsible for loading and parsing the `mcp_config.json` file, which defines the configuration for various Model Context Protocol (MCP) servers. It supports environment variable substitution within the configuration file.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.config import MCPConfigLoader
+
+loader = MCPConfigLoader()
+crawl4ai_config = loader.get_server_config("crawl4ai-rag")
+```
+
+Initializes the loader and retrieves the configuration for the "crawl4ai-rag" MCP server.
+
+### EXAMPLE 2
+
+```python
+from src.app.config import MCPConfigLoader
+
+loader = MCPConfigLoader(config_path="custom_mcp_config.json")
+is_enabled = loader.is_server_enabled("my-custom-server")
+```
+
+Initializes the loader with a custom configuration file path and checks if a server is enabled.
+
+## PARAMETERS
+
+### -config_path
+
+Path to the MCP configuration file. Defaults to "mcp_config.json".
+
+```yaml
+Type: str
+Parameter Sets: __init__
+Aliases:
+
+Required: False
+Position: 1
+Default value: "mcp_config.json"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -server_name
+
+The name of the MCP server for which to retrieve configuration or status.
+
+```yaml
+Type: str
+Parameter Sets: get_server_config, is_server_enabled, get_server_url, get_server_env
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### Dict[str, Any]
+
+`get_server_config` returns a dictionary containing the server configuration.
+
+### bool
+
+`is_server_enabled` returns `True` if the server is enabled, `False` otherwise.
+
+### str
+
+`get_server_url` returns the URL string for the server.
+
+### Dict[str, str]
+
+`get_server_env` returns a dictionary of environment variables for the server.
+
+## NOTES
+This class is essential for dynamically configuring MCP server connections based on a JSON file, allowing for flexible deployment and integration.
+It handles `FileNotFoundError` and `json.JSONDecodeError` internally during loading.
+
+Tags: Configuration, MCP, Server, Environment Variables<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `get_crawl_logger`
+
+## SYNOPSIS
+
+Gets a logger instance specifically configured for crawl operations.
+
+## SYNTAX
+
+```python
+get_crawl_logger() -> logging.Logger
+```
+
+## DESCRIPTION
+
+This function provides a singleton logger for `crawl4ai` operations. It ensures that all crawl-related logs are directed to a dedicated file (`instance/logs/crawl4ai.log`) with a rotating file handler to manage log file size.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.crawl_logger import get_crawl_logger
+
+logger = get_crawl_logger()
+logger.info("Starting a new crawl operation.")
+```
+
+Retrieves the crawl logger and logs an informational message.
+
+## PARAMETERS
+
+### None
+
+This function has no parameters.
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### logging.Logger
+
+Returns a configured `logging.Logger` instance for crawl operations.
+
+## NOTES
+The logger is configured to write to `instance/logs/crawl4ai.log` with a maximum size of 10MB and 10 backup files.
+It ensures that only one handler is added to the logger to prevent duplicate log entries.
+
+Tags: Logging, Crawl, `crawl4ai-rag`<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `to_uuid`
+
+## SYNOPSIS
+
+Coerces a string or UUID into a UUID instance.
+
+## SYNTAX
+
+```python
+to_uuid(val: Union[str, UUID]) -> UUID
+```
+
+## DESCRIPTION
+
+This helper function converts a given value, which can be either a string representation of a UUID or an existing UUID object, into a `UUID` instance. It is useful for ensuring consistent UUID handling across the application.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from uuid import UUID
+from src.app.database import to_uuid
+
+uuid_str = "12345678-1234-5678-1234-567812345678"
+uuid_obj = to_uuid(uuid_str) # Returns a UUID object
+```
+
+Converts a UUID string to a UUID object.
+
+### EXAMPLE 2
+
+```python
+from uuid import uuid4
+from src.app.database import to_uuid
+
+existing_uuid = uuid4()
+same_uuid_obj = to_uuid(existing_uuid) # Returns the same UUID object
+```
+
+Passes an existing UUID object through the function, returning the same object.
+
+## PARAMETERS
+
+### -val
+
+The value to convert, which can be a string representation of a UUID or a UUID object.
+
+```yaml
+Type: Union[str, UUID]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### UUID
+
+Returns a `UUID` instance.
+
+## NOTES
+This function is primarily used internally by the `DatabaseService` and related database helper functions to standardize UUID handling.
+
+Tags: Utility, UUID, Type Conversion<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `DatabaseService`
+
+## SYNOPSIS
+
+Service for database operations.
+
+## SYNTAX
+
+```python
+class DatabaseService:
+    def __init__(self, database_url: str)
+    def get_session(self) -> Session
+    def create_tables(self) -> None
+```
+
+## DESCRIPTION
+
+This class provides a centralized service for managing database connections and operations using SQLAlchemy. It initializes the database engine and provides methods to obtain database sessions and create tables.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.database import DatabaseService
+
+db_service = DatabaseService("sqlite:///test.db")
+session = db_service.get_session()
+# Use session for database operations
+session.close()
+```
+
+Initializes the database service with a SQLite database and obtains a session.
+
+### EXAMPLE 2
+
+```python
+from src.app.database import DatabaseService
+
+db_service = DatabaseService("sqlite:///instance/aipackager.db")
+db_service.create_tables()
+```
+
+Initializes the database service and creates all defined tables.
+
+## PARAMETERS
+
+### -database_url
+
+The SQLAlchemy database URL string (e.g., "sqlite:///instance/aipackager.db", "postgresql://user:pass@host/db").
+
+```yaml
+Type: str
+Parameter Sets: __init__
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### Session
+
+`get_session` returns a SQLAlchemy `Session` object.
+
+### None
+
+`create_tables` does not return any value.
+
+## NOTES
+It is crucial to close sessions obtained from `get_session()` using `session.close()` in a `finally` block to release database resources.
+
+Tags: Database, SQLAlchemy, Session Management<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `get_database_service`
+
+## SYNOPSIS
+
+Gets the database service instance.
+
+## SYNTAX
+
+```python
+get_database_service() -> DatabaseService
+```
+
+## DESCRIPTION
+
+This function provides a singleton instance of `DatabaseService`. It checks if a `database_service` attribute already exists on the Flask `current_app` object. If not, it initializes a new `DatabaseService` instance, configures its database URL (defaulting to an SQLite database in the instance folder if `DATABASE_URL` is not set in app config), and creates all necessary database tables.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from flask import Flask
+from src.app.database import get_database_service
+
+app = Flask(__name__)
+with app.app_context():
+    db_service = get_database_service()
+    # db_service is now available and tables are created
+```
+
+Obtains the database service instance within a Flask application context.
+
+## PARAMETERS
+
+### None
+
+This function has no parameters.
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### DatabaseService
+
+Returns the singleton `DatabaseService` instance.
+
+## NOTES
+This function ensures that only one `DatabaseService` instance is created per application context, preventing multiple database connections and simplifying resource management.
+
+Tags: Database, Singleton, Flask, SQLAlchemy<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `create_package`
+
+## SYNOPSIS
+
+Creates a new package record in the database.
+
+## SYNTAX
+
+```python
+create_package(filename: str, file_path: str, custom_instructions: Optional[str] = None) -> Package
+```
+
+## DESCRIPTION
+
+This function creates a new `Package` entry in the database with the provided filename, file path, and optional custom instructions. It commits the new record to the database and refreshes the object to ensure all database-generated fields (like `id` and `upload_time`) are populated.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.database import create_package
+# Assuming Flask app context is active
+package = create_package("installer.msi", "/path/to/installer.msi", "Install silently")
+print(f"Created package with ID: {package.id}")
+```
+
+Creates a new package record with custom instructions.
+
+### EXAMPLE 2
+
+```python
+from src.app.database import create_package
+# Assuming Flask app context is active
+package = create_package("app.exe", "/path/to/app.exe")
+print(f"Created package with filename: {package.filename}")
+```
+
+Creates a new package record without custom instructions.
+
+## PARAMETERS
+
+### -filename
+
+The original filename of the uploaded installer.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -file_path
+
+The absolute path where the uploaded file is stored on the filesystem.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -custom_instructions
+
+Optional custom instructions provided by the user for script generation.
+
+```yaml
+Type: Optional[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### Package
+
+Returns the newly created `Package` instance.
+
+## NOTES
+This function handles its own database session, ensuring proper commit and closure.
+
+Tags: Database, Package Management, CRUD<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `get_package`
+
+## SYNOPSIS
+
+Gets a package by its ID.
+
+## SYNTAX
+
+```python
+get_package(package_id: Union[str, UUID]) -> Optional[Package]
+```
+
+## DESCRIPTION
+
+This function retrieves a `Package` record from the database using its UUID. It can accept either a string representation of the UUID or a `UUID` object directly. If the package is found, its associated metadata is eagerly loaded.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.database import get_package
+# Assuming Flask app context is active
+package_id_str = "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+package = get_package(package_id_str)
+if package:
+    print(f"Found package: {package.filename}")
+```
+
+Retrieves a package using its ID as a string.
+
+### EXAMPLE 2
+
+```python
+from uuid import UUID
+from src.app.database import get_package
+# Assuming Flask app context is active
+package_id_obj = UUID("a1b2c3d4-e5f6-7890-1234-567890abcdef")
+package = get_package(package_id_obj)
+if package:
+    print(f"Package status: {package.status}")
+```
+
+Retrieves a package using a UUID object.
+
+## PARAMETERS
+
+### -package_id
+
+The UUID of the package, either as a string or a `UUID` object.
+
+```yaml
+Type: Union[str, UUID]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### Optional[Package]
+
+Returns the `Package` instance if found, otherwise `None`.
+
+## NOTES
+This function handles its own database session, ensuring proper closure.
+It includes error handling for invalid UUID strings, returning `None` in such cases.
+
+Tags: Database, Package Management, CRUD<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `update_package_status`
+
+## SYNOPSIS
+
+Updates the status of a package in the database.
+
+## SYNTAX
+
+```python
+update_package_status(package_id: Union[str, UUID], status: str) -> bool
+```
+
+## DESCRIPTION
+
+This function updates the `status` field of a specific `Package` record in the database. It takes the package's UUID and the new status string as input.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.database import update_package_status
+# Assuming Flask app context is active
+package_id = "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+success = update_package_status(package_id, "processing")
+if success:
+    print("Package status updated to 'processing'.")
+```
+
+Updates a package's status to "processing".
+
+### EXAMPLE 2
+
+```python
+from src.app.database import update_package_status
+# Assuming Flask app context is active
+package_id = "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+success = update_package_status(package_id, "failed")
+if not success:
+    print("Failed to update package status (package not found or invalid ID).")
+```
+
+Attempts to update a package's status to "failed".
+
+## PARAMETERS
+
+### -package_id
+
+The UUID of the package to update, either as a string or a `UUID` object.
+
+```yaml
+Type: Union[str, UUID]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -status
+
+The new status string for the package (e.g., "uploading", "processing", "completed", "failed").
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### bool
+
+Returns `True` if the package status was updated successfully, `False` otherwise (e.g., if the package was not found or the ID was invalid).
+
+## NOTES
+This function handles its own database session, ensuring proper commit and closure.
+
+Tags: Database, Package Management, CRUD<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `create_metadata`
+
+## SYNOPSIS
+
+Creates metadata for a package in the database.
+
+## SYNTAX
+
+```python
+create_metadata(package_id: Union[str, UUID], **metadata_fields: Any) -> Metadata
+```
+
+## DESCRIPTION
+
+This function creates a new `Metadata` record associated with a specific `Package` using its UUID. It accepts arbitrary keyword arguments (`**metadata_fields`) to populate the metadata fields. The new record is committed to the database and refreshed.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.database import create_metadata
+# Assuming Flask app context is active and package_id is valid
+metadata = create_metadata(
+    "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    product_name="My App",
+    version="1.0.0",
+    publisher="My Company"
+)
+print(f"Created metadata for product: {metadata.product_name}")
+```
+
+Creates a metadata record with product name, version, and publisher.
+
+## PARAMETERS
+
+### -package_id
+
+The UUID of the package to associate the metadata with, either as a string or a `UUID` object.
+
+```yaml
+Type: Union[str, UUID]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -metadata_fields
+
+Arbitrary keyword arguments representing the metadata fields and their values (e.g., `product_name="App"`, `version="1.0"`).
+
+```yaml
+Type: Any
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### Metadata
+
+Returns the newly created `Metadata` instance.
+
+## NOTES
+This function handles its own database session, ensuring proper commit and closure.
+
+Tags: Database, Metadata, CRUD<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `get_all_packages`
+
+## SYNOPSIS
+
+Gets all package records from the database.
+
+## SYNTAX
+
+```python
+get_all_packages() -> list[Package]
+```
+
+## DESCRIPTION
+
+This function retrieves all `Package` records stored in the database, ordered by their `upload_time` in descending order (most recent first). It ensures that the associated metadata for each package is eagerly loaded.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.database import get_all_packages
+# Assuming Flask app context is active
+all_packages = get_all_packages()
+for package in all_packages:
+    print(f"Package: {package.filename}, Status: {package.status}")
+```
+
+Retrieves and prints information for all packages.
+
+## PARAMETERS
+
+### None
+
+This function has no parameters.
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### list[Package]
+
+Returns a list of `Package` instances.
+
+## NOTES
+This function handles its own database session, ensuring proper closure.
+
+Tags: Database, Package Management, CRUD<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `save_uploaded_file`
+
+## SYNOPSIS
+
+Saves an uploaded file with UUID naming.
+
+## SYNTAX
+
+```python
+save_uploaded_file(file: FileStorage, instance_dir: Path) -> Tuple[UUID, str]
+```
+
+## DESCRIPTION
+
+This function securely saves an uploaded file to the specified instance directory. It generates a unique UUID for the file, prepends it to a secured version of the original filename, and ensures the target upload directory exists.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from werkzeug.datastructures import FileStorage
+from pathlib import Path
+from src.app.file_persistence import save_uploaded_file
+
+# Simulate a FileStorage object
+# with open("test_installer.msi", "rb") as f:
+#     file_storage = FileStorage(f, filename="test_installer.msi")
+
+# instance_path = Path("/tmp/my_app_instance")
+# file_id, file_path = save_uploaded_file(file_storage, instance_path)
+# print(f"File saved: {file_path} with ID: {file_id}")
+```
+
+Saves a simulated uploaded file to a temporary instance directory.
+
+## PARAMETERS
+
+### -file
+
+The uploaded file object from a Flask request (`werkzeug.datastructures.FileStorage`).
+
+```yaml
+Type: FileStorage
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -instance_dir
+
+The `Path` object representing the application's instance directory where the 'uploads' folder will be created.
+
+```yaml
+Type: Path
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### Tuple[UUID, str]
+
+Returns a tuple containing the generated `UUID` for the file and the absolute path to the saved file as a string.
+
+## NOTES
+The function uses `secure_filename` to prevent directory traversal attacks.
+The saved file will have a name like `UUID_original_filename.ext`.
+
+Tags: File Management, Upload, Security<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `get_file_path`
+
+## SYNOPSIS
+
+Gets the file path for a given UUID and filename.
+
+## SYNTAX
+
+```python
+get_file_path(file_id: UUID, filename: str, instance_dir: Path) -> str
+```
+
+## DESCRIPTION
+
+This function constructs the expected absolute file path for a previously saved uploaded file, given its UUID, original filename, and the application's instance directory. It uses the same naming convention as `save_uploaded_file`.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from uuid import uuid4
+from pathlib import Path
+from src.app.file_persistence import get_file_path
+
+file_id = uuid4()
+original_filename = "my_app.msi"
+instance_path = Path("/tmp/my_app_instance")
+path = get_file_path(file_id, original_filename, instance_path)
+print(f"Expected file path: {path}")
+# Expected: /tmp/my_app_instance/uploads/{uuid}_my_app.msi
+```
+
+Constructs a file path for a given file ID and name.
+
+## PARAMETERS
+
+### -file_id
+
+The `UUID` of the file.
+
+```yaml
+Type: UUID
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -filename
+
+The original filename of the file.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -instance_dir
+
+The `Path` object representing the application's instance directory.
+
+```yaml
+Type: Path
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### str
+
+Returns the absolute path to the file as a string.
+
+## NOTES
+This function does not check if the file actually exists on the filesystem. It only constructs the path.
+
+Tags: File Management, Path Construction<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `delete_file`
+
+## SYNOPSIS
+
+Deletes a file from the filesystem.
+
+## SYNTAX
+
+```python
+delete_file(file_path: str) -> bool
+```
+
+## DESCRIPTION
+
+This function attempts to delete a file at the specified absolute path from the filesystem. It checks for the file's existence before attempting deletion.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from pathlib import Path
+from src.app.file_persistence import delete_file
+
+# Create a dummy file
+# dummy_file = Path("/tmp/test_delete.txt")
+# dummy_file.write_text("This is a test file.")
+
+# success = delete_file(str(dummy_file))
+# if success:
+#     print(f"File {dummy_file} deleted successfully.")
+```
+
+Deletes a file and reports success.
+
+## PARAMETERS
+
+### -file_path
+
+The absolute path to the file to delete.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### bool
+
+Returns `True` if the file was successfully deleted, `False` otherwise (e.g., if the file did not exist or an `OSError` occurred).
+
+## NOTES
+This function handles `OSError` exceptions during deletion.
+
+Tags: File Management, Deletion<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `get_file_size`
+
+## SYNOPSIS
+
+Gets the size of a file in bytes.
+
+## SYNTAX
+
+```python
+get_file_size(file_path: str) -> int
+```
+
+## DESCRIPTION
+
+This function returns the size of the file at the specified absolute path in bytes. If the file does not exist or an error occurs, it returns 0.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from pathlib import Path
+from src.app.file_persistence import get_file_size
+
+# Create a dummy file
+# dummy_file = Path("/tmp/test_size.txt")
+# dummy_file.write_text("Hello World") # 11 bytes
+
+# size = get_file_size(str(dummy_file))
+# print(f"File size: {size} bytes") # Expected: 11
+```
+
+Gets the size of a file.
+
+## PARAMETERS
+
+### -file_path
+
+The absolute path to the file.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### int
+
+Returns the file size in bytes, or 0 if the file does not exist or an error occurs.
+
+## NOTES
+This function handles `OSError` exceptions during size retrieval.
+
+Tags: File Management, File Information<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `file_exists`
+
+## SYNOPSIS
+
+Checks if a file exists.
+
+## SYNTAX
+
+```python
+file_exists(file_path: str) -> bool
+```
+
+## DESCRIPTION
+
+This function checks whether a file exists at the specified absolute path and is indeed a file (not a directory).
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from pathlib import Path
+from src.app.file_persistence import file_exists
+
+# Create a dummy file
+# dummy_file = Path("/tmp/test_exists.txt")
+# dummy_file.write_text("Content")
+
+# exists = file_exists(str(dummy_file))
+# print(f"File exists: {exists}") # Expected: True
+```
+
+Checks if a file exists.
+
+## PARAMETERS
+
+### -file_path
+
+The absolute path to the file.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### bool
+
+Returns `True` if the file exists and is a file, `False` otherwise.
+
+## NOTES
+This function is a wrapper around `os.path.exists` and `os.path.isfile`.
+
+Tags: File Management, File Information<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `CMTraceFormatter`
+
+## SYNOPSIS
+
+Custom formatter for CMTrace log format.
+
+## SYNTAX
+
+```python
+class CMTraceFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str
+```
+
+## DESCRIPTION
+
+This class extends `logging.Formatter` to format log records into the specific CMTrace log format. This format is commonly used in Microsoft System Center Configuration Manager (SCCM) logs, making the application's logs easily viewable with CMTrace.exe.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+import logging
+from src.app.logging_cmtrace import CMTraceFormatter
+
+logger = logging.getLogger("my_logger")
+handler = logging.StreamHandler()
+formatter = CMTraceFormatter()
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
+
+logger.info("This is a test message.", extra={"component": "MyComponent", "context": "Init"})
+# Expected CMTrace format output
+```
+
+Sets up a logger to use the `CMTraceFormatter` and logs a message.
+
+## PARAMETERS
+
+### -record
+
+The `logging.LogRecord` object to format.
+
+```yaml
+Type: logging.LogRecord
+Parameter Sets: format
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### str
+
+`format` returns the formatted log message string in CMTrace format.
+
+## NOTES
+The formatter extracts timestamp, date, component, context, log type (info, warning, error), thread ID, and file/line information from the log record.
+Log levels are mapped to CMTrace types: INFO/DEBUG=1, WARNING=2, ERROR/CRITICAL=3.
+
+Tags: Logging, CMTrace, Formatting<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `setup_cmtrace_logging`
+
+## SYNOPSIS
+
+Sets up CMTrace logging for the application.
+
+## SYNTAX
+
+```python
+setup_cmtrace_logging(log_file: Optional[str] = None, component: str = "AIPackager", level: int = logging.INFO, instance_dir: Optional[Path] = None) -> logging.Logger
+```
+
+## DESCRIPTION
+
+This function configures the Python logging system to output logs in the CMTrace format. It creates a file handler that writes to a specified log file (defaulting to `instance/logs/aipackager.log`) and adds a console handler for development visibility. It also sets the logging level and component name.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+import logging
+from src.app.logging_cmtrace import setup_cmtrace_logging
+
+logger = setup_cmtrace_logging(level=logging.DEBUG, component="MyApp")
+logger.info("Application started.")
+```
+
+Sets up CMTrace logging with a custom component name and debug level.
+
+### EXAMPLE 2
+
+```python
+from pathlib import Path
+from src.app.logging_cmtrace import setup_cmtrace_logging
+
+instance_path = Path("/tmp/my_instance")
+logger = setup_cmtrace_logging(instance_dir=instance_path)
+logger.error("An error occurred.")
+```
+
+Sets up CMTrace logging to a specific instance directory.
+
+## PARAMETERS
+
+### -log_file
+
+Optional path to the log file. If `None`, it defaults to `instance/logs/aipackager.log`.
+
+```yaml
+Type: Optional[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -component
+
+The component name to be included in the CMTrace log entries. Defaults to "AIPackager".
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: "AIPackager"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -level
+
+The minimum logging level to capture (e.g., `logging.INFO`, `logging.DEBUG`, `logging.ERROR`). Defaults to `logging.INFO`.
+
+```yaml
+Type: int
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: logging.INFO
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -instance_dir
+
+Optional `Path` object to the application's instance directory. Used to determine the default log file location if `log_file` is not provided.
+
+```yaml
+Type: Optional[Path]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### logging.Logger
+
+Returns the configured `logging.Logger` instance.
+
+## NOTES
+This function ensures that log handlers are not duplicated if called multiple times for the same logger.
+It creates the log directory if it does not exist.
+
+Tags: Logging, CMTrace, Configuration<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `get_cmtrace_logger`
+
+## SYNOPSIS
+
+Gets or creates a CMTrace logger.
+
+## SYNTAX
+
+```python
+get_cmtrace_logger(component: str = "AIPackager") -> logging.Logger
+```
+
+## DESCRIPTION
+
+This function retrieves an existing logger instance by its component name or creates a new one if it doesn't exist. It's a convenience function to get a logger that is expected to be configured for CMTrace output (e.g., by `setup_cmtrace_logging`).
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.logging_cmtrace import get_cmtrace_logger
+
+logger = get_cmtrace_logger("MyModule")
+logger.info("This message will go to the 'MyModule' logger.")
+```
+
+Retrieves a logger for a specific component.
+
+## PARAMETERS
+
+### -component
+
+The name of the component for which to get the logger. Defaults to "AIPackager".
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: "AIPackager"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### logging.Logger
+
+Returns the `logging.Logger` instance.
+
+## NOTES
+This function does not configure the logger; it only retrieves it. Configuration should be done once at application startup using `setup_cmtrace_logging`.
+
+Tags: Logging, CMTrace, Utility<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `log_with_context`
+
+## SYNOPSIS
+
+Logs a message with CMTrace context.
+
+## SYNTAX
+
+```python
+log_with_context(logger: logging.Logger, level: int, message: str, context: str = "", component: Optional[str] = None) -> None
+```
+
+## DESCRIPTION
+
+This helper function logs a message to the provided logger at a specified level, including additional context information. It allows for dynamic context and an optional component name override, which are then formatted by `CMTraceFormatter`.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+import logging
+from src.app.logging_cmtrace import get_cmtrace_logger, log_with_context
+
+logger = get_cmtrace_logger("Database")
+log_with_context(logger, logging.INFO, "Connection established.", context="DB_INIT")
+```
+
+Logs an informational message with a specific context.
+
+### EXAMPLE 2
+
+```python
+import logging
+from src.app.logging_cmtrace import get_cmtrace_logger, log_with_context
+
+logger = get_cmtrace_logger() # Default AIPackager logger
+log_with_context(logger, logging.ERROR, "Failed to save data.", context="SAVE_ERROR", component="DataService")
+```
+
+Logs an error message with context and overrides the component name.
+
+## PARAMETERS
+
+### -logger
+
+The `logging.Logger` instance to use for logging.
+
+```yaml
+Type: logging.Logger
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -level
+
+The logging level (e.g., `logging.INFO`, `logging.WARNING`, `logging.ERROR`).
+
+```yaml
+Type: int
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -message
+
+The log message string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -context
+
+Optional context string to be included in the CMTrace log entry. Defaults to an empty string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: ""
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -component
+
+Optional component name override for this specific log entry. If `None`, the logger's default component name is used.
+
+```yaml
+Type: Optional[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This function does not return any value.
+
+## NOTES
+This function is a low-level helper for logging with CMTrace-specific context. Convenience functions like `log_info`, `log_warning`, `log_error`, and `log_debug` are available for common use cases.
+
+Tags: Logging, CMTrace, Context<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `log_info`
+
+## SYNOPSIS
+
+Logs an informational message with context.
+
+## SYNTAX
+
+```python
+log_info(logger: logging.Logger, message: str, context: str = "") -> None
+```
+
+## DESCRIPTION
+
+This is a convenience function to log an informational message (`logging.INFO` level) using `log_with_context`.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+import logging
+from src.app.logging_cmtrace import get_cmtrace_logger, log_info
+
+logger = get_cmtrace_logger("FileHandler")
+log_info(logger, "File processed successfully.", context="FILE_PROCESS")
+```
+
+Logs an informational message.
+
+## PARAMETERS
+
+### -logger
+
+The `logging.Logger` instance to use.
+
+```yaml
+Type: logging.Logger
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -message
+
+The log message string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -context
+
+Optional context string. Defaults to an empty string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: ""
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This function does not return any value.
+
+## NOTES
+This function simplifies logging common informational events.
+
+Tags: Logging, CMTrace, Info<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `log_warning`
+
+## SYNOPSIS
+
+Logs a warning message with context.
+
+## SYNTAX
+
+```python
+log_warning(logger: logging.Logger, message: str, context: str = "") -> None
+```
+
+## DESCRIPTION
+
+This is a convenience function to log a warning message (`logging.WARNING` level) using `log_with_context`.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+import logging
+from src.app.logging_cmtrace import get_cmtrace_logger, log_warning
+
+logger = get_cmtrace_logger("Validation")
+log_warning(logger, "Input data is missing a field.", context="DATA_VALIDATION")
+```
+
+Logs a warning message.
+
+## PARAMETERS
+
+### -logger
+
+The `logging.Logger` instance to use.
+
+```yaml
+Type: logging.Logger
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -message
+
+The log message string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -context
+
+Optional context string. Defaults to an empty string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: ""
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This function does not return any value.
+
+## NOTES
+This function simplifies logging non-critical issues that should be noted.
+
+Tags: Logging, CMTrace, Warning<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `log_error`
+
+## SYNOPSIS
+
+Logs an error message with context.
+
+## SYNTAX
+
+```python
+log_error(logger: logging.Logger, message: str, context: str = "") -> None
+```
+
+## DESCRIPTION
+
+This is a convenience function to log an error message (`logging.ERROR` level) using `log_with_context`.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+import logging
+from src.app.logging_cmtrace import get_cmtrace_logger, log_error
+
+logger = get_cmtrace_logger("API")
+log_error(logger, "Database connection failed.", context="DB_CONNECT")
+```
+
+Logs an error message.
+
+## PARAMETERS
+
+### -logger
+
+The `logging.Logger` instance to use.
+
+```yaml
+Type: logging.Logger
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -message
+
+The log message string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -context
+
+Optional context string. Defaults to an empty string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: ""
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This function does not return any value.
+
+## NOTES
+This function simplifies logging critical issues that indicate a problem requiring attention.
+
+Tags: Logging, CMTrace, Error<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `log_debug`
+
+## SYNOPSIS
+
+Logs a debug message with context.
+
+## SYNTAX
+
+```python
+log_debug(logger: logging.Logger, message: str, context: str = "") -> None
+```
+
+## DESCRIPTION
+
+This is a convenience function to log a debug message (`logging.DEBUG` level) using `log_with_context`.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+import logging
+from src.app.logging_cmtrace import get_cmtrace_logger, log_debug
+
+logger = get_cmtrace_logger("DebugInfo")
+log_debug(logger, "Variable value: 123", context="VAR_CHECK")
+```
+
+Logs a debug message.
+
+## PARAMETERS
+
+### -logger
+
+The `logging.Logger` instance to use.
+
+```yaml
+Type: logging.Logger
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -message
+
+The log message string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -context
+
+Optional context string. Defaults to an empty string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: ""
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This function does not return any value.
+
+## NOTES
+This function is useful for detailed tracing and troubleshooting during development.
+
+Tags: Logging, CMTrace, Debug<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `MetadataExtractor`
+
+## SYNOPSIS
+
+Extracts metadata from installer files using cross-platform tools.
+
+## SYNTAX
+
+```python
+class MetadataExtractor:
+    def extract_executable_names(self, file_path: str) -> List[str]
+    def extract_metadata(self, file_path: str) -> Dict[str, Any]
+    def get_psadt_variables(self, metadata: Dict[str, Any]) -> Dict[str, str]
+```
+
+## DESCRIPTION
+
+This class provides methods to extract various types of metadata from installer files (MSI and EXE). It prioritizes `msitools` for MSI files and falls back to alternative methods if necessary. It also includes functionality to extract executable names and map extracted data to PSADT-specific variables.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.metadata_extractor import MetadataExtractor
+
+extractor = MetadataExtractor()
+metadata = extractor.extract_metadata("path/to/installer.msi")
+print(f"Product Name: {metadata.get('product_name')}")
+```
+
+Initializes the extractor and extracts metadata from an MSI file.
+
+### EXAMPLE 2
+
+```python
+from src.app.metadata_extractor import MetadataExtractor
+
+extractor = MetadataExtractor()
+executables = extractor.extract_executable_names("path/to/installer.msi")
+print(f"Executable Names: {', '.join(executables)}")
+```
+
+Extracts executable names from an MSI file.
+
+### EXAMPLE 3
+
+```python
+from src.app.metadata_extractor import MetadataExtractor
+
+extractor = MetadataExtractor()
+metadata = {"product_name": "TestApp", "version": "1.0", "publisher": "TestCorp"}
+psadt_vars = extractor.get_psadt_variables(metadata)
+print(f"PSADT App Name: {psadt_vars.get('appName')}")
+```
+
+Maps extracted metadata to PSADT variables.
+
+## PARAMETERS
+
+### -file_path
+
+The absolute path to the installer file (MSI or EXE).
+
+```yaml
+Type: str
+Parameter Sets: extract_executable_names, extract_metadata
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -metadata
+
+A dictionary containing extracted metadata, used for mapping to PSADT variables.
+
+```yaml
+Type: Dict[str, Any]
+Parameter Sets: get_psadt_variables
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### List[str]
+
+`extract_executable_names` returns a list of extracted executable names.
+
+### Dict[str, Any]
+
+`extract_metadata` returns a dictionary containing extracted metadata.
+
+### Dict[str, str]
+
+`get_psadt_variables` returns a dictionary containing PSADT-specific variables.
+
+## NOTES
+The class handles different file types (`.msi`, `.exe`) and includes fallback mechanisms if preferred tools are not available.
+It logs warnings for unsupported file types or extraction failures.
+
+Tags: Metadata, Extraction, MSI, EXE, PSADT<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `extract_file_metadata`
+
+## SYNOPSIS
+
+Convenience function to extract metadata from a file.
+
+## SYNTAX
+
+```python
+extract_file_metadata(file_path: str) -> Dict[str, Any]
+```
+
+## DESCRIPTION
+
+This function provides a simple interface to extract metadata from an installer file by instantiating `MetadataExtractor` and calling its `extract_metadata` method.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.metadata_extractor import extract_file_metadata
+
+metadata = extract_file_metadata("path/to/installer.exe")
+print(f"File extension: {metadata.get('file_extension')}")
+```
+
+Extracts metadata from an EXE file.
+
+## PARAMETERS
+
+### -file_path
+
+The absolute path to the installer file.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### Dict[str, Any]
+
+Returns a dictionary containing extracted metadata.
+
+## NOTES
+This function is a wrapper for `MetadataExtractor().extract_metadata()`.
+
+Tags: Metadata, Extraction, Utility<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `Base`
+
+## SYNOPSIS
+
+Base class for all SQLAlchemy models.
+
+## SYNTAX
+
+```python
+class Base(DeclarativeBase):
+    pass
+```
+
+## DESCRIPTION
+
+This class serves as the declarative base for all SQLAlchemy ORM models in the AIPackager v3 application. All data models (e.g., `Package`, `Metadata`) should inherit from this class.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from sqlalchemy.orm import Mapped, mapped_column
+from src.app.models import Base
+
+class MyNewModel(Base):
+    __tablename__ = "my_new_table"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+```
+
+Defines a new SQLAlchemy model inheriting from `Base`.
+
+## PARAMETERS
+
+### None
+
+This class has no parameters.
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This class does not generate any direct output.
+
+## NOTES
+`DeclarativeBase` provides the necessary functionality to map Python classes to database tables.
+
+Tags: Database, SQLAlchemy, ORM, Model<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `Package`
+
+## SYNOPSIS
+
+Package model representing uploaded installer files.
+
+## SYNTAX
+
+```python
+class Package(Base):
+    id: Mapped[UUID]
+    filename: Mapped[str]
+    file_path: Mapped[str]
+    upload_time: Mapped[datetime]
+    status: Mapped[str]
+    current_step: Mapped[str]
+    progress_pct: Mapped[int]
+    custom_instructions: Mapped[Optional[str]]
+    instruction_result: Mapped[Optional[dict]]
+    rag_documentation: Mapped[Optional[str]]
+    initial_script: Mapped[Optional[dict]]
+    generated_script: Mapped[Optional[dict]]
+    hallucination_report: Mapped[Optional[dict]]
+    pipeline_metadata: Mapped[Optional[dict]]
+    corrections_applied: Mapped[Optional[list]]
+    package_metadata: Mapped[Optional["Metadata"]]
+```
+
+## DESCRIPTION
+
+This SQLAlchemy model defines the `packages` table in the database. It stores information about uploaded installer files, their processing status through the 5-stage AI pipeline, user instructions, and results from various pipeline stages (e.g., instruction processing, RAG documentation, generated scripts, hallucination reports, and applied corrections). It also includes a relationship to the `Metadata` model.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.models import Package
+from uuid import uuid4
+from datetime import datetime, timezone
+
+new_package = Package(
+    id=uuid4(),
+    filename="setup.exe",
+    file_path="/uploads/setup.exe",
+    upload_time=datetime.now(timezone.utc),
+    status="uploading",
+    current_step="upload",
+    progress_pct=0,
+    custom_instructions="Install silently."
+)
+# Add to session and commit
+```
+
+Creates a new `Package` instance.
+
+### EXAMPLE 2
+
+```python
+from src.app.models import Package
+# Assuming 'package' is an existing Package object
+if package.status == "completed":
+    print(f"Generated Script: {package.generated_script}")
+```
+
+Accesses the `generated_script` from a completed package.
+
+## PARAMETERS
+
+### -id
+
+Primary key, a UUID for the package. Defaults to a new UUID.
+
+```yaml
+Type: Mapped[UUID]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: uuid4()
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -filename
+
+The original filename of the uploaded installer.
+
+```yaml
+Type: Mapped[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -file_path
+
+The absolute path where the installer file is stored.
+
+```yaml
+Type: Mapped[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -upload_time
+
+Timestamp when the package was uploaded. Defaults to the current UTC time.
+
+```yaml
+Type: Mapped[datetime]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: datetime.now(timezone.utc)
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -status
+
+Current processing status of the package. Enum values: "uploading", "processing", "completed", "failed". Defaults to "uploading".
+
+```yaml
+Type: Mapped[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: "uploading"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -current_step
+
+The current step in the processing workflow. Defaults to "upload".
+
+```yaml
+Type: Mapped[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: "upload"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -progress_pct
+
+Percentage of completion for the current package processing. Defaults to 0.
+
+```yaml
+Type: Mapped[int]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: 0
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -custom_instructions
+
+Optional custom instructions provided by the user for script generation.
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -instruction_result
+
+JSON dictionary storing the output of Stage 1 (Instruction Processor).
+
+```yaml
+Type: Mapped[Optional[dict]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -rag_documentation
+
+String storing the documentation retrieved from Stage 2 (Targeted RAG).
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -initial_script
+
+JSON dictionary storing the initial script generated by Stage 3 (Script Generator).
+
+```yaml
+Type: Mapped[Optional[dict]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -generated_script
+
+JSON dictionary storing the final generated script (after Stage 5 correction if applicable).
+
+```yaml
+Type: Mapped[Optional[dict]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -hallucination_report
+
+JSON dictionary storing the report from Stage 4 (Hallucination Detector).
+
+```yaml
+Type: Mapped[Optional[dict]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -pipeline_metadata
+
+JSON dictionary storing metadata about the pipeline execution (e.g., model used, version).
+
+```yaml
+Type: Mapped[Optional[dict]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -corrections_applied
+
+List of strings detailing corrections applied by Stage 5 (Advisor AI).
+
+```yaml
+Type: Mapped[Optional[list]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -package_metadata
+
+Relationship to the `Metadata` model, representing the extracted installer metadata.
+
+```yaml
+Type: Mapped[Optional["Metadata"]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This class does not generate any direct output. Its instances represent database records.
+
+## NOTES
+The `__repr__` method provides a concise string representation for debugging.
+The `package_metadata` relationship is configured for eager loading and cascading deletes.
+
+Tags: Database, SQLAlchemy, ORM, Package, Workflow<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `Metadata`
+
+## SYNOPSIS
+
+Metadata model for extracted installer information.
+
+## SYNTAX
+
+```python
+class Metadata(Base):
+    id: Mapped[UUID]
+    package_id: Mapped[UUID]
+    product_name: Mapped[Optional[str]]
+    version: Mapped[Optional[str]]
+    publisher: Mapped[Optional[str]]
+    install_date: Mapped[Optional[str]]
+    uninstall_string: Mapped[Optional[str]]
+    estimated_size: Mapped[Optional[int]]
+    product_code: Mapped[Optional[str]]
+    upgrade_code: Mapped[Optional[str]]
+    language: Mapped[Optional[str]]
+    architecture: Mapped[Optional[str]]
+    executable_names: Mapped[Optional[list]]
+    package: Mapped["Package"]
+```
+
+## DESCRIPTION
+
+This SQLAlchemy model defines the `metadata` table in the database. It stores detailed information extracted from installer files (MSI/EXE), such as product name, version, publisher, product code, and architecture. It is linked to a `Package` record via a foreign key.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.models import Metadata
+from uuid import uuid4
+
+new_metadata = Metadata(
+    id=uuid4(),
+    package_id=uuid4(), # Link to an existing package ID
+    product_name="Example App",
+    version="2.0.0",
+    publisher="Example Corp",
+    architecture="x64"
+)
+# Add to session and commit
+```
+
+Creates a new `Metadata` instance.
+
+### EXAMPLE 2
+
+```python
+from src.app.models import Package
+# Assuming 'package' is a Package object with loaded metadata
+if package.package_metadata:
+    print(f"Product Name: {package.package_metadata.product_name}")
+```
+
+Accesses metadata through a related `Package` object.
+
+## PARAMETERS
+
+### -id
+
+Primary key, a UUID for the metadata record. Defaults to a new UUID.
+
+```yaml
+Type: Mapped[UUID]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: uuid4()
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -package_id
+
+Foreign key linking to the `Package` record. This field is mandatory.
+
+```yaml
+Type: Mapped[UUID]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -product_name
+
+The name of the product extracted from the installer.
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -version
+
+The version of the product.
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -publisher
+
+The publisher or manufacturer of the product.
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -install_date
+
+The installation date string, if available.
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -uninstall_string
+
+The command string used to uninstall the application.
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -estimated_size
+
+The estimated size of the application in bytes.
+
+```yaml
+Type: Mapped[Optional[int]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -product_code
+
+The MSI Product Code (GUID).
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -upgrade_code
+
+The MSI Upgrade Code (GUID).
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -language
+
+The language of the installer (e.g., "en-US").
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -architecture
+
+The architecture of the installer (e.g., "x64", "x86", "arm64").
+
+```yaml
+Type: Mapped[Optional[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -executable_names
+
+A list of executable names found within the installer (e.g., ["app.exe", "updater.exe"]).
+
+```yaml
+Type: Mapped[Optional[list]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -package
+
+Relationship back to the `Package` model.
+
+```yaml
+Type: Mapped["Package"]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This class does not generate any direct output. Its instances represent database records.
+
+## NOTES
+The `__repr__` method provides a concise string representation for debugging.
+The `package` relationship is configured for back-populating.
+
+Tags: Database, SQLAlchemy, ORM, Metadata<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `PackageLogger`
+
+## SYNOPSIS
+
+Handles per-package logging for detailed troubleshooting.
+
+## SYNTAX
+
+```python
+class PackageLogger:
+    def __init__(self, package_id: str)
+    def log_step(self, step: str, message: str, level: str = "INFO", data: Optional[Dict[str, Any]] = None) -> None
+    def log_error(self, step: str, error: Exception, context: Optional[Dict[str, Any]] = None) -> None
+    def log_5_stage_pipeline(self, stage: int, stage_name: str, status: str, details: Optional[Dict[str, Any]] = None) -> None
+    def get_logs(self) -> str
+    def get_log_file_path(self) -> Optional[Path]
+```
+
+## DESCRIPTION
+
+This class provides a dedicated logging mechanism for each individual package being processed by the AIPackager application. It creates a unique log file for each package, allowing for detailed, isolated troubleshooting of the 5-stage pipeline workflow.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.package_logger import PackageLogger
+
+logger = PackageLogger("my-package-uuid")
+logger.log_step("UPLOAD", "File upload started.", data={"filename": "app.msi"})
+```
+
+Initializes a package logger and logs an upload step.
+
+### EXAMPLE 2
+
+```python
+from src.app.package_logger import PackageLogger
+
+logger = PackageLogger("my-package-uuid")
+try:
+    raise ValueError("Invalid input")
+except ValueError as e:
+    logger.log_error("VALIDATION_FAILED", e, context={"input_data": "abc"})
+```
+
+Logs an error with context.
+
+### EXAMPLE 3
+
+```python
+from src.app.package_logger import PackageLogger
+
+logger = PackageLogger("my-package-uuid")
+logger.log_5_stage_pipeline(1, "Instruction Processing", "COMPLETED")
+```
+
+Logs a specific stage completion for the 5-stage pipeline.
+
+## PARAMETERS
+
+### -package_id
+
+The UUID of the package as a string, used to create a unique log file.
+
+```yaml
+Type: str
+Parameter Sets: __init__
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -step
+
+A string identifying the current step or event in the workflow (e.g., "UPLOAD", "METADATA_EXTRACTION").
+
+```yaml
+Type: str
+Parameter Sets: log_step, log_error
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -message
+
+The main log message.
+
+```yaml
+Type: str
+Parameter Sets: log_step
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -level
+
+The logging level as a string (e.g., "INFO", "WARNING", "ERROR", "DEBUG"). Defaults to "INFO".
+
+```yaml
+Type: str
+Parameter Sets: log_step
+Aliases:
+
+Required: False
+Position: Named
+Default value: "INFO"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -data
+
+Optional dictionary of additional data to log, which will be serialized to JSON in debug logs.
+
+```yaml
+Type: Optional[Dict[str, Any]]
+Parameter Sets: log_step
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -error
+
+The `Exception` object to log.
+
+```yaml
+Type: Exception
+Parameter Sets: log_error
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -context
+
+Optional dictionary of context information related to the error.
+
+```yaml
+Type: Optional[Dict[str, Any]]
+Parameter Sets: log_error
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -stage
+
+The numerical stage of the 5-stage pipeline (e.g., 1, 2, 3, 4, 5).
+
+```yaml
+Type: int
+Parameter Sets: log_5_stage_pipeline
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -stage_name
+
+The descriptive name of the pipeline stage (e.g., "Instruction Processing", "Targeted RAG").
+
+```yaml
+Type: str
+Parameter Sets: log_5_stage_pipeline
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -status
+
+The status of the pipeline stage (e.g., "START", "COMPLETED", "FAILED").
+
+```yaml
+Type: str
+Parameter Sets: log_5_stage_pipeline
+Aliases:
+
+Required: True
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -details
+
+Optional dictionary of additional details for the pipeline stage log.
+
+```yaml
+Type: Optional[Dict[str, Any]]
+Parameter Sets: log_5_stage_pipeline
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+`log_step`, `log_error`, and `log_5_stage_pipeline` do not return any value.
+
+### str
+
+`get_logs` returns the entire content of the package's log file as a string.
+
+### Optional[Path]
+
+`get_log_file_path` returns the `Path` object to the log file, or `None` if it doesn't exist.
+
+## NOTES
+Each package log file is stored in `instance/logs/{package_id}.log`.
+The logger is configured to prevent propagation to the root logger, ensuring isolated logs.
+
+Tags: Logging, Package, Workflow, Troubleshooting<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `get_package_logger`
+
+## SYNOPSIS
+
+Gets or creates a logger for a specific package.
+
+## SYNTAX
+
+```python
+get_package_logger(package_id: str) -> PackageLogger
+```
+
+## DESCRIPTION
+
+This function provides a convenient way to retrieve a `PackageLogger` instance for a given package ID. It ensures that a new `PackageLogger` is initialized if one doesn't already exist for that ID.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.package_logger import get_package_logger
+
+package_id = "some-unique-package-id"
+logger = get_package_logger(package_id)
+logger.log_step("INIT", "Logger initialized for package.")
+```
+
+Retrieves a package-specific logger.
+
+## PARAMETERS
+
+### -package_id
+
+The UUID of the package as a string.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### PackageLogger
+
+Returns a `PackageLogger` instance configured for the specified package ID.
+
+## NOTES
+This function acts as a factory for `PackageLogger` instances.
+
+Tags: Logging, Package, Utility<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `get_job`
+
+## SYNOPSIS
+
+Gets a job by its ID.
+
+## SYNTAX
+
+```python
+get_job(job_id: str) -> Dict[str, Any] | None
+```
+
+## DESCRIPTION
+
+This function retrieves a job's progress and status information from an in-memory dictionary based on its unique job ID. This is part of a mock progress tracking system.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.progress import get_job, start_job
+
+job_id = start_job("my_file.msi")
+job_info = get_job(job_id)
+if job_info:
+    print(f"Job status: {job_info['status']}")
+```
+
+Starts a job and then retrieves its information.
+
+## PARAMETERS
+
+### -job_id
+
+The unique identifier of the job.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### Dict[str, Any] | None
+
+Returns a dictionary containing job details (`filename`, `custom_instructions`, `status`, `progress`) if found, otherwise `None`.
+
+## NOTES
+This is part of a mock implementation and does not persist job data across application restarts.
+
+Tags: Progress, Mock, Job Tracking<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `set_job_progress`
+
+## SYNOPSIS
+
+Sets the progress of a job.
+
+## SYNTAX
+
+```python
+set_job_progress(job_id: str, progress: int, status: str = "Processing") -> None
+```
+
+## DESCRIPTION
+
+This function updates the progress percentage and status message for a specific job in the in-memory mock progress tracking system.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.progress import set_job_progress, start_job
+
+job_id = start_job("another_file.exe")
+set_job_progress(job_id, 50, "Extracting Metadata")
+# Now, get_job(job_id) would show 50% progress and "Extracting Metadata" status.
+```
+
+Updates the progress of an existing job.
+
+## PARAMETERS
+
+### -job_id
+
+The unique identifier of the job to update.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -progress
+
+The new progress percentage (an integer between 0 and 100).
+
+```yaml
+Type: int
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -status
+
+An optional string describing the current status of the job. Defaults to "Processing".
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: "Processing"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This function does not return any value.
+
+## NOTES
+This is part of a mock implementation and does not persist job data across application restarts.
+
+Tags: Progress, Mock, Job Tracking<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `start_job`
+
+## SYNOPSIS
+
+Starts a job and returns its ID.
+
+## SYNTAX
+
+```python
+start_job(filename: str, custom_instructions: str | None = None) -> str
+```
+
+## DESCRIPTION
+
+This function initiates a new job in the in-memory mock progress tracking system. It generates a unique UUID for the job, stores initial details like filename and custom instructions, and sets the initial status to "Uploading" with 0% progress.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.progress import start_job
+
+job_id = start_job("my_application.msi", "Install silently.")
+print(f"New job started with ID: {job_id}")
+```
+
+Starts a new job with custom instructions.
+
+## PARAMETERS
+
+### -filename
+
+The filename associated with the job.
+
+```yaml
+Type: str
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -custom_instructions
+
+Optional custom instructions for the job. Defaults to `None`.
+
+```yaml
+Type: str | None
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This function does not accept pipeline input.
+
+## OUTPUTS
+
+### str
+
+Returns the unique UUID string generated for the new job.
+
+## NOTES
+This is part of a mock implementation and does not persist job data across application restarts.
+
+Tags: Progress, Mock, Job Tracking<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `InstructionResult`
+
+## SYNOPSIS
+
+Pydantic schema for Stage 1 output: structured instructions + predicted cmdlets.
+
+## SYNTAX
+
+```python
+class InstructionResult(BaseModel):
+    structured_instructions: Dict[str, Any]
+    predicted_cmdlets: List[str]
+    confidence_score: float
+    predicted_processes_to_close: Optional[List[str]]
+```
+
+## DESCRIPTION
+
+This Pydantic model defines the expected output structure from the Instruction Processor (Stage 1 of the 5-stage pipeline). It includes the user's instructions converted into a structured dictionary, a list of PSADT cmdlets predicted to be required, a confidence score for the prediction, and an optional list of processes to close.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.schemas import InstructionResult
+
+result = InstructionResult(
+    structured_instructions={"action": "install", "type": "msi"},
+    predicted_cmdlets=["Start-ADTMsiProcess", "Show-ADTInstallationWelcome"],
+    confidence_score=0.95,
+    predicted_processes_to_close=["chrome.exe", "firefox.exe"]
+)
+print(result.model_dump_json(indent=2))
+```
+
+Creates an instance of `InstructionResult` and prints its JSON representation.
+
+## PARAMETERS
+
+### -structured_instructions
+
+A dictionary representing the user's instructions in a structured format.
+
+```yaml
+Type: Dict[str, Any]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -predicted_cmdlets
+
+A list of strings, where each string is a predicted PSADT cmdlet required for the task.
+
+```yaml
+Type: List[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -confidence_score
+
+A float representing the confidence level of the instruction processing and cmdlet prediction.
+
+```yaml
+Type: float
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -predicted_processes_to_close
+
+An optional list of strings, where each string is the name of a process predicted to need closing before installation.
+
+```yaml
+Type: Optional[List[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This class does not generate any direct output. Its instances are data containers.
+
+## NOTES
+This Pydantic model facilitates data validation and serialization for the output of the Instruction Processor.
+
+Tags: Schema, Pydantic, AI Pipeline, Instruction Processing<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `PSADTScript`
+
+## SYNOPSIS
+
+Pydantic schema for Stage 3+5 output: validated PowerShell script sections.
+
+## SYNTAX
+
+```python
+class PSADTScript(BaseModel):
+    pre_installation_tasks: List[str]
+    installation_tasks: List[str]
+    post_installation_tasks: List[str]
+    uninstallation_tasks: List[str]
+    post_uninstallation_tasks: List[str]
+    pre_repair_tasks: List[str]
+    repair_tasks: List[str]
+    post_repair_tasks: List[str]
+    hallucination_report: Optional[Dict[str, Any]]
+    corrections_applied: Optional[List[str]]
+```
+
+## DESCRIPTION
+
+This Pydantic model defines the structure for the generated PowerShell script, broken down into various PSADT sections (e.g., pre-installation, installation, uninstallation). It also includes optional fields for the hallucination report and a list of applied corrections, making it suitable for both initial script generation (Stage 3) and corrected scripts (Stage 5).
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.schemas import PSADTScript
+
+script = PSADTScript(
+    pre_installation_tasks=["# Pre-install actions"],
+    installation_tasks=["Start-ADTMsiProcess -Path 'app.msi'"],
+    post_installation_tasks=["# Post-install actions"],
+    uninstallation_tasks=["# Uninstall actions"],
+    post_uninstallation_tasks=["# Post-uninstall actions"],
+    pre_repair_tasks=[],
+    repair_tasks=[],
+    post_repair_tasks=[]
+)
+print(script.model_dump_json(indent=2))
+```
+
+Creates a basic `PSADTScript` instance.
+
+### EXAMPLE 2
+
+```python
+from src.app.schemas import PSADTScript
+
+script_with_issues = PSADTScript(
+    installation_tasks=["Install-FakeApp"],
+    hallucination_report={"has_hallucinations": True, "issues": [{"type": "unknown_cmdlet", "cmdlet": "Install-FakeApp"}]},
+    corrections_applied=["Replaced Install-FakeApp with Start-ADTMsiProcess"]
+)
+print(script_with_issues.hallucination_report)
+```
+
+Creates a `PSADTScript` instance with a hallucination report and corrections.
+
+## PARAMETERS
+
+### -pre_installation_tasks
+
+A list of strings, where each string is a line of PowerShell code for pre-installation tasks.
+
+```yaml
+Type: List[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -installation_tasks
+
+A list of strings, where each string is a line of PowerShell code for installation tasks.
+
+```yaml
+Type: List[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -post_installation_tasks
+
+A list of strings, where each string is a line of PowerShell code for post-installation tasks.
+
+```yaml
+Type: List[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -uninstallation_tasks
+
+A list of strings, where each string is a line of PowerShell code for uninstallation tasks.
+
+```yaml
+Type: List[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -post_uninstallation_tasks
+
+A list of strings, where each string is a line of PowerShell code for post-uninstallation tasks.
+
+```yaml
+Type: List[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -pre_repair_tasks
+
+A list of strings, where each string is a line of PowerShell code for pre-repair tasks.
+
+```yaml
+Type: List[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -repair_tasks
+
+A list of strings, where each string is a line of PowerShell code for repair tasks.
+
+```yaml
+Type: List[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -post_repair_tasks
+
+A list of strings, where each string is a line of PowerShell code for post-repair tasks.
+
+```yaml
+Type: List[str]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -hallucination_report
+
+An optional dictionary containing the report from the Hallucination Detector (Stage 4).
+
+```yaml
+Type: Optional[Dict[str, Any]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -corrections_applied
+
+An optional list of strings detailing the corrections applied by the Advisor AI (Stage 5).
+
+```yaml
+Type: Optional[List[str]]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This class does not generate any direct output. Its instances are data containers.
+
+## NOTES
+This Pydantic model is central to the AI pipeline's output, providing a structured representation of the generated PSADT script and its validation status.
+
+Tags: Schema, Pydantic, AI Pipeline, Script Generation<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `ScriptRenderer`
+
+## SYNOPSIS
+
+Renders PSADT scripts and AI prompt templates using Jinja2.
+
+## SYNTAX
+
+```python
+class ScriptRenderer:
+    def __init__(self) -> None
+    def render_psadt_script(self, package: Package, ai_sections: Dict[str, Any]) -> str
+    def render_prompt_template(self, template_name: str, context: Dict[str, Any]) -> str
+    def get_template_context(self, package: Package, metadata: Optional[Metadata]) -> Dict[str, Any]
+    def validate_template_syntax(self, template_name: str) -> bool
+    def list_available_templates(self) -> Dict[str, list]
+```
+
+## DESCRIPTION
+
+This class provides functionality for rendering Jinja2 templates, specifically for generating the final PSADT scripts and for constructing AI prompts. It manages separate Jinja2 environments for prompts and PSADT templates, ensuring proper loading and rendering.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.script_renderer import ScriptRenderer
+from src.app.models import Package, Metadata
+from uuid import uuid4
+
+renderer = ScriptRenderer()
+# Assuming 'package_obj' and 'metadata_obj' are valid instances
+# ai_sections = {
+#     "installation_tasks": ["Start-ADTMsiProcess -Path 'app.msi'"],
+#     "uninstallation_tasks": ["Remove-ADTApplication -Name 'App'"]
+# }
+# rendered_script = renderer.render_psadt_script(package_obj, ai_sections)
+# print(rendered_script)
+```
+
+Initializes the renderer and renders a PSADT script.
+
+### EXAMPLE 2
+
+```python
+from src.app.script_renderer import ScriptRenderer
+
+renderer = ScriptRenderer()
+context = {"user_instructions": "Install Chrome"}
+prompt = renderer.render_prompt_template("instruction_processing.j2", context)
+print(prompt)
+```
+
+Renders an AI prompt template.
+
+### EXAMPLE 3
+
+```python
+from src.app.script_renderer import ScriptRenderer
+
+renderer = ScriptRenderer()
+is_valid = renderer.validate_template_syntax("system.j2")
+print(f"Template syntax valid: {is_valid}")
+```
+
+Validates the syntax of a template.
+
+## PARAMETERS
+
+### -package
+
+The `Package` object containing information about the installer.
+
+```yaml
+Type: Package
+Parameter Sets: render_psadt_script, get_template_context
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ai_sections
+
+A dictionary containing AI-generated script sections, typically lists of PowerShell code lines, categorized by PSADT section names (e.g., `installation_tasks`, `uninstallation_tasks`).
+
+```yaml
+Type: Dict[str, Any]
+Parameter Sets: render_psadt_script
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -template_name
+
+The name of the template file to render (e.g., "system.j2" for prompts, "psadt/Invoke-AppDeployToolkit.ps1.j2" for PSADT).
+
+```yaml
+Type: str
+Parameter Sets: render_prompt_template, validate_template_syntax
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -context
+
+A dictionary containing variables to be passed to the template for rendering.
+
+```yaml
+Type: Dict[str, Any]
+Parameter Sets: render_prompt_template
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -metadata
+
+An optional `Metadata` object associated with the package, used to build the template context.
+
+```yaml
+Type: Optional[Metadata]
+Parameter Sets: get_template_context
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### str
+
+`render_psadt_script` returns the rendered PowerShell script as a string.
+`render_prompt_template` returns the rendered prompt as a string.
+
+### Dict[str, Any]
+
+`get_template_context` returns a dictionary containing all template variables.
+
+### bool
+
+`validate_template_syntax` returns `True` if template syntax is valid, `False` otherwise.
+
+### Dict[str, list]
+
+`list_available_templates` returns a dictionary with lists of prompt and PSADT templates.
+
+## NOTES
+The class ensures that template directories (`src/app/prompts`, `src/app/templates`) exist.
+It includes error handling for `TemplateSyntaxError` and other rendering exceptions.
+
+Tags: Templating, Jinja2, PSADT, AI Prompt, Rendering<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `retry_with_backoff`
+
+## SYNOPSIS
+
+A decorator for retrying a function with exponential backoff.
+
+## SYNTAX
+
+```python
+retry_with_backoff(retries: int = 3, backoff_in_seconds: float = 1) -> Callable[[F], F]
+```
+
+## DESCRIPTION
+
+This decorator provides a mechanism to automatically retry a function call if it raises an exception. It implements an exponential backoff strategy, where the delay between retries increases with each attempt, preventing overwhelming external services.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+import random
+from src.app.utils import retry_with_backoff
+
+@retry_with_backoff(retries=5, backoff_in_seconds=0.5)
+def flaky_function():
+    if random.random() < 0.7: # 70% chance of failure
+        raise ValueError("Simulated network error")
+    return "Success!"
+
+# result = flaky_function()
+# print(result)
+```
+
+Decorates a flaky function to retry up to 5 times with increasing delays.
+
+## PARAMETERS
+
+### -retries
+
+The maximum number of times to retry the function call. Defaults to 3.
+
+```yaml
+Type: int
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: 3
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -backoff_in_seconds
+
+The initial delay in seconds before the first retry. This delay doubles with each subsequent retry. Defaults to 1 second.
+
+```yaml
+Type: float
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: 1
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This decorator does not accept pipeline input.
+
+## OUTPUTS
+
+### Callable[[F], F]
+
+Returns the decorated function. The decorated function returns the result of the wrapped function on success, or re-raises the last exception after all retries are exhausted.
+
+## NOTES
+This decorator catches all `Exception` types. For more fine-grained control, specific exceptions can be caught within the decorated function.
+It prints a message to the console on each retry attempt.
+
+Tags: Utility, Decorator, Retry, Backoff, Error Handling<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `AdvisorService`
+
+## SYNOPSIS
+
+Stage 5: Self-correction AI.
+
+## SYNTAX
+
+```python
+class AdvisorService:
+    def __init__(self) -> None
+    def correct_script(self, script: PSADTScript, hallucination_report: dict, package_id: str) -> PSADTScript
+```
+
+## DESCRIPTION
+
+This class implements the Advisor AI (Stage 5 of the 5-stage pipeline), responsible for self-correcting generated PowerShell scripts based on a hallucination report. It uses OpenAI's API to generate corrections, leveraging a comprehensive PSADT v4 cmdlet reference.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.services.advisor_service import AdvisorService
+from src.app.schemas import PSADTScript
+
+advisor = AdvisorService()
+# Assuming 'initial_script' is a PSADTScript object and 'report' is a hallucination report dict
+# corrected_script = advisor.correct_script(initial_script, report, "package-id-123")
+# print(corrected_script.corrections_applied)
+```
+
+Initializes the advisor and attempts to correct a script based on a hallucination report.
+
+## PARAMETERS
+
+### -script
+
+The `PSADTScript` object representing the initial generated script that needs correction.
+
+```yaml
+Type: PSADTScript
+Parameter Sets: correct_script
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -hallucination_report
+
+A dictionary containing the report from the Hallucination Detector, detailing the issues found in the script.
+
+```yaml
+Type: dict
+Parameter Sets: correct_script
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -package_id
+
+The UUID of the package as a string, used for logging.
+
+```yaml
+Type: str
+Parameter Sets: correct_script
+Aliases:
+
+Required: True
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### PSADTScript
+
+`correct_script` returns a new `PSADTScript` object with the applied corrections and updated `corrections_applied` field.
+
+## NOTES
+The service requires an `OPENAI_API_KEY` environment variable to be configured.
+It handles various OpenAI API errors (connection, timeout, authentication).
+It uses a Jinja2 template (`advisor_correction.j2`) to construct the prompt for the AI model.
+It builds a comprehensive PSADT v4 cmdlet reference to guide the AI in making accurate corrections.
+
+Tags: AI Pipeline, Self-Correction, OpenAI, PSADT, Advisor<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `CmdletDiscoveryService`
+
+## SYNOPSIS
+
+Discovers available PSADT cmdlets and their descriptions from documentation files.
+
+## SYNTAX
+
+```python
+class CmdletDiscoveryService:
+    def get_cmdlet_reference(self) -> List[Dict[str, str]]
+    def refresh_cmdlet_reference(self) -> List[Dict[str, str]]
+```
+
+## DESCRIPTION
+
+This class scans the PSADT documentation directory (`PSADT/docs/docs`) to extract cmdlet names and their synopses. It caches the discovered cmdlet reference in memory to optimize performance and avoid repeated file I/O.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.services.cmdlet_discovery import cmdlet_discovery_service
+
+cmdlets = cmdlet_discovery_service.get_cmdlet_reference()
+for cmdlet in cmdlets[:3]:
+    print(f"Name: {cmdlet['name']}, Description: {cmdlet['description']}")
+```
+
+Retrieves the cached cmdlet reference and prints the first three cmdlets.
+
+### EXAMPLE 2
+
+```python
+from src.app.services.cmdlet_discovery import cmdlet_discovery_service
+
+updated_cmdlets = cmdlet_discovery_service.refresh_cmdlet_reference()
+print(f"Refreshed {len(updated_cmdlets)} cmdlets.")
+```
+
+Forces a rebuild of the cmdlet reference cache.
+
+## PARAMETERS
+
+### None
+
+This class has no public parameters for its methods.
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### List[Dict[str, str]]
+
+`get_cmdlet_reference` and `refresh_cmdlet_reference` return a list of dictionaries, where each dictionary contains 'name' and 'description' of a cmdlet.
+
+## NOTES
+The class uses a singleton instance (`cmdlet_discovery_service`) for application-wide access.
+It logs errors if the documentation directory is not found or if files cannot be parsed.
+
+Tags: PSADT, Cmdlet, Discovery, Documentation, Caching<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `HallucinationDetectorService`
+
+## SYNOPSIS
+
+Stage 4: Hallucination Detection.
+
+## SYNTAX
+
+```python
+class HallucinationDetectorService:
+    def __init__(self, package_id: str) -> None
+    def detect_hallucinations(self, script_path: str) -> Dict[str, Any]
+```
+
+## DESCRIPTION
+
+This class is responsible for detecting hallucinations in AI-generated PowerShell scripts (Stage 4 of the 5-stage pipeline). It leverages the `crawl4ai-rag` MCP server's `check_ai_script_hallucinations` tool, which uses a knowledge graph for validation.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.services.hallucination_detector_service import HallucinationDetectorService
+
+detector = HallucinationDetectorService("my-package-uuid")
+# Assuming 'script_file_path' is the path to the generated PowerShell script
+# report = detector.detect_hallucinations(script_file_path)
+# print(report)
+```
+
+Initializes the detector and attempts to detect hallucinations in a script.
+
+## PARAMETERS
+
+### -package_id
+
+The UUID of the package as a string, used for logging.
+
+```yaml
+Type: str
+Parameter Sets: __init__
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -script_path
+
+The absolute path to the AI-generated PowerShell script file to be analyzed for hallucinations.
+
+```yaml
+Type: str
+Parameter Sets: detect_hallucinations
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### Dict[str, Any]
+
+`detect_hallucinations` returns a dictionary containing the hallucination report from the MCP server.
+
+## NOTES
+This service uses a thread-safe wrapper (`_run_mcp_in_thread`) to call asynchronous MCP functions.
+It logs the start and completion of the detection process, as well as any failures.
+If the MCP call fails, it returns a default error report.
+
+Tags: AI Pipeline, Hallucination, Detection, MCP, Knowledge Graph<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `HallucinationDetector`
+
+## SYNOPSIS
+
+Stage 4: Script validation using MCP knowledge graph.
+
+## SYNTAX
+
+```python
+class HallucinationDetector:
+    def __init__(self, package_id: str = "system") -> None
+    def detect(self, script: str) -> Dict[str, Any]
+```
+
+## DESCRIPTION
+
+This class is responsible for detecting potential hallucinations in a PowerShell script. While it aims to use an MCP knowledge graph for validation, it currently falls back to an enhanced internal validation mechanism due to the MCP tool's focus on Python scripts. It identifies unknown PSADT cmdlets, invalid parameters, and suspicious patterns.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.services.hallucination_detector import HallucinationDetector
+from src.app.schemas import PSADTScript
+
+detector = HallucinationDetector("my-package-uuid")
+script_content = """
+Start-ADTMsiProcess -Path 'app.msi'
+Install-FakeCmdlet -Param1 Value
+"""
+report = detector.detect(script_content)
+print(report.get("has_hallucinations"))
+print(report.get("issues"))
+```
+
+Initializes the detector and detects hallucinations in a sample script.
+
+## PARAMETERS
+
+### -package_id
+
+The UUID of the package as a string, used for logging. Defaults to "system".
+
+```yaml
+Type: str
+Parameter Sets: __init__
+Aliases:
+
+Required: False
+Position: 1
+Default value: "system"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -script
+
+The PowerShell script content as a string to be analyzed for hallucinations.
+
+```yaml
+Type: str
+Parameter Sets: detect
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### Dict[str, Any]
+
+`detect` returns a dictionary containing the hallucination report, including `has_hallucinations` (boolean), `confidence_score`, `issues` (list of detected problems), and `recommendations`.
+
+## NOTES
+The class loads PSADT v4 cmdlet definitions for comprehensive validation.
+It includes a temporary forced fallback to internal PowerShell validation, as the `check_ai_script_hallucinations` MCP tool is designed for Python.
+It uses `retry_with_backoff` for robustness.
+
+Tags: AI Pipeline, Hallucination, Detection, PSADT, Validation<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `InstructionProcessor`
+
+## SYNOPSIS
+
+Stage 1: User instruction processing.
+
+## SYNTAX
+
+```python
+class InstructionProcessor:
+    def __init__(self) -> None
+    def process_instructions(self, text: str, package_id: str) -> InstructionResult
+```
+
+## DESCRIPTION
+
+This class implements the Instruction Processor (Stage 1 of the 5-stage pipeline). It takes raw user instructions and processes them using an OpenAI model to convert them into structured instructions, predict required PSADT cmdlets, and estimate a confidence score. It leverages a dynamic cmdlet reference for better prediction.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.services.instruction_processor import InstructionProcessor
+
+processor = InstructionProcessor()
+# Assuming 'package_id' is a valid UUID string
+# result = processor.process_instructions("Install Google Chrome silently.", "package-id-123")
+# print(result.structured_instructions)
+# print(result.predicted_cmdlets)
+```
+
+Initializes the processor and processes user instructions.
+
+## PARAMETERS
+
+### -text
+
+The raw user instructions as a string (e.g., "Install this application silently").
+
+```yaml
+Type: str
+Parameter Sets: process_instructions
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -package_id
+
+The UUID of the package as a string, used for logging.
+
+```yaml
+Type: str
+Parameter Sets: process_instructions
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### InstructionResult
+
+`process_instructions` returns an `InstructionResult` object containing structured instructions, predicted cmdlets, confidence score, and optional predicted processes to close.
+
+## NOTES
+The service requires an `OPENAI_API_KEY` environment variable to be configured.
+It uses a Jinja2 template (`instruction_processing.j2`) to construct the prompt for the AI model.
+It dynamically retrieves the PSADT cmdlet reference from `CmdletDiscoveryService`.
+It handles various OpenAI API errors and provides a fallback `InstructionResult` on parsing failure.
+
+Tags: AI Pipeline, Instruction Processing, OpenAI, PSADT, NLP<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `MCPService`
+
+## SYNOPSIS
+
+Service for interacting with the Model Context Protocol (MCP) server.
+
+## SYNTAX
+
+```python
+class MCPService:
+    def __init__(self, package_id: str = "system")
+    async def crawl_and_index(self, url: str) -> dict
+    async def perform_rag_query(self, query: str, source: Optional[str] = None) -> str
+    async def check_hallucinations(self, script_path: str) -> dict
+    async def get_available_sources(self) -> dict
+    async def crawl_single_page(self, url: str) -> dict
+    async def smart_crawl_url(self, url: str, max_depth: int = 3, max_concurrent: int = 10, chunk_size: int = 5000) -> dict
+    async def parse_github_repository(self, repo_url: str) -> dict
+    async def query_knowledge_graph(self, command: str) -> dict
+    async def check_infrastructure_health(self) -> Dict[str, Any]
+```
+
+## DESCRIPTION
+
+This class provides a high-level interface for interacting with the `crawl4ai-rag` Model Context Protocol (MCP) server. It encapsulates the logic for making asynchronous calls to various MCP tools, including crawling, RAG queries, hallucination checks, knowledge graph interactions, and health monitoring.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+import anyio
+from src.app.services.mcp_service import MCPService
+
+async def example_get_sources():
+    service = MCPService()
+    sources = await service.get_available_sources()
+    print(f"Available sources: {sources}")
+
+# anyio.run(example_get_sources)
+```
+
+Initializes the MCP service and retrieves available knowledge base sources.
+
+### EXAMPLE 2
+
+```python
+import anyio
+from src.app.services.mcp_service import MCPService
+
+async def example_crawl():
+    service = MCPService()
+    result = await service.crawl_single_page("https://example.com/docs")
+    print(f"Crawl result: {result}")
+
+# anyio.run(example_crawl)
+```
+
+Crawls a single web page using the MCP service.
+
+### EXAMPLE 3
+
+```python
+import anyio
+from src.app.services.mcp_service import MCPService
+
+async def example_health_check():
+    service = MCPService()
+    health = await service.check_infrastructure_health()
+    print(f"Overall MCP Health: {health['overall']['status']}")
+
+# anyio.run(example_health_check)
+```
+
+Performs a comprehensive health check of the MCP infrastructure.
+
+## PARAMETERS
+
+### -package_id
+
+The UUID of the package as a string, used for logging within the service. Defaults to "system".
+
+```yaml
+Type: str
+Parameter Sets: __init__
+Aliases:
+
+Required: False
+Position: 1
+Default value: "system"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -url
+
+The URL to crawl or smart crawl.
+
+```yaml
+Type: str
+Parameter Sets: crawl_and_index, crawl_single_page, smart_crawl_url
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -query
+
+The search query for RAG operations.
+
+```yaml
+Type: str
+Parameter Sets: perform_rag_query
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -source
+
+Optional source domain to filter RAG results (e.g., 'psappdeploytoolkit.com').
+
+```yaml
+Type: Optional[str]
+Parameter Sets: perform_rag_query
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -script_path
+
+The absolute path to the AI-generated script file for hallucination checking.
+
+```yaml
+Type: str
+Parameter Sets: check_hallucinations
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -max_depth
+
+Maximum recursion depth for smart crawling regular URLs. Defaults to 3.
+
+```yaml
+Type: int
+Parameter Sets: smart_crawl_url
+Aliases:
+
+Required: False
+Position: Named
+Default value: 3
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -max_concurrent
+
+Maximum number of concurrent browser sessions for smart crawling. Defaults to 10.
+
+```yaml
+Type: int
+Parameter Sets: smart_crawl_url
+Aliases:
+
+Required: False
+Position: Named
+Default value: 10
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -chunk_size
+
+Maximum size of each content chunk in characters for smart crawling. Defaults to 5000.
+
+```yaml
+Type: int
+Parameter Sets: smart_crawl_url
+Aliases:
+
+Required: False
+Position: Named
+Default value: 5000
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -repo_url
+
+The GitHub repository URL to parse (e.g., 'https://github.com/user/repo.git').
+
+```yaml
+Type: str
+Parameter Sets: parse_github_repository
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -command
+
+The command string to execute against the knowledge graph (e.g., "repos", "explore my-repo").
+
+```yaml
+Type: str
+Parameter Sets: query_knowledge_graph
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### dict
+
+`crawl_and_index`, `check_hallucinations`, `get_available_sources`, `crawl_single_page`, `smart_crawl_url`, `parse_github_repository`, and `query_knowledge_graph` return a dictionary with the response from the MCP tool.
+
+### str
+
+`perform_rag_query` returns a string with the RAG query results.
+
+### Dict[str, Any]
+
+`check_infrastructure_health` returns a dictionary detailing the health status of MCP-related infrastructure components.
+
+## NOTES
+The service uses `MCPConfigLoader` to load server configurations and `retry_with_backoff` for robust tool calls.
+It handles various connection and tool call errors, logging them appropriately.
+The `mcp_service` is exposed as a singleton instance for application-wide use.
+
+Tags: MCP, `crawl4ai-rag`, Knowledge Base, RAG, Crawling, Health Check<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `MetricsService`
+
+## SYNOPSIS
+
+Service to calculate and present pipeline metrics.
+
+## SYNTAX
+
+```python
+class MetricsService:
+    def __init__(self, package_data: Dict[str, Any])
+    def get_display_metrics(self) -> Dict[str, Any]
+```
+
+## DESCRIPTION
+
+This class processes the results of the 5-stage AI pipeline to calculate and provide display-ready metrics. It extracts information from the package data, hallucination reports, and applied corrections to generate insights into pipeline performance and AI effectiveness.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.services.metrics_service import MetricsService
+
+# Assuming 'package_data_dict' is a dictionary representation of a Package object
+# metrics = MetricsService(package_data_dict).get_display_metrics()
+# print(metrics.get("overall_performance"))
+```
+
+Initializes the service with package data and retrieves display metrics.
+
+## PARAMETERS
+
+### -package_data
+
+A dictionary representation of the `Package` object, containing all pipeline results and metadata.
+
+```yaml
+Type: Dict[str, Any]
+Parameter Sets: __init__
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### Dict[str, Any]
+
+`get_display_metrics` returns a dictionary containing calculated metrics, including `stage_times`, `hallucination_metrics`, `advisor_metrics`, and `overall_performance`.
+
+## NOTES
+Currently, some metric calculations are placeholders and would require parsing timestamps from logs or dedicated timing mechanisms for accurate stage durations.
+
+Tags: Metrics, Performance, AI Pipeline, Reporting<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `PSADTDocumentationParser`
+
+## SYNOPSIS
+
+Parses PSADT v4 MDX documentation files to extract complete cmdlet specifications.
+
+## SYNTAX
+
+```python
+class PSADTDocumentationParser:
+    def __init__(self, docs_path: str = "PSADT/docs/docs")
+    def parse_all_cmdlets(self) -> Dict[str, CmdletDefinition]
+    def parse_mdx_file(self, file_path: Path) -> Optional[CmdletDefinition]
+    def get_cmdlet_names(self) -> List[str]
+    def get_cmdlet(self, name: str) -> Optional[CmdletDefinition]
+    def export_to_json(self, output_file: str) -> None
+    def get_validation_summary(self) -> Dict[str, Any]
+```
+
+## DESCRIPTION
+
+This class is designed to parse the MDX documentation files for PSADT v4 cmdlets. It extracts detailed information for each cmdlet, including its synopsis, description, parameters (with types, mandatory status, default values, and valid values), parameter sets, examples, and related links. This parsed data is crucial for the Hallucination Detector and Advisor AI.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.services.psadt_documentation_parser import PSADTDocumentationParser
+
+parser = PSADTDocumentationParser()
+cmdlets = parser.parse_all_cmdlets()
+print(f"Parsed {len(cmdlets)} cmdlets.")
+if "Copy-ADTFile" in cmdlets:
+    print(f"Copy-ADTFile Synopsis: {cmdlets['Copy-ADTFile'].synopsis}")
+```
+
+Initializes the parser and parses all cmdlet documentation files.
+
+### EXAMPLE 2
+
+```python
+from src.app.services.psadt_documentation_parser import PSADTDocumentationParser
+from pathlib import Path
+
+parser = PSADTDocumentationParser()
+file_path = Path("PSADT/docs/docs/Copy-ADTFile.mdx")
+cmdlet_def = parser.parse_mdx_file(file_path)
+if cmdlet_def:
+    print(f"Parsed cmdlet: {cmdlet_def.name}")
+    print(f"Parameters: {list(cmdlet_def.parameters.keys())}")
+```
+
+Parses a single MDX documentation file.
+
+### EXAMPLE 3
+
+```python
+from src.app.services.psadt_documentation_parser import PSADTDocumentationParser
+
+parser = PSADTDocumentationParser()
+parser.parse_all_cmdlets()
+parser.export_to_json("psadt_cmdlets.json")
+```
+
+Parses all cmdlets and exports their definitions to a JSON file.
+
+## PARAMETERS
+
+### -docs_path
+
+The path to the directory containing the PSADT MDX documentation files. Defaults to "PSADT/docs/docs".
+
+```yaml
+Type: str
+Parameter Sets: __init__
+Aliases:
+
+Required: False
+Position: 1
+Default value: "PSADT/docs/docs"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -file_path
+
+The `Path` object to a single MDX file to parse.
+
+```yaml
+Type: Path
+Parameter Sets: parse_mdx_file
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -name
+
+The name of the cmdlet to retrieve.
+
+```yaml
+Type: str
+Parameter Sets: get_cmdlet
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -output_file
+
+The path to the JSON file where the parsed cmdlet definitions will be exported.
+
+```yaml
+Type: str
+Parameter Sets: export_to_json
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### Dict[str, CmdletDefinition]
+
+`parse_all_cmdlets` returns a dictionary mapping cmdlet names to their `CmdletDefinition` objects.
+
+### Optional[CmdletDefinition]
+
+`parse_mdx_file` returns a `CmdletDefinition` object if parsing is successful, otherwise `None`.
+`get_cmdlet` returns a `CmdletDefinition` object for the specified cmdlet, or `None` if not found.
+
+### List[str]
+
+`get_cmdlet_names` returns a list of all parsed cmdlet names.
+
+### None
+
+`export_to_json` does not return any value.
+
+### Dict[str, Any]
+
+`get_validation_summary` returns a dictionary summarizing the parsed cmdlet data, useful for validation coverage.
+
+## NOTES
+The parser uses regular expressions to extract information from the MDX files.
+It handles various sections like SYNOPSIS, SYNTAX, DESCRIPTION, PARAMETERS, EXAMPLES, NOTES, INPUTS, OUTPUTS, and RELATED LINKS.
+It includes logic to determine parameter types, mandatory status, and default values from YAML-like blocks within the MDX.
+
+Tags: PSADT, Documentation, Parser, Cmdlet, MDX<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `RAGService`
+
+## SYNOPSIS
+
+Stage 2+5: Targeted documentation queries.
+
+## SYNTAX
+
+```python
+class RAGService:
+    def __init__(self, package_id: str = "system") -> None
+    def query(self, cmdlets: List[str]) -> str
+```
+
+## DESCRIPTION
+
+This class implements the Retrieval Augmented Generation (RAG) service (used in Stage 2 and Stage 5 of the 5-stage pipeline). It queries the `crawl4ai-rag` MCP server to retrieve relevant PSADT documentation based on a list of predicted cmdlets, providing contextual information for script generation and correction.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+import anyio
+from src.app.services.rag_service import RAGService
+
+async def example_rag_query():
+    rag_service = RAGService("my-package-uuid")
+    cmdlets_to_query = ["Start-ADTMsiProcess", "Show-ADTInstallationWelcome"]
+    documentation = await rag_service.query(cmdlets_to_query)
+    print(f"Retrieved documentation length: {len(documentation)}")
+
+# anyio.run(example_rag_query)
+```
+
+Initializes the RAG service and queries for documentation on specific cmdlets.
+
+## PARAMETERS
+
+### -package_id
+
+The UUID of the package as a string, used for logging. Defaults to "system".
+
+```yaml
+Type: str
+Parameter Sets: __init__
+Aliases:
+
+Required: False
+Position: 1
+Default value: "system"
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -cmdlets
+
+A list of PSADT cmdlet names (strings) for which to retrieve documentation.
+
+```yaml
+Type: List[str]
+Parameter Sets: query
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### str
+
+`query` returns a string containing the retrieved documentation relevant to the queried cmdlets.
+
+## NOTES
+The service uses `MCPService` to interact with the `crawl4ai-rag` MCP server.
+It uses a thread-safe wrapper (`_run_mcp_in_thread`) to call asynchronous MCP functions.
+It applies `retry_with_backoff` for robust query execution.
+The `source` for the RAG query is hardcoded to `psappdeploytoolkit.com` to ensure relevance.
+
+Tags: AI Pipeline, RAG, Documentation, `crawl4ai-rag`, PSADT<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `PSADTGenerator`
+
+## SYNOPSIS
+
+5-stage pipeline orchestrator.
+
+## SYNTAX
+
+```python
+class PSADTGenerator:
+    def __init__(self) -> None
+    def generate_script(self, text: str, package: Package | None = None, session: Session | None = None, progress_queue: queue.Queue | None = None) -> PSADTScript
+```
+
+## DESCRIPTION
+
+This class orchestrates the entire 5-stage self-correcting AI pipeline for generating PSADT scripts. It integrates the Instruction Processor, RAG Service, Hallucination Detector, and Advisor Service to transform user instructions into a validated PowerShell script. It also handles progress reporting and database updates.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.app.services.script_generator import PSADTGenerator
+from src.app.models import Package
+from src.app.database import get_database_service
+import queue
+
+# Assuming 'package_obj' is a Package instance from the database
+# and 'session_obj' is an SQLAlchemy session
+# generator = PSADTGenerator()
+# progress_q = queue.Queue()
+# final_script = generator.generate_script(
+#     "Install Adobe Reader silently.",
+#     package=package_obj,
+#     session=session_obj,
+#     progress_queue=progress_q
+# )
+# print(final_script.installation_tasks)
+```
+
+Initializes the generator and runs the full 5-stage pipeline to generate a script.
+
+## PARAMETERS
+
+### -text
+
+The raw user instructions as a string (e.g., "Install the application").
+
+```yaml
+Type: str
+Parameter Sets: generate_script
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -package
+
+Optional `Package` object associated with the current generation request. Used for storing intermediate results and logging.
+
+```yaml
+Type: Package | None
+Parameter Sets: generate_script
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -session
+
+Optional SQLAlchemy `Session` object for database interactions.
+
+```yaml
+Type: Session | None
+Parameter Sets: generate_script
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -progress_queue
+
+Optional `queue.Queue` object for sending real-time progress updates to the frontend.
+
+```yaml
+Type: queue.Queue | None
+Parameter Sets: generate_script
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### PSADTScript
+
+`generate_script` returns a `PSADTScript` object representing the final generated and validated PowerShell script.
+
+## NOTES
+The pipeline stages are: Instruction Processing (1), Targeted RAG (2), Script Generation (3), Hallucination Detection (4), and Advisor AI (5).
+It uses `retry_with_backoff` for robustness in each stage.
+Progress updates are sent via the `progress_queue` and logged using `PackageLogger` and `CMTraceLogger`.
+It updates the `Package` object in the database with results from each stage.
+If no hallucinations are detected, Stage 5 (Advisor AI) is skipped.
+
+Tags: AI Pipeline, Orchestrator, Script Generation, PSADT, Workflow<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `WorkflowStep`
+
+## SYNOPSIS
+
+Represents the steps in the package creation workflow.
+
+## SYNTAX
+
+```python
+class WorkflowStep(enum.Enum):
+    UPLOAD = "upload"
+    EXTRACT_METADATA = "extract_metadata"
+    PREPROCESS = "preprocess"
+    GENERATE_PROMPT = "generate_prompt"
+    CALL_AI = "call_ai"
+    RENDER_SCRIPT = "render_script"
+    COMPLETED = "completed"
+    FAILED = "failed"
+```
+
+## DESCRIPTION
+
+This `enum.Enum` defines the various stages a package goes through during its processing workflow within the AIPackager application. These steps are used for tracking the `current_step` and `status` of a `Package` record in the database.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.aipackager.workflow import WorkflowStep
+
+current_step = WorkflowStep.EXTRACT_METADATA
+print(current_step.value) # Output: "extract_metadata"
+```
+
+Accesses the value of a workflow step.
+
+### EXAMPLE 2
+
+```python
+from src.aipackager.workflow import WorkflowStep
+
+if package.current_step == WorkflowStep.COMPLETED.value:
+    print("Package processing finished.")
+```
+
+Compares a package's current step with an enum value.
+
+## PARAMETERS
+
+### None
+
+This enum has no parameters.
+
+## INPUTS
+
+### None
+
+This enum does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+This enum does not generate any direct output. Its members are constants.
+
+## NOTES
+The values of the enum members are strings, which are used for database storage and UI display.
+The `WorkflowStep` enum in `src/aipackager/workflow.py` is an older version. The updated and more comprehensive `WorkflowStep` enum, reflecting the 5-stage pipeline, is defined in `docs/api-reference.md` and used in `src/app/models.py`. This documentation reflects the older enum from `src/aipackager/workflow.py`.
+
+Tags: Workflow, Enum, Status, Pipeline<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
+
+---
+
+## `PackageRequest`
+
+## SYNOPSIS
+
+Represents a single package creation request.
+
+## SYNTAX
+
+```python
+class PackageRequest:
+    def __init__(self, package: Any) -> None
+    def start(self) -> None
+    def set_step(self, step_name: str) -> None
+    def save_metadata(self, metadata: Dict[str, Any]) -> None
+    def resume(self) -> None
+    @classmethod
+    def resume_pending_jobs(cls) -> None
+```
+
+## DESCRIPTION
+
+This class encapsulates the business logic for processing a single package creation request. It manages the package's state transitions, logs progress, saves metadata, and supports resuming interrupted workflows.
+
+## EXAMPLES
+
+### EXAMPLE 1
+
+```python
+from src.aipackager.workflow import PackageRequest
+# Assuming 'package_obj' is a Package instance
+# request = PackageRequest(package_obj)
+# request.start()
+# request.set_step("extract_metadata")
+```
+
+Initializes a package request and sets its initial step.
+
+### EXAMPLE 2
+
+```python
+from src.aipackager.workflow import PackageRequest
+# Assuming 'package_obj' is a Package instance with status "processing"
+# request = PackageRequest(package_obj)
+# request.resume()
+```
+
+Resumes processing for an incomplete package.
+
+### EXAMPLE 3
+
+```python
+from src.aipackager.workflow import PackageRequest
+# Assuming Flask app context is active
+# PackageRequest.resume_pending_jobs()
+```
+
+Class method to resume all pending jobs on application startup.
+
+## PARAMETERS
+
+### -package
+
+The `Package` object associated with this request.
+
+```yaml
+Type: Any
+Parameter Sets: __init__
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -step_name
+
+The name of the new step to transition to (e.g., "upload", "extract_metadata", "completed").
+
+```yaml
+Type: str
+Parameter Sets: set_step
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -metadata
+
+A dictionary containing the metadata to be saved for the package.
+
+```yaml
+Type: Dict[str, Any]
+Parameter Sets: save_metadata
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+## INPUTS
+
+### None
+
+This class does not accept pipeline input.
+
+## OUTPUTS
+
+### None
+
+`start`, `set_step`, `save_metadata`, and `resume` do not return any value.
+`resume_pending_jobs` (class method) does not return any value.
+
+## NOTES
+This class uses `PackageLogger` for detailed logging of workflow transitions and errors.
+The `resume_pending_jobs` class method is intended to be called once at application startup to ensure continuity of interrupted workflows.
+The `WorkflowStep` enum used internally by this class is an older version. The primary 5-stage pipeline steps are managed by `PSADTGenerator` and reflected in `src/app/models.py`.
+
+Tags: Workflow, Package, State Management, Resume<br />
+Website: https://github.com/alexandergreif/AIPackager_v3<br />
+Copyright: (C) 2025 AIPackager Team<br />
+License: https://opensource.org/license/lgpl-3-0
