@@ -12,8 +12,8 @@ from ..schemas import PSADTScript, InstructionResult
 from ..utils import retry_with_backoff
 from ..workflow.progress import pct
 from ..logging_cmtrace import get_cmtrace_logger
-from ..package_logger import get_package_logger
-from typing import ContextManager
+from ..package_logger import PackageLogger, get_package_logger
+from typing import ContextManager, Optional
 import queue
 from ..config import Config  # Import Config
 
@@ -58,12 +58,15 @@ class PSADTGenerator:
         package: Package | None = None,
         session: Session | None = None,
         progress_queue: queue.Queue | None = None,
+        model_name: Optional[str] = None,
+        package_logger: Optional[PackageLogger] = None,
     ) -> PSADTScript:
         """
         5-stage pipeline for generating validated PSADT scripts.
         """
         package_id = str(package.id) if package else "unknown_package"
-        package_logger = get_package_logger(package_id)
+        if package_logger is None:
+            package_logger = get_package_logger(package_id)
 
         # Stage 1: Instruction Processing
         if not package or not package.instruction_result:
@@ -71,8 +74,8 @@ class PSADTGenerator:
                 1, "Instruction Processing", "START", {"user_instructions": text}
             )
             with PIPELINE_STAGE_SECONDS.labels("instruction_processing").time():
-                instruction_result = self.instruction_processor.process_instructions(
-                    text, package_id
+                instruction_result = self.instruction_processor.process_instructions(  # type: ignore
+                    text=str(text), package_logger=package_logger
                 )
             if package and session:
                 package.instruction_result = instruction_result.model_dump()
@@ -144,8 +147,8 @@ class PSADTGenerator:
                 {"predicted_cmdlets": instruction_result.predicted_cmdlets},
             )
             with PIPELINE_STAGE_SECONDS.labels("rag_enrichment").time():
-                rag_documentation = self.rag_service.query(
-                    instruction_result.predicted_cmdlets
+                rag_documentation = self.rag_service.query(  # type: ignore
+                    instruction_result.predicted_cmdlets, package_logger
                 )
             if package and session:
                 # Convert dict to JSON string for database storage
@@ -195,7 +198,7 @@ class PSADTGenerator:
             )
             with PIPELINE_STAGE_SECONDS.labels("script_generation").time():
                 initial_script = self._generate_initial_script(
-                    instruction_result, rag_documentation, package
+                    instruction_result, rag_documentation, package, model_name
                 )
             if package and session:
                 package.initial_script = initial_script.model_dump()
@@ -246,7 +249,7 @@ class PSADTGenerator:
             )
             with PIPELINE_STAGE_SECONDS.labels("hallucination_detection").time():
                 hallucination_report = self.hallucination_detector.detect(
-                    script_to_validate
+                    script_to_validate, package_logger=package_logger
                 )
             if package and session:
                 package.hallucination_report = hallucination_report
@@ -287,7 +290,9 @@ class PSADTGenerator:
                 )
                 with PIPELINE_STAGE_SECONDS.labels("advisor_correction").time():
                     corrected_script = self.advisor_service.correct_script(
-                        initial_script, hallucination_report, package_id
+                        initial_script,
+                        hallucination_report,
+                        package_logger=package_logger,
                     )
                 if package and session:
                     package.generated_script = corrected_script.model_dump()
@@ -338,6 +343,7 @@ class PSADTGenerator:
         instruction_result: InstructionResult,
         documentation: str,
         package: Package | None,
+        model_name: Optional[str] = None,
     ) -> PSADTScript:
         """Generate initial PSADT script based on instructions and documentation."""
         from .instruction_processor import InstructionProcessor
@@ -360,7 +366,7 @@ class PSADTGenerator:
         ]
 
         response = ip.client.chat.completions.create(
-            model=Config.AI_MODEL,  # Use Config.AI_MODEL
+            model=model_name or Config.AI_MODEL,  # Use model_name or fallback to config
             messages=messages,
             response_format={"type": "json_object"},
         )

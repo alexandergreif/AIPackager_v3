@@ -17,7 +17,7 @@ from openai import (
 
 from jinja2 import Environment, FileSystemLoader
 from ..schemas import PSADTScript
-from ..package_logger import get_package_logger
+from ..package_logger import PackageLogger
 from .rag_service import RAGService
 from .psadt_documentation_parser import PSADTDocumentationParser, CmdletDefinition
 from ..config import Config  # Import Config
@@ -42,10 +42,12 @@ class AdvisorService:
             self.psadt_cmdlets = {}
 
     def correct_script(
-        self, script: PSADTScript, hallucination_report: dict, package_id: str
+        self,
+        script: PSADTScript,
+        hallucination_report: dict,
+        package_logger: PackageLogger,
     ) -> PSADTScript:
-        package_logger = get_package_logger(package_id)
-        self.rag_service = RAGService(package_id=package_id)
+        self.rag_service = RAGService()
 
         if not self.client.api_key:
             package_logger.log_error(
@@ -148,15 +150,57 @@ class AdvisorService:
 
             # Add correction tracking
             corrections = []
+            original_script_tasks = {
+                "pre_installation_tasks": script.pre_installation_tasks,
+                "installation_tasks": script.installation_tasks,
+                "post_installation_tasks": script.post_installation_tasks,
+                "uninstallation_tasks": script.uninstallation_tasks,
+                "post_uninstallation_tasks": script.post_uninstallation_tasks,
+                "pre_repair_tasks": script.pre_repair_tasks,
+                "repair_tasks": script.repair_tasks,
+                "post_repair_tasks": script.post_repair_tasks,
+            }
+
             for issue in hallucination_report.get("issues", []):
-                if issue.get("type") == "unknown_cmdlets":
-                    corrections.append(
-                        f"Corrected unknown cmdlets: {', '.join(issue.get('cmdlets', []))}"
-                    )
-                else:
-                    corrections.append(
-                        f"Applied correction for: {issue.get('type', 'unknown issue')}"
-                    )
+                original_line = "N/A"
+                issue_text = issue.get("text")
+                if issue_text:
+                    # Find the original line in the script that caused the issue
+                    for task_name, task_list in original_script_tasks.items():
+                        for line in task_list:
+                            if issue_text in line:
+                                original_line = line
+                                break
+                        if original_line != "N/A":
+                            break
+
+                # Find the corresponding corrected line
+                corrected_line = "Correction not found"
+                if "text" in issue and issue["text"]:
+                    for task_list in [
+                        corrected_data.get("pre_installation_tasks", []),
+                        corrected_data.get("installation_tasks", []),
+                        corrected_data.get("post_installation_tasks", []),
+                        corrected_data.get("uninstallation_tasks", []),
+                        corrected_data.get("post_uninstallation_tasks", []),
+                        corrected_data.get("pre_repair_tasks", []),
+                        corrected_data.get("repair_tasks", []),
+                        corrected_data.get("post_repair_tasks", []),
+                    ]:
+                        for line in task_list:
+                            if issue["text"] in line:
+                                corrected_line = line
+                                break
+                        if corrected_line != "Correction not found":
+                            break
+
+                correction_details = {
+                    "type": issue.get("type", "unknown"),
+                    "original": original_line,
+                    "corrected": corrected_line,
+                    "reason": issue.get("description", "No description provided."),
+                }
+                corrections.append(correction_details)
 
             script.corrections_applied = corrections
             package_logger.log_step(
@@ -171,7 +215,12 @@ class AdvisorService:
             )
             # Fallback: apply minimal corrections
             script.corrections_applied = [
-                f"Applied basic corrections due to parsing error: {str(e)}"
+                {
+                    "type": "parsing_error",
+                    "original": "N/A",
+                    "corrected": "N/A",
+                    "reason": f"Applied basic corrections due to parsing error: {str(e)}",
+                }
             ]
 
         return script
