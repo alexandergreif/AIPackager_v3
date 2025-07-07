@@ -5,42 +5,46 @@ Stage 4: Script validation using MCP knowledge graph
 """
 
 from ..utils import retry_with_backoff
-from ..package_logger import get_package_logger
+from ..package_logger import PackageLogger
 import re
 from typing import Dict, Any, Optional
 from .psadt_documentation_parser import PSADTDocumentationParser, CmdletDefinition
 
 
 class HallucinationDetector:
-    def __init__(self, package_id: str = "system") -> None:
-        self.package_logger = get_package_logger(package_id)
+    def __init__(self) -> None:
         # Initialize PSADT v4 documentation parser
         self.psadt_parser = PSADTDocumentationParser()
         self.psadt_cmdlets: Optional[Dict[str, CmdletDefinition]] = None
         self._load_psadt_cmdlets()
 
-    def _load_psadt_cmdlets(self) -> None:
+    def _load_psadt_cmdlets(
+        self, package_logger: Optional[PackageLogger] = None
+    ) -> None:
         """Load PSADT v4 cmdlet definitions"""
         try:
             self.psadt_cmdlets = self.psadt_parser.parse_all_cmdlets()
-            self.package_logger.log_step(
-                "PSADT_CMDLETS_LOADED",
-                f"Loaded {len(self.psadt_cmdlets)} PSADT v4 cmdlets for validation",
-            )
+            if package_logger:
+                package_logger.log_step(
+                    "PSADT_CMDLETS_LOADED",
+                    f"Loaded {len(self.psadt_cmdlets)} PSADT v4 cmdlets for validation",
+                )
         except Exception as e:
-            self.package_logger.log_error(
-                "PSADT_CMDLETS_LOAD_FAILED",
-                e,
-                {"fallback": "Will use basic validation"},
-            )
+            if package_logger:
+                package_logger.log_error(
+                    "PSADT_CMDLETS_LOAD_FAILED",
+                    e,
+                    {"fallback": "Will use basic validation"},
+                )
             self.psadt_cmdlets = {}
 
     @retry_with_backoff()
-    def detect(self, script: str) -> Dict[str, Any]:
+    def detect(self, script: str, package_logger: PackageLogger) -> Dict[str, Any]:
         """
         Detects potential hallucinations in a PowerShell script using MCP knowledge graph.
         """
-        self.package_logger.log_step(
+        self._load_psadt_cmdlets(package_logger)
+        package_logger.log_step(
             "HALLUCINATION_DETECTION_START",
             "Starting hallucination detection with MCP knowledge graph",
             data={"script_length": len(script)},
@@ -50,7 +54,7 @@ class HallucinationDetector:
         cmdlet_pattern = r"([A-Z][a-zA-Z]*-[A-Z][a-zA-Z]*)"
         found_cmdlets = re.findall(cmdlet_pattern, script)
 
-        self.package_logger.log_step(
+        package_logger.log_step(
             "CMDLET_EXTRACTION",
             f"Extracted {len(found_cmdlets)} cmdlets from script",
             data={"cmdlets": found_cmdlets},
@@ -59,7 +63,7 @@ class HallucinationDetector:
         try:
             # TEMPORARY: Force fallback validation since MCP is for Python, not PowerShell
             # TODO: Need to either find PowerShell validation in MCP or enhance fallback
-            self.package_logger.log_step(
+            package_logger.log_step(
                 "FORCED_FALLBACK_VALIDATION",
                 "Using fallback validation - MCP check_ai_script_hallucinations is for Python, not PowerShell",
             )
@@ -68,16 +72,16 @@ class HallucinationDetector:
             raise Exception("Forcing fallback validation for PowerShell script testing")
 
         except Exception as e:
-            self.package_logger.log_error(
+            package_logger.log_error(
                 "MCP_VALIDATION_SKIPPED",
                 e,
                 {"script_length": len(script), "cmdlets_found": len(found_cmdlets)},
             )
 
             # Fallback to basic validation if MCP fails
-            report = self._fallback_validation(script, found_cmdlets)
+            report = self._fallback_validation(script, found_cmdlets, package_logger)
 
-        self.package_logger.log_step(
+        package_logger.log_step(
             "HALLUCINATION_DETECTION_COMPLETE",
             f"Hallucination detection completed: {report.get('has_hallucinations', False)}",
             data={"report_summary": report.get("report", {})},
@@ -146,11 +150,11 @@ class HallucinationDetector:
             return self._fallback_validation("", found_cmdlets)
 
     def _fallback_validation(
-        self, script: str, found_cmdlets: list[str]
+        self, script: str, found_cmdlets: list[str], package_logger: PackageLogger
     ) -> Dict[str, Any]:
         """Enhanced validation using PSADT v4 cmdlet database."""
         cmdlet_count = len(self.psadt_cmdlets) if self.psadt_cmdlets else 0
-        self.package_logger.log_step(
+        package_logger.log_step(
             "ENHANCED_PSADT_VALIDATION",
             f"Using comprehensive PSADT v4 validation with {cmdlet_count} cmdlets",
         )
@@ -166,7 +170,7 @@ class HallucinationDetector:
 
         # Fallback to basic validation if cmdlets didn't load
         if self.psadt_cmdlets is None or not known_psadt_cmdlets:
-            self.package_logger.log_error(
+            package_logger.log_error(
                 "PSADT_CMDLETS_UNAVAILABLE",
                 Exception("PSADT cmdlets not loaded, using basic validation"),
                 {"cmdlet_count": 0},
@@ -281,24 +285,42 @@ class HallucinationDetector:
         # Add parameter issues to the main issues list
         issues.extend(parameter_issues)
 
-        # Check for suspicious patterns
+        # Check for suspicious patterns and best practice violations
         suspicious_patterns = [
-            (r"Invoke-Expression", "Use of Invoke-Expression can be dangerous"),
+            (
+                r"Invoke-Expression",
+                "suspicious_pattern",
+                "Use of Invoke-Expression can be dangerous",
+                "high",
+            ),
             (
                 r"Start-Process.*-WindowStyle Hidden",
+                "suspicious_pattern",
                 "Hidden process execution detected",
+                "medium",
             ),
-            (r"Remove-Item.*-Recurse.*-Force", "Aggressive file deletion detected"),
+            (
+                r"Remove-Item.*-Recurse.*-Force",
+                "suspicious_pattern",
+                "Aggressive file deletion detected",
+                "high",
+            ),
+            (
+                r"'.*\$.*'",
+                "best_practice_violation",
+                "Variable in single-quoted string will not expand",
+                "medium",
+            ),
         ]
 
-        for pattern, description in suspicious_patterns:
-            if re.search(pattern, script, re.IGNORECASE):
+        for pattern, issue_type, description, severity in suspicious_patterns:
+            for match in re.finditer(pattern, script, re.IGNORECASE):
                 issues.append(
                     {
-                        "type": "suspicious_pattern",
+                        "type": issue_type,
                         "description": description,
-                        "severity": "medium",
-                        "pattern": pattern,
+                        "severity": severity,
+                        "text": match.group(0),
                     }
                 )
 

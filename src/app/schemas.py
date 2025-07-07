@@ -24,4 +24,49 @@ class PSADTScript(BaseModel):
     repair_tasks: List[str]
     post_repair_tasks: List[str]
     hallucination_report: Optional[Dict[str, Any]] = None
-    corrections_applied: Optional[List[str]] = None
+    corrections_applied: Optional[List[Dict[str, Any]]] = None
+
+
+# --- Evaluation Feature Schemas ---
+
+
+class Scenario(BaseModel):
+    """Pydantic model for a test scenario."""
+
+    id: str
+    title: str
+    prompt: str
+    difficulty: str
+    category: str
+    psadt_variables: Dict[str, str]
+
+
+class ModelInfo(BaseModel):
+    """Pydantic model for a language model."""
+
+    id: str
+    name: str
+    description: str
+
+
+class EvaluationMetrics(BaseModel):
+    """Pydantic model for evaluation metrics."""
+
+    hallucinations_found: int
+    hallucinations_corrected: int
+    trust_score: float
+
+
+class EvaluationResult(BaseModel):
+    """Pydantic model for a full evaluation result."""
+
+    id: str
+    model: ModelInfo
+    scenario: Scenario
+    timestamp: str
+    raw_model_output: str
+    advisor_corrected_output: str
+    evaluation_log: str  # This will now be a path to the log file
+    metrics: EvaluationMetrics
+    detailed_hallucination_report: Optional[List[Dict[str, Any]]] = None
+    detailed_corrections_log: Optional[List[Dict[str, Any]]] = None
