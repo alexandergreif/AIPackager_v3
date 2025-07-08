@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createCard(item, type) {
         const card = document.createElement('div');
         card.className = `glass-card p-4 ${type}-card cursor-pointer flex items-start`;
-        
+
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.className = 'mr-4 mt-1 h-4 w-4 text-accent-purple bg-secondary-bg border-border-color rounded focus:ring-accent-purple';
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedModels = getSelectedIds('model');
         const selectedScenarios = getSelectedIds('scenario');
         startEvaluationBtn.disabled = !(selectedModels.length > 0 && selectedScenarios.length > 0);
-        
+
         // Save selections to localStorage
         localStorage.setItem('selectedModels', JSON.stringify(selectedModels));
         localStorage.setItem('selectedScenarios', JSON.stringify(selectedScenarios));
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const savedModels = JSON.parse(localStorage.getItem('selectedModels') || '[]');
             const savedScenarios = JSON.parse(localStorage.getItem('selectedScenarios') || '[]');
-            
+
             // Apply saved model selections
             savedModels.forEach(id => {
                 const checkbox = modelSelector.querySelector(`input[data-id="${id}"]`);
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     checkbox.closest('.model-card')?.classList.add('selected');
                 }
             });
-            
+
             // Apply saved scenario selections
             savedScenarios.forEach(id => {
                 const checkbox = scenarioSelector.querySelector(`input[data-id="${id}"]`);
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     checkbox.closest('.scenario-card')?.classList.add('selected');
                 }
             });
-            
+
             updateButtonState();
         } catch (e) {
             console.warn('Failed to load saved selections:', e);
@@ -228,9 +228,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function filterEvaluations(evaluations, filterText) {
         if (!filterText) return evaluations;
-        
+
         const filter = filterText.toLowerCase();
-        return evaluations.filter(e => 
+        return evaluations.filter(e =>
             e.model.name.toLowerCase().includes(filter) ||
             e.scenario.title.toLowerCase().includes(filter) ||
             e.scenario.category?.toLowerCase().includes(filter)
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function sortEvaluations(evaluations, sortBy) {
         const sorted = [...evaluations];
-        
+
         switch (sortBy) {
             case 'timestamp-desc':
                 return sorted.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -261,13 +261,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyFiltersAndSort() {
         // Filter evaluations
         filteredEvaluations = filterEvaluations(allEvaluations, currentFilter);
-        
+
         // Sort evaluations
         filteredEvaluations = sortEvaluations(filteredEvaluations, currentSort);
-        
+
         // Render results
         renderPastEvaluations(filteredEvaluations);
-        
+
         // Update results count
         if (resultsCount) {
             resultsCount.textContent = filteredEvaluations.length;
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderPastEvaluations(evaluations) {
         pastEvaluationsTable.innerHTML = '';
-        
+
         if (evaluations.length === 0) {
             if (allEvaluations.length === 0) {
                 // No evaluations at all - show empty state
@@ -294,14 +294,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide empty state and show table
         pastEvaluationsTable.parentElement.classList.remove('hidden');
         evaluationsEmpty.classList.add('hidden');
-        
+
         evaluations.forEach(e => {
             const row = document.createElement('tr');
             row.className = 'border-b border-border-color hover:bg-secondary-bg transition-colors';
-            
+
             const trustScoreClass = getTrustScoreClass(e.metrics.trust_score);
             const trustScoreDisplay = (e.metrics.trust_score * 100).toFixed(1) + '%';
-            
+
             row.innerHTML = `
                 <td class="px-6 py-4 whitespace-nowrap text-text-primary font-medium">${e.model.name}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-text-primary">${e.scenario.title}</td>
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `
             <div class="glass-card p-6 mb-4">
                 <h3 class="text-xl font-semibold text-accent-green mb-4">Result for ${result.model.name} on "${result.scenario.title}"</h3>
-                
+
                 <!-- Metrics -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="glass-card p-4 text-center">
@@ -429,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
             evaluationSpinner.classList.add('hidden');
             startEvaluationBtn.disabled = false;
             hideNewEvaluationModal();
-            
+
             // Fetch full logs for all results now that the process is complete
             for (let i = 0; i < allResults.length; i++) {
                 try {
@@ -567,11 +567,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         console.error('open-evaluation-modal-btn element not found!');
     }
-    
+
     if (newEvaluationModalCloseBtn) {
         newEvaluationModalCloseBtn.addEventListener('click', hideNewEvaluationModal);
     }
-    
+
     // Modal close handler removed - now using full-page view
 
     selectAllModelsBtn.addEventListener('click', () => {
@@ -581,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         updateButtonState();
     });
-    
+
     deselectAllModelsBtn.addEventListener('click', () => {
         modelSelector.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             cb.checked = false;
@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         updateButtonState();
     });
-    
+
     selectAllScenariosBtn.addEventListener('click', () => {
         scenarioSelector.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             cb.checked = true;
@@ -597,7 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         updateButtonState();
     });
-    
+
     deselectAllScenariosBtn.addEventListener('click', () => {
         scenarioSelector.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             cb.checked = false;
@@ -605,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         updateButtonState();
     });
-    
+
     newEvaluationModal.addEventListener('click', (event) => {
         if (event.target === newEvaluationModal) {
             hideNewEvaluationModal();

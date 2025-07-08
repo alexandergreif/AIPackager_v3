@@ -17,49 +17,49 @@
         border-color: #4f46e5;
         box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4);
     }
-    
+
     /* Skeleton loading animations */
     .skeleton {
         background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
         background-size: 200% 100%;
         animation: skeleton-loading 1.5s infinite;
     }
-    
+
     @keyframes skeleton-loading {
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
     }
-    
+
     .skeleton-card {
         height: 120px;
         border-radius: 8px;
     }
-    
+
     .skeleton-text {
         height: 20px;
         border-radius: 4px;
         margin-bottom: 8px;
     }
-    
+
     .skeleton-text.short {
         width: 60%;
     }
-    
+
     .skeleton-text.long {
         width: 90%;
     }
-    
+
     /* Trust score color coding */
     .trust-score-excellent { color: #10b981; }
     .trust-score-good { color: #f59e0b; }
     .trust-score-poor { color: #ef4444; }
-    
+
     /* Enhanced progress bar */
     .progress-bar-enhanced {
         position: relative;
         overflow: hidden;
     }
-    
+
     .progress-bar-enhanced::after {
         content: '';
         position: absolute;
@@ -80,24 +80,24 @@
         background-size: 50px 50px;
         animation: move 2s linear infinite;
     }
-    
+
     @keyframes move {
         0% { background-position: 0 0; }
         100% { background-position: 50px 50px; }
     }
-    
+
     /* Error state styling */
     .error-container {
         border-left: 4px solid #ef4444;
         background-color: rgba(239, 68, 68, 0.1);
     }
-    
+
     /* Tooltip styling */
     .tooltip {
         position: relative;
         display: inline-block;
     }
-    
+
     .tooltip .tooltiptext {
         visibility: hidden;
         width: 200px;
@@ -115,7 +115,7 @@
         transition: opacity 0.3s;
         font-size: 0.875rem;
     }
-    
+
     .tooltip .tooltiptext::after {
         content: "";
         position: absolute;
@@ -126,25 +126,25 @@
         border-style: solid;
         border-color: #1f2937 transparent transparent transparent;
     }
-    
+
     .tooltip:hover .tooltiptext {
         visibility: visible;
         opacity: 1;
     }
-    
+
     /* Additional evaluation-specific styles */
     .text-accent-blue { color: var(--accent-blue); }
     .text-accent-green { color: var(--accent-green); }
     .text-accent-purple { color: var(--accent-purple); }
     .text-text-primary { color: var(--text-primary); }
     .text-text-secondary { color: var(--text-secondary); }
-    
+
     /* Modal overlay styling - backdrop for page blur */
     .modal-overlay {
         background-color: rgba(0, 0, 0, 0.5);
         backdrop-filter: blur(4px);
     }
-    
+
     /* Proper modal dialog styling */
     .modal-dialog {
         background-color: rgba(24, 26, 32, 0.95); /* Nearly opaque dark panel */
@@ -158,7 +158,7 @@
         /* Remove any backdrop blur from the modal itself */
         backdrop-filter: none;
     }
-    
+
     /* Modal header styling */
     .modal-header {
         font-size: 1.25rem; /* 20px */
@@ -171,7 +171,7 @@
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 16px;
     }
-    
+
     /* Close button styling */
     .modal-close {
         position: absolute;
@@ -187,17 +187,17 @@
         transition: color 0.2s, background-color 0.2s;
         z-index: 10;
     }
-    
+
     .modal-close:hover {
         color: var(--text-primary);
         background-color: rgba(239, 68, 68, 0.1);
     }
-    
+
     /* Form step sections */
     .eval-form-step {
         margin-bottom: 24px; /* Clear separation */
     }
-    
+
     /* Step headers */
     .step-header {
         font-size: 1.125rem; /* 18px */
@@ -248,7 +248,7 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Filter and Sort Controls -->
             <div class="filter-controls">
                 <input type="text" id="filter-input" class="filter-input" placeholder="Filter by model or scenario...">
@@ -264,7 +264,7 @@
                     <span id="results-count">0</span> evaluations
                 </div>
             </div>
-            
+
             <div class="overflow-x-auto">
                 <table class="min-w-full">
                     <thead>
@@ -288,13 +288,13 @@
                     </tbody>
                 </table>
             </div>
-            
+
             <!-- Loading state for table -->
             <div id="evaluations-loading" class="hidden text-center py-8">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue"></div>
                 <p class="mt-2 text-text-secondary">Loading evaluations...</p>
             </div>
-            
+
             <!-- Empty state -->
             <div id="evaluations-empty" class="hidden text-center py-8">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto text-text-secondary mb-4">
@@ -314,11 +314,11 @@
 <div id="new-evaluation-modal" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto modal-overlay">
     <div class="modal-dialog w-11/12 my-8 max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <button id="new-evaluation-modal-close-btn" class="modal-close" aria-label="Close modal">&times;</button>
-        
+
         <div class="modal-header">
             <h3 id="modal-title">Run a New Evaluation</h3>
         </div>
-        
+
         <div class="overflow-y-auto">
             <form id="evaluation-form">
                 <div class="eval-form-step">

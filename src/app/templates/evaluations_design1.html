@@ -12,7 +12,7 @@
         gap: 2rem;
         margin-bottom: 2rem;
     }
-    
+
     .selection-section {
         background: var(--card-bg);
         border: 1px solid var(--border-color);
@@ -20,7 +20,7 @@
         padding: 1.5rem;
         backdrop-filter: blur(10px);
     }
-    
+
     .section-header {
         display: flex;
         justify-content: space-between;
@@ -29,19 +29,19 @@
         padding-bottom: 0.75rem;
         border-bottom: 2px solid var(--accent-blue);
     }
-    
+
     .section-title {
         font-size: 1.25rem;
         font-weight: 700;
         color: var(--accent-blue);
         margin: 0;
     }
-    
+
     .select-actions {
         display: flex;
         gap: 0.5rem;
     }
-    
+
     .select-action {
         font-size: 0.75rem;
         color: var(--accent-purple);
@@ -52,12 +52,12 @@
         cursor: pointer;
         transition: all 0.2s ease;
     }
-    
+
     .select-action:hover {
         background: var(--accent-purple);
         color: white;
     }
-    
+
     .cards-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -66,7 +66,7 @@
         overflow-y: auto;
         padding-right: 0.5rem;
     }
-    
+
     .selectable-card {
         background: var(--secondary-bg);
         border: 2px solid var(--border-color);
@@ -76,33 +76,33 @@
         transition: all 0.3s ease;
         position: relative;
     }
-    
+
     .selectable-card:hover {
         border-color: var(--accent-blue);
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
     }
-    
+
     .selectable-card.selected {
         border-color: var(--accent-green);
         background: rgba(16, 245, 76, 0.1);
         box-shadow: 0 0 0 1px var(--accent-green);
     }
-    
+
     .card-header {
         display: flex;
         justify-content: between;
         align-items: center;
         margin-bottom: 0.5rem;
     }
-    
+
     .card-title {
         font-size: 1rem;
         font-weight: 600;
         color: var(--text-primary);
         margin: 0;
     }
-    
+
     .card-badge {
         background: var(--accent-blue);
         color: white;
@@ -112,14 +112,14 @@
         font-weight: 500;
         margin-left: auto;
     }
-    
+
     .card-description {
         color: var(--text-secondary);
         font-size: 0.875rem;
         line-height: 1.4;
         margin-bottom: 0.75rem;
     }
-    
+
     .card-meta {
         display: flex;
         justify-content: space-between;
@@ -127,7 +127,7 @@
         font-size: 0.75rem;
         color: var(--text-secondary);
     }
-    
+
     .card-checkbox {
         position: absolute;
         top: 0.75rem;
@@ -136,7 +136,7 @@
         height: 18px;
         accent-color: var(--accent-green);
     }
-    
+
     .selection-summary {
         background: var(--primary-bg);
         border: 1px solid var(--border-color);
@@ -147,13 +147,13 @@
         justify-content: space-between;
         align-items: center;
     }
-    
+
     .summary-item {
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
-    
+
     .summary-count {
         background: var(--accent-blue);
         color: white;
@@ -162,7 +162,7 @@
         font-weight: 600;
         font-size: 0.875rem;
     }
-    
+
     .start-evaluation-section {
         text-align: center;
         padding: 2rem;
@@ -170,7 +170,7 @@
         border-radius: 12px;
         border: 1px solid var(--border-color);
     }
-    
+
     .start-btn {
         background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
         color: white;
@@ -183,37 +183,37 @@
         transition: all 0.3s ease;
         box-shadow: 0 4px 12px rgba(16, 245, 76, 0.3);
     }
-    
+
     .start-btn:hover:not(:disabled) {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(16, 245, 76, 0.4);
     }
-    
+
     .start-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
         transform: none;
     }
-    
+
     /* Scrollbar styling */
     .cards-grid::-webkit-scrollbar {
         width: 6px;
     }
-    
+
     .cards-grid::-webkit-scrollbar-track {
         background: var(--secondary-bg);
         border-radius: 3px;
     }
-    
+
     .cards-grid::-webkit-scrollbar-thumb {
         background: var(--accent-blue);
         border-radius: 3px;
     }
-    
+
     .cards-grid::-webkit-scrollbar-thumb:hover {
         background: var(--accent-purple);
     }
-    
+
     /* Loading skeleton for cards */
     .skeleton-card {
         background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
@@ -223,17 +223,17 @@
         height: 120px;
         margin-bottom: 1rem;
     }
-    
+
     @keyframes skeleton-loading {
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }
     }
-    
+
     @media (max-width: 768px) {
         .selection-container {
             grid-template-columns: 1fr;
         }
-        
+
         .cards-grid {
             grid-template-columns: 1fr;
         }
@@ -275,7 +275,7 @@
                     <button class="select-action" onclick="deselectAllModels()">Clear</button>
                 </div>
             </div>
-            
+
             <div class="cards-grid" id="models-grid">
                 <!-- Models will be loaded here -->
                 <div class="skeleton-card"></div>
@@ -293,7 +293,7 @@
                     <button class="select-action" onclick="deselectAllScenarios()">Clear</button>
                 </div>
             </div>
-            
+
             <div class="cards-grid" id="scenarios-grid">
                 <!-- Scenarios will be loaded here -->
                 <div class="skeleton-card"></div>
@@ -317,11 +317,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     let selectedModels = new Set();
     let selectedScenarios = new Set();
-    
+
     // Load mock data
     loadModels();
     loadScenarios();
-    
+
     function loadModels() {
         const models = [
             { id: 'gpt-4', name: 'GPT-4', description: 'Most capable GPT model with advanced reasoning', category: 'OpenAI' },
@@ -331,16 +331,16 @@ document.addEventListener('DOMContentLoaded', function() {
             { id: 'gemini-pro', name: 'Gemini Pro', description: 'Google\'s advanced AI model', category: 'Google' },
             { id: 'llama-2-70b', name: 'Llama 2 70B', description: 'Meta\'s open-source large language model', category: 'Meta' }
         ];
-        
+
         const grid = document.getElementById('models-grid');
         grid.innerHTML = '';
-        
+
         models.forEach(model => {
             const card = createModelCard(model);
             grid.appendChild(card);
         });
     }
-    
+
     function loadScenarios() {
         const scenarios = [
             { id: 'simple-install', title: 'Simple Installation', description: 'Basic MSI installation with standard parameters', difficulty: 'Easy' },
@@ -350,21 +350,21 @@ document.addEventListener('DOMContentLoaded', function() {
             { id: 'registry-changes', title: 'Registry Modifications', description: 'Installation requiring registry modifications', difficulty: 'Hard' },
             { id: 'file-operations', title: 'File Operations', description: 'Complex file copy and manipulation tasks', difficulty: 'Medium' }
         ];
-        
+
         const grid = document.getElementById('scenarios-grid');
         grid.innerHTML = '';
-        
+
         scenarios.forEach(scenario => {
             const card = createScenarioCard(scenario);
             grid.appendChild(card);
         });
     }
-    
+
     function createModelCard(model) {
         const card = document.createElement('div');
         card.className = 'selectable-card';
         card.dataset.modelId = model.id;
-        
+
         card.innerHTML = `
             <input type="checkbox" class="card-checkbox" onchange="toggleModel('${model.id}')">
             <div class="card-header">
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>Model ID: ${model.id}</span>
             </div>
         `;
-        
+
         card.addEventListener('click', (e) => {
             if (e.target.type !== 'checkbox') {
                 const checkbox = card.querySelector('.card-checkbox');
@@ -384,21 +384,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 toggleModel(model.id);
             }
         });
-        
+
         return card;
     }
-    
+
     function createScenarioCard(scenario) {
         const card = document.createElement('div');
         card.className = 'selectable-card';
         card.dataset.scenarioId = scenario.id;
-        
+
         const difficultyColors = {
             'Easy': 'var(--accent-green)',
             'Medium': 'var(--accent-blue)',
             'Hard': 'var(--accent-purple)'
         };
-        
+
         card.innerHTML = `
             <input type="checkbox" class="card-checkbox" onchange="toggleScenario('${scenario.id}')">
             <div class="card-header">
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>Scenario ID: ${scenario.id}</span>
             </div>
         `;
-        
+
         card.addEventListener('click', (e) => {
             if (e.target.type !== 'checkbox') {
                 const checkbox = card.querySelector('.card-checkbox');
@@ -418,14 +418,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 toggleScenario(scenario.id);
             }
         });
-        
+
         return card;
     }
-    
+
     window.toggleModel = function(modelId) {
         const card = document.querySelector(`[data-model-id="${modelId}"]`);
         const checkbox = card.querySelector('.card-checkbox');
-        
+
         if (checkbox.checked) {
             selectedModels.add(modelId);
             card.classList.add('selected');
@@ -433,14 +433,14 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedModels.delete(modelId);
             card.classList.remove('selected');
         }
-        
+
         updateCounts();
     };
-    
+
     window.toggleScenario = function(scenarioId) {
         const card = document.querySelector(`[data-scenario-id="${scenarioId}"]`);
         const checkbox = card.querySelector('.card-checkbox');
-        
+
         if (checkbox.checked) {
             selectedScenarios.add(scenarioId);
             card.classList.add('selected');
@@ -448,10 +448,10 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedScenarios.delete(scenarioId);
             card.classList.remove('selected');
         }
-        
+
         updateCounts();
     };
-    
+
     window.selectAllModels = function() {
         document.querySelectorAll('[data-model-id]').forEach(card => {
             const checkbox = card.querySelector('.card-checkbox');
@@ -461,7 +461,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         updateCounts();
     };
-    
+
     window.deselectAllModels = function() {
         document.querySelectorAll('[data-model-id]').forEach(card => {
             const checkbox = card.querySelector('.card-checkbox');
@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         updateCounts();
     };
-    
+
     window.selectAllScenarios = function() {
         document.querySelectorAll('[data-scenario-id]').forEach(card => {
             const checkbox = card.querySelector('.card-checkbox');
@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         updateCounts();
     };
-    
+
     window.deselectAllScenarios = function() {
         document.querySelectorAll('[data-scenario-id]').forEach(card => {
             const checkbox = card.querySelector('.card-checkbox');
@@ -491,22 +491,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         updateCounts();
     };
-    
+
     function updateCounts() {
         document.getElementById('selected-models-count').textContent = selectedModels.size;
         document.getElementById('selected-scenarios-count').textContent = selectedScenarios.size;
         document.getElementById('total-evaluations-count').textContent = selectedModels.size * selectedScenarios.size;
-        
+
         const startBtn = document.getElementById('start-evaluation-btn');
         startBtn.disabled = selectedModels.size === 0 || selectedScenarios.size === 0;
     }
-    
+
     window.startEvaluation = function() {
         if (selectedModels.size === 0 || selectedScenarios.size === 0) {
             alert('Please select at least one model and one scenario.');
             return;
         }
-        
+
         alert(`Starting evaluation with ${selectedModels.size} models and ${selectedScenarios.size} scenarios (${selectedModels.size * selectedScenarios.size} total evaluations)`);
     };
 });

@@ -47,7 +47,7 @@ PIPELINE_STAGE_SECONDS = Summary(
 class PSADTGenerator:
     def __init__(self) -> None:
         self.instruction_processor = InstructionProcessor()
-        self.rag_service = (
+        self.rag_service: Optional[RAGService] = (
             None  # Will be initialized with package_id in generate_script
         )
         self.hallucination_detector = HallucinationDetector()
@@ -71,8 +71,11 @@ class PSADTGenerator:
             package_logger = get_package_logger(package_id)
 
         # Initialize RAG service with package_id if not already done
-        if not self.rag_service:
+        if self.rag_service is None:
             self.rag_service = RAGService(package_id)
+
+        # Type assertion to help mypy understand the type
+        assert self.rag_service is not None
 
         # Stage 1: Instruction Processing
         if not package or not package.instruction_result:
