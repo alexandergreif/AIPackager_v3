@@ -1,0 +1,34 @@
+{
+  "models": [
+    {
+      "id": "gpt-4o",
+      "name": "GPT-4o",
+      "description": "The latest and most advanced model from OpenAI, with improved speed and intelligence."
+    },
+    {
+      "id": "gpt-4o-mini",
+      "name": "GPT-4o Mini",
+      "description": "A smaller, faster, and more cost-effective version of GPT-4o."
+    },
+    {
+      "id": "gpt-4.1",
+      "name": "GPT-4.1",
+      "description": "A hypothetical advanced version of GPT-4, offering enhanced capabilities."
+    },
+    {
+      "id": "gpt-4.1-mini",
+      "name": "GPT-4.1 Mini",
+      "description": "A smaller, more efficient version of the hypothetical GPT-4.1 model."
+    },
+    {
+      "id": "gpt-4.1-nano",
+      "name": "GPT-4.1 Nano",
+      "description": "An extremely lightweight version of GPT-4.1, designed for on-device tasks."
+    }
+  ],
+  "advisor_model": {
+    "id": "advisor-v2",
+    "name": "Evaluation Advisor v2",
+    "description": "A specialized model trained to detect and correct hallucinations in the output of other language models."
+  }
+}

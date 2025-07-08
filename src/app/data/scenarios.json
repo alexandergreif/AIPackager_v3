@@ -1,0 +1,87 @@
+[
+  {
+    "id": "scenario-1",
+    "title": "VLC Media Player",
+    "prompt": "Generate a PSADT script to silently install VLC Media Player 3.0.16.",
+    "difficulty": "easy",
+    "category": "Media",
+    "psadt_variables": {
+      "app_vendor": "VideoLAN",
+      "app_name": "VLC Media Player",
+      "app_version": "3.0.16",
+      "app_arch": "x64",
+      "app_lang": "EN",
+      "app_script_version": "1.0.0",
+      "app_script_date": "2025-07-06",
+      "app_script_author": "AI Packager"
+    }
+  },
+  {
+    "id": "scenario-2",
+    "title": "7-Zip Archiver",
+    "prompt": "Create a PSADT script for the silent installation of 7-Zip 21.07, ensuring any running 7-Zip processes are closed beforehand.",
+    "difficulty": "easy",
+    "category": "Utilities",
+    "psadt_variables": {
+      "app_vendor": "Igor Pavlov",
+      "app_name": "7-Zip",
+      "app_version": "21.07",
+      "app_arch": "x64",
+      "app_lang": "EN",
+      "app_script_version": "1.0.0",
+      "app_script_date": "2025-07-06",
+      "app_script_author": "AI Packager"
+    }
+  },
+  {
+    "id": "scenario-3",
+    "title": "Notepad++",
+    "prompt": "Generate a PSADT script to deploy Notepad++ 8.4.2, including a custom shortcut on the public desktop.",
+    "difficulty": "medium",
+    "category": "Developer Tools",
+    "psadt_variables": {
+      "app_vendor": "Don Ho",
+      "app_name": "Notepad++",
+      "app_version": "8.4.2",
+      "app_arch": "x86",
+      "app_lang": "EN",
+      "app_script_version": "1.0.0",
+      "app_script_date": "2025-07-06",
+      "app_script_author": "AI Packager"
+    }
+  },
+  {
+    "id": "scenario-4",
+    "title": "Adobe Acrobat Reader DC",
+    "prompt": "Create a PSADT script for Adobe Acrobat Reader DC that removes previous versions and disables the desktop shortcut.",
+    "difficulty": "hard",
+    "category": "Productivity",
+    "psadt_variables": {
+      "app_vendor": "Adobe",
+      "app_name": "Acrobat Reader DC",
+      "app_version": "2022.001.20117",
+      "app_arch": "x64",
+      "app_lang": "EN",
+      "app_script_version": "1.0.0",
+      "app_script_date": "2025-07-06",
+      "app_script_author": "AI Packager"
+    }
+  },
+  {
+    "id": "scenario-5",
+    "title": "Google Chrome",
+    "prompt": "Generate a PSADT script to install Google Chrome Enterprise, set the default homepage, and remove the desktop icon.",
+    "difficulty": "medium",
+    "category": "Browser",
+    "psadt_variables": {
+      "app_vendor": "Google",
+      "app_name": "Chrome",
+      "app_version": "103.0.5060.114",
+      "app_arch": "x64",
+      "app_lang": "EN",
+      "app_script_version": "1.0.0",
+      "app_script_date": "2025-07-06",
+      "app_script_author": "AI Packager"
+    }
+  }
+]

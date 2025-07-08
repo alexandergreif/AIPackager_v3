@@ -251,6 +251,48 @@ def register_routes(app: Flask) -> None:
         """Render the maintenance and tools page."""
         return render_template("tools.html")
 
+    @app.route("/evaluations")
+    def evaluations() -> str:
+        """Render the evaluation page."""
+        return render_template("evaluations.html")
+
+    @app.route("/evaluations/new")
+    def new_evaluation() -> str:
+        """Render the new evaluation page."""
+        return render_template("new_evaluation.html")
+
+    @app.route("/evaluations/<evaluation_id>")
+    def evaluation_detail(evaluation_id: str) -> Union[str, tuple[str, int]]:
+        """Render the evaluation detail page."""
+        try:
+            from .services.evaluation_service import EvaluationService
+
+            instance_dir = Path(current_app.instance_path)
+            evaluation_service = EvaluationService(instance_dir)
+            evaluations = evaluation_service.get_all_evaluations()
+
+            # Find the specific evaluation
+            evaluation = next((e for e in evaluations if e.id == evaluation_id), None)
+            if not evaluation:
+                return "Evaluation not found", 404
+
+            # Get the evaluation log content
+            log_content = None
+            try:
+                log_content = evaluation_service.get_evaluation_log_content(
+                    evaluation.evaluation_log
+                )
+            except Exception as e:
+                log_content = f"Failed to load evaluation log: {str(e)}"
+
+            return render_template(
+                "evaluation_detail.html",
+                evaluation=evaluation,
+                log_content=log_content,
+            )
+        except Exception as e:
+            return f"Error loading evaluation: {str(e)}", 500
+
     @app.route("/api/packages", methods=["POST"])
     def api_create_package() -> Response | tuple[Response, int]:
         """API endpoint to create a new package with file upload."""
@@ -584,6 +626,138 @@ def register_routes(app: Flask) -> None:
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/evaluations/models", methods=["GET"])
+    def api_get_evaluation_models() -> Response | tuple[Response, int]:
+        """API endpoint to get available evaluation models."""
+        try:
+            from .services.evaluation_service import EvaluationService
+
+            instance_dir = Path(current_app.instance_path)
+            evaluation_service = EvaluationService(instance_dir)
+            models = evaluation_service.get_models()
+            return jsonify([model.model_dump() for model in models])
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/evaluations/scenarios", methods=["GET"])
+    def api_get_evaluation_scenarios() -> Response | tuple[Response, int]:
+        """API endpoint to get available evaluation scenarios."""
+        try:
+            from .services.evaluation_service import EvaluationService
+
+            instance_dir = Path(current_app.instance_path)
+            evaluation_service = EvaluationService(instance_dir)
+            scenarios = evaluation_service.get_scenarios()
+            return jsonify([scenario.model_dump() for scenario in scenarios])
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/evaluations", methods=["GET"])
+    def api_get_evaluations() -> Response | tuple[Response, int]:
+        """API endpoint to get all past evaluation results."""
+        try:
+            from .services.evaluation_service import EvaluationService
+
+            instance_dir = Path(current_app.instance_path)
+            evaluation_service = EvaluationService(instance_dir)
+            evaluations = evaluation_service.get_all_evaluations()
+            return jsonify([evaluation.model_dump() for evaluation in evaluations])
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/evaluations/logs", methods=["GET"])
+    def api_get_evaluation_logs() -> Response | tuple[Response, int]:
+        """API endpoint to get evaluation log content."""
+        try:
+            log_path = request.args.get("path")
+            if not log_path:
+                return jsonify({"error": "Log path is required"}), 400
+
+            from .services.evaluation_service import EvaluationService
+
+            instance_dir = Path(current_app.instance_path)
+            evaluation_service = EvaluationService(instance_dir)
+            log_content = evaluation_service.get_evaluation_log_content(log_path)
+
+            if log_content is None:
+                return jsonify({"error": "Log file not found"}), 404
+
+            return Response(log_content, mimetype="text/plain")
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/evaluations/run", methods=["POST"])
+    def api_run_evaluation() -> Response | tuple[Response, int]:
+        """API endpoint to run a new evaluation asynchronously."""
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Request data is required"}), 400
+
+        model_ids = data.get("model_ids", [])
+        scenario_ids = data.get("scenario_ids", [])
+
+        if not model_ids:
+            return jsonify({"error": "At least one model must be selected"}), 400
+        if not scenario_ids:
+            return jsonify({"error": "At least one scenario must be selected"}), 400
+
+        def evaluation_task(model_ids: list[str], scenario_ids: list[str]) -> None:
+            with app.app_context():
+                from .services.evaluation_service import EvaluationService
+
+                instance_dir = Path(current_app.instance_path)
+                evaluation_service = EvaluationService(instance_dir)
+
+                total_runs = len(model_ids) * len(scenario_ids)
+                completed_runs = 0
+
+                for model_id in model_ids:
+                    for scenario_id in scenario_ids:
+                        try:
+                            result = evaluation_service.run_evaluation(
+                                model_id, scenario_id
+                            )
+                            completed_runs += 1
+                            progress = (completed_runs / total_runs) * 100
+
+                            if result:
+                                socketio.emit(
+                                    "evaluation_progress",
+                                    {
+                                        "progress": progress,
+                                        "status": f"Completed {completed_runs}/{total_runs}: {result.model['name']} on {result.scenario['title']}",
+                                        "result": result.model_dump(),
+                                    },
+                                )
+                            else:
+                                socketio.emit(
+                                    "evaluation_progress",
+                                    {
+                                        "progress": progress,
+                                        "status": f"Failed {completed_runs}/{total_runs}: {model_id} on {scenario_id}",
+                                        "error": f"Evaluation failed for {model_id} on {scenario_id}",
+                                    },
+                                )
+                        except Exception as e:
+                            completed_runs += 1
+                            progress = (completed_runs / total_runs) * 100
+                            socketio.emit(
+                                "evaluation_progress",
+                                {
+                                    "progress": progress,
+                                    "status": f"Error on {model_id} / {scenario_id}",
+                                    "error": str(e),
+                                },
+                            )
+
+                socketio.emit(
+                    "evaluation_complete", {"message": "All evaluations completed."}
+                )
+
+        socketio.start_background_task(evaluation_task, model_ids, scenario_ids)
+
+        return jsonify({"message": "Evaluation started"}), 202
 
     @app.route("/api/kb/sources", methods=["GET"])
     def api_get_kb_sources() -> Response | tuple[Response, int]:
