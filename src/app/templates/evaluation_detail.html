@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}Evaluation Details - {{ evaluation.model.name }} on {{ evaluation.scenario.title }} - AIPackager v3{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    /* Trust score color coding */
+    .trust-score-excellent { color: #10b981; }
+    .trust-score-good { color: #f59e0b; }
+    .trust-score-poor { color: #ef4444; }
+
+    /* Tab styling */
+    .tab-button {
+        @apply px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-text-secondary hover:text-text-primary hover:border-border-color transition-colors;
+    }
+
+    .tab-button.active {
+        @apply text-accent-blue border-accent-blue bg-secondary-bg;
+    }
+
+    .tab-content {
+        @apply hidden;
+    }
+
+    .tab-content.active {
+        @apply block;
+    }
+
+    /* Code styling */
+    .code-block {
+        @apply bg-secondary-bg p-4 rounded-lg text-sm font-mono whitespace-pre-wrap text-text-secondary;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .code-block.large {
+        max-height: 700px;
+    }
+
+    /* Diff styling */
+    .diff-container {
+        @apply grid grid-cols-1 lg:grid-cols-2 gap-4;
+    }
+
+    .diff-original {
+        @apply bg-red-900 bg-opacity-20 border-l-4 border-red-500;
+    }
+
+    .diff-corrected {
+        @apply bg-green-900 bg-opacity-20 border-l-4 border-green-500;
+    }
+
+    /* Metrics styling */
+    .metric-card {
+        @apply glass-card p-6 text-center;
+    }
+
+    .metric-value {
+        @apply text-3xl font-bold text-text-primary;
+    }
+
+    .metric-label {
+        @apply text-sm text-text-secondary mt-2;
+    }
+
+    /* Issue styling */
+    .issue-item {
+        @apply bg-secondary-bg p-4 rounded-lg border-l-4;
+    }
+
+    .issue-hallucination {
+        @apply border-red-500;
+    }
+
+    .issue-correction {
+        @apply border-green-500;
+    }
+
+    /* Breadcrumb styling */
+    .breadcrumb {
+        @apply flex items-center space-x-2 text-sm text-text-secondary mb-6;
+    }
+
+    .breadcrumb a {
+        @apply text-accent-blue hover:underline;
+    }
+
+    .breadcrumb-separator {
+        @apply text-text-secondary;
+    }
+
+    /* Back button styling */
+    .back-button {
+        @apply inline-flex items-center px-4 py-2 text-sm font-medium text-accent-blue bg-secondary-bg border border-border-color rounded-lg hover:bg-primary-bg transition-colors;
+    }
+
+    /* Print styles */
+    @media print {
+        .tab-buttons, .back-button, .breadcrumb {
+            display: none !important;
+        }
+
+        .tab-content {
+            display: block !important;
+        }
+
+        .code-block {
+            max-height: none !important;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Breadcrumb Navigation -->
+    <nav class="breadcrumb">
+        <a href="{{ url_for('evaluations') }}">Evaluations</a>
+        <span class="breadcrumb-separator">›</span>
+        <span class="text-text-primary">{{ evaluation.model.name }} on {{ evaluation.scenario.title }}</span>
+    </nav>
+
+    <!-- Back Button -->
+    <div class="mb-6">
+        <a href="{{ url_for('evaluations') }}" class="back-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Back to Evaluations
+        </a>
+    </div>
+
+    <!-- Header Section -->
+    <div class="glass-card p-6 mb-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-accent-blue mb-2">Evaluation Details</h1>
+                <div class="space-y-1 text-text-secondary">
+                    <p><strong class="text-text-primary">Model:</strong> {{ evaluation.model.name }}</p>
+                    <p><strong class="text-text-primary">Scenario:</strong> {{ evaluation.scenario.title }}</p>
+                    <p><strong class="text-text-primary">Category:</strong> {{ evaluation.scenario.category }}</p>
+                    <p><strong class="text-text-primary">Timestamp:</strong> {{ evaluation.timestamp[:19].replace('T', ' ') if evaluation.timestamp else 'N/A' }}</p>
+                </div>
+            </div>
+            <div class="mt-4 lg:mt-0">
+                {% set trust_score = evaluation.metrics.trust_score %}
+                {% set trust_score_class = 'trust-score-excellent' if trust_score >= 0.8 else ('trust-score-good' if trust_score >= 0.6 else 'trust-score-poor') %}
+                <div class="text-center">
+                    <div class="text-4xl font-bold {{ trust_score_class }}">
+                        {{ "%.1f"|format(trust_score * 100) }}%
+                    </div>
+                    <div class="text-sm text-text-secondary mt-1">Trust Score</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="metric-card">
+            <div class="metric-value text-red-400">{{ evaluation.metrics.hallucinations_found or 0 }}</div>
+            <div class="metric-label">Hallucinations Found</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value text-green-400">{{ evaluation.metrics.hallucinations_corrected or 0 }}</div>
+            <div class="metric-label">Hallucinations Corrected</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value {{ trust_score_class }}">{{ "%.2f"|format(trust_score) }}</div>
+            <div class="metric-label">Trust Score (0.0 - 1.0)</div>
+        </div>
+    </div>
+
+    <!-- Tabbed Content -->
+    <div class="glass-card p-6">
+        <!-- Tab Navigation -->
+        <div class="tab-buttons flex flex-wrap border-b border-border-color mb-6">
+            <button class="tab-button active" data-tab="overview">Overview</button>
+            <button class="tab-button" data-tab="original-output">Original Output</button>
+            <button class="tab-button" data-tab="corrected-output">Corrected Output</button>
+            <button class="tab-button" data-tab="comparison">Comparison</button>
+            <button class="tab-button" data-tab="issues-found">Issues Found</button>
+            <button class="tab-button" data-tab="corrections-applied">Corrections Applied</button>
+            <button class="tab-button" data-tab="full-log">Full Log</button>
+        </div>
+
+        <!-- Tab Content -->
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <h3 class="text-xl font-semibold text-accent-green mb-4">Evaluation Overview</h3>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-semibold text-text-primary mb-3">Model Information</h4>
+                    <div class="space-y-2 text-sm">
+                        <p><strong>Name:</strong> {{ evaluation.model.name }}</p>
+                        <p><strong>Description:</strong> {{ evaluation.model.description or 'N/A' }}</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-text-primary mb-3">Scenario Information</h4>
+                    <div class="space-y-2 text-sm">
+                        <p><strong>Title:</strong> {{ evaluation.scenario.title }}</p>
+                        <p><strong>Category:</strong> {{ evaluation.scenario.category or 'N/A' }}</p>
+                        <p><strong>Description:</strong> {{ evaluation.scenario.description or 'N/A' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <h4 class="font-semibold text-text-primary mb-3">Summary</h4>
+                <div class="bg-secondary-bg p-4 rounded-lg">
+                    {% if evaluation.metrics.hallucinations_found == 0 %}
+                        <p class="text-green-400">✅ This evaluation completed successfully with no hallucinations detected.</p>
+                    {% else %}
+                        <p class="text-text-secondary">
+                            This evaluation detected <span class="text-red-400 font-semibold">{{ evaluation.metrics.hallucinations_found }}</span> hallucination(s).
+                            {% if evaluation.metrics.hallucinations_corrected > 0 %}
+                                The advisor successfully corrected <span class="text-green-400 font-semibold">{{ evaluation.metrics.hallucinations_corrected }}</span> of them.
+                            {% else %}
+                                No corrections were applied.
+                            {% endif %}
+                            Trust score: <span class="{{ trust_score_class }} font-semibold">{{ "%.1f"|format(trust_score * 100) }}%</span>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Original Output Tab -->
+        <div id="original-output" class="tab-content">
+            <h3 class="text-xl font-semibold text-accent-green mb-4">Original Model Output</h3>
+            <div class="code-block large">{{ evaluation.raw_model_output or 'No original output available.' }}</div>
+        </div>
+
+        <!-- Corrected Output Tab -->
+        <div id="corrected-output" class="tab-content">
+            <h3 class="text-xl font-semibold text-accent-green mb-4">Advisor Corrected Output</h3>
+            <div class="code-block large">{{ evaluation.advisor_corrected_output or 'No corrected output available.' }}</div>
+        </div>
+
+        <!-- Comparison Tab -->
+        <div id="comparison" class="tab-content">
+            <h3 class="text-xl font-semibold text-accent-green mb-4">Side-by-Side Comparison</h3>
+            <div class="diff-container">
+                <div>
+                    <h4 class="font-semibold text-text-primary mb-2">Original Output</h4>
+                    <div class="code-block diff-original">{{ evaluation.raw_model_output or 'No original output available.' }}</div>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-text-primary mb-2">Corrected Output</h4>
+                    <div class="code-block diff-corrected">{{ evaluation.advisor_corrected_output or 'No corrected output available.' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Issues Found Tab -->
+        <div id="issues-found" class="tab-content">
+            <h3 class="text-xl font-semibold text-accent-green mb-4">Detected Hallucinations</h3>
+            {% if evaluation.detailed_hallucination_report and evaluation.detailed_hallucination_report|length > 0 %}
+                <div class="space-y-4">
+                    {% for issue in evaluation.detailed_hallucination_report %}
+                        <div class="issue-item issue-hallucination">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 mr-3">
+                                    <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                                        <span class="text-white text-xs font-bold">!</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-red-400 mb-2">{{ issue.type or 'Hallucination' }}</h4>
+                                    <p class="text-text-secondary mb-2">{{ issue.text or issue.description or 'No description available.' }}</p>
+                                    {% if issue.context %}
+                                        <div class="mt-2">
+                                            <strong class="text-text-primary">Context:</strong>
+                                            <code class="bg-primary-bg px-2 py-1 rounded text-sm">{{ issue.context }}</code>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto text-green-400 mb-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h4 class="text-lg font-medium text-green-400 mb-2">No Issues Found</h4>
+                    <p class="text-text-secondary">This evaluation completed without detecting any hallucinations.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Corrections Applied Tab -->
+        <div id="corrections-applied" class="tab-content">
+            <h3 class="text-xl font-semibold text-accent-green mb-4">Applied Corrections</h3>
+            {% if evaluation.detailed_corrections_log and evaluation.detailed_corrections_log|length > 0 %}
+                <div class="space-y-4">
+                    {% for correction in evaluation.detailed_corrections_log %}
+                        <div class="issue-item issue-correction">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 mr-3">
+                                    <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                        <span class="text-white text-xs font-bold">✓</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-green-400 mb-2">Correction Applied</h4>
+                                    <p class="text-text-secondary mb-2"><strong>Original:</strong> {{ correction.original or 'N/A' }}</p>
+                                    {% if correction.corrected %}
+                                        <p class="text-text-secondary mb-2"><strong>Corrected:</strong> {{ correction.corrected }}</p>
+                                    {% endif %}
+                                    {% if correction.reason %}
+                                        <div class="mt-2">
+                                            <strong class="text-text-primary">Reason:</strong>
+                                            <span class="text-text-secondary">{{ correction.reason }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto text-text-secondary mb-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                    </svg>
+                    <h4 class="text-lg font-medium text-text-secondary mb-2">No Corrections Applied</h4>
+                    <p class="text-text-secondary">No corrections were necessary or applied during this evaluation.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Full Log Tab -->
+        <div id="full-log" class="tab-content">
+            <h3 class="text-xl font-semibold text-accent-green mb-4">Full Evaluation Log</h3>
+            {% if log_content %}
+                <div class="code-block large">{{ log_content }}</div>
+            {% else %}
+                <div class="text-center py-8">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto text-text-secondary mb-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    <h4 class="text-lg font-medium text-text-secondary mb-2">Log Not Available</h4>
+                    <p class="text-text-secondary">The evaluation log could not be loaded.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Print Button -->
+    <div class="mt-8 text-center no-print">
+        <button onclick="window.print()" class="btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.32 0H6.34m11.32 0l1.05-4.171" />
+            </svg>
+            Print Report
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Add active class to clicked button and corresponding content
+            this.classList.add('active');
+            document.getElementById(targetTab).classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}

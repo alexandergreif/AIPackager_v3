@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+
+{% block title %}Model Evaluations - Design 1{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    /* Design 1: Card-Based Layout with Grid System */
+    .selection-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .selection-section {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--accent-blue);
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--accent-blue);
+        margin: 0;
+    }
+
+    .select-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .select-action {
+        font-size: 0.75rem;
+        color: var(--accent-purple);
+        background: none;
+        border: 1px solid var(--accent-purple);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .select-action:hover {
+        background: var(--accent-purple);
+        color: white;
+    }
+
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+
+    .selectable-card {
+        background: var(--secondary-bg);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .selectable-card:hover {
+        border-color: var(--accent-blue);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
+    }
+
+    .selectable-card.selected {
+        border-color: var(--accent-green);
+        background: rgba(16, 245, 76, 0.1);
+        box-shadow: 0 0 0 1px var(--accent-green);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .card-badge {
+        background: var(--accent-blue);
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-weight: 500;
+        margin-left: auto;
+    }
+
+    .card-description {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        line-height: 1.4;
+        margin-bottom: 0.75rem;
+    }
+
+    .card-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .card-checkbox {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent-green);
+    }
+
+    .selection-summary {
+        background: var(--primary-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .summary-count {
+        background: var(--accent-blue);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .start-evaluation-section {
+        text-align: center;
+        padding: 2rem;
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    .start-btn {
+        background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(16, 245, 76, 0.3);
+    }
+
+    .start-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 245, 76, 0.4);
+    }
+
+    .start-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Scrollbar styling */
+    .cards-grid::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .cards-grid::-webkit-scrollbar-track {
+        background: var(--secondary-bg);
+        border-radius: 3px;
+    }
+
+    .cards-grid::-webkit-scrollbar-thumb {
+        background: var(--accent-blue);
+        border-radius: 3px;
+    }
+
+    .cards-grid::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-purple);
+    }
+
+    /* Loading skeleton for cards */
+    .skeleton-card {
+        background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 8px;
+        height: 120px;
+        margin-bottom: 1rem;
+    }
+
+    @keyframes skeleton-loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    @media (max-width: 768px) {
+        .selection-container {
+            grid-template-columns: 1fr;
+        }
+
+        .cards-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-accent-blue mb-2">Model Evaluation Center</h1>
+        <p class="text-text-secondary">Select AI models and evaluation scenarios to run comprehensive tests</p>
+    </div>
+
+    <!-- Selection Summary -->
+    <div class="selection-summary">
+        <div class="summary-item">
+            <span class="text-text-secondary">Selected Models:</span>
+            <span class="summary-count" id="selected-models-count">0</span>
+        </div>
+        <div class="summary-item">
+            <span class="text-text-secondary">Selected Scenarios:</span>
+            <span class="summary-count" id="selected-scenarios-count">0</span>
+        </div>
+        <div class="summary-item">
+            <span class="text-text-secondary">Total Evaluations:</span>
+            <span class="summary-count" id="total-evaluations-count">0</span>
+        </div>
+    </div>
+
+    <!-- Selection Container -->
+    <div class="selection-container">
+        <!-- Models Section -->
+        <div class="selection-section">
+            <div class="section-header">
+                <h2 class="section-title">AI Models</h2>
+                <div class="select-actions">
+                    <button class="select-action" onclick="selectAllModels()">Select All</button>
+                    <button class="select-action" onclick="deselectAllModels()">Clear</button>
+                </div>
+            </div>
+
+            <div class="cards-grid" id="models-grid">
+                <!-- Models will be loaded here -->
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+            </div>
+        </div>
+
+        <!-- Scenarios Section -->
+        <div class="selection-section">
+            <div class="section-header">
+                <h2 class="section-title">Test Scenarios</h2>
+                <div class="select-actions">
+                    <button class="select-action" onclick="selectAllScenarios()">Select All</button>
+                    <button class="select-action" onclick="deselectAllScenarios()">Clear</button>
+                </div>
+            </div>
+
+            <div class="cards-grid" id="scenarios-grid">
+                <!-- Scenarios will be loaded here -->
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Evaluation Section -->
+    <div class="start-evaluation-section">
+        <h3 class="text-xl font-semibold text-accent-green mb-4">Ready to Start?</h3>
+        <p class="text-text-secondary mb-6">Run comprehensive evaluations on your selected models and scenarios</p>
+        <button class="start-btn" id="start-evaluation-btn" disabled onclick="startEvaluation()">
+            Start Evaluation
+        </button>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let selectedModels = new Set();
+    let selectedScenarios = new Set();
+
+    // Load mock data
+    loadModels();
+    loadScenarios();
+
+    function loadModels() {
+        const models = [
+            { id: 'gpt-4', name: 'GPT-4', description: 'Most capable GPT model with advanced reasoning', category: 'OpenAI' },
+            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'Fast and efficient model for most tasks', category: 'OpenAI' },
+            { id: 'claude-3-opus', name: 'Claude 3 Opus', description: 'Anthropic\'s most powerful model', category: 'Anthropic' },
+            { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', description: 'Balanced performance and speed', category: 'Anthropic' },
+            { id: 'gemini-pro', name: 'Gemini Pro', description: 'Google\'s advanced AI model', category: 'Google' },
+            { id: 'llama-2-70b', name: 'Llama 2 70B', description: 'Meta\'s open-source large language model', category: 'Meta' }
+        ];
+
+        const grid = document.getElementById('models-grid');
+        grid.innerHTML = '';
+
+        models.forEach(model => {
+            const card = createModelCard(model);
+            grid.appendChild(card);
+        });
+    }
+
+    function loadScenarios() {
+        const scenarios = [
+            { id: 'simple-install', title: 'Simple Installation', description: 'Basic MSI installation with standard parameters', difficulty: 'Easy' },
+            { id: 'complex-install', title: 'Complex Installation', description: 'Multi-step installation with custom configurations', difficulty: 'Hard' },
+            { id: 'silent-install', title: 'Silent Installation', description: 'Unattended installation with no user interaction', difficulty: 'Medium' },
+            { id: 'custom-params', title: 'Custom Parameters', description: 'Installation with specific command-line arguments', difficulty: 'Medium' },
+            { id: 'registry-changes', title: 'Registry Modifications', description: 'Installation requiring registry modifications', difficulty: 'Hard' },
+            { id: 'file-operations', title: 'File Operations', description: 'Complex file copy and manipulation tasks', difficulty: 'Medium' }
+        ];
+
+        const grid = document.getElementById('scenarios-grid');
+        grid.innerHTML = '';
+
+        scenarios.forEach(scenario => {
+            const card = createScenarioCard(scenario);
+            grid.appendChild(card);
+        });
+    }
+
+    function createModelCard(model) {
+        const card = document.createElement('div');
+        card.className = 'selectable-card';
+        card.dataset.modelId = model.id;
+
+        card.innerHTML = `
+            <input type="checkbox" class="card-checkbox" onchange="toggleModel('${model.id}')">
+            <div class="card-header">
+                <h3 class="card-title">${model.name}</h3>
+                <div class="card-badge">${model.category}</div>
+            </div>
+            <div class="card-description">${model.description}</div>
+            <div class="card-meta">
+                <span>Model ID: ${model.id}</span>
+            </div>
+        `;
+
+        card.addEventListener('click', (e) => {
+            if (e.target.type !== 'checkbox') {
+                const checkbox = card.querySelector('.card-checkbox');
+                checkbox.checked = !checkbox.checked;
+                toggleModel(model.id);
+            }
+        });
+
+        return card;
+    }
+
+    function createScenarioCard(scenario) {
+        const card = document.createElement('div');
+        card.className = 'selectable-card';
+        card.dataset.scenarioId = scenario.id;
+
+        const difficultyColors = {
+            'Easy': 'var(--accent-green)',
+            'Medium': 'var(--accent-blue)',
+            'Hard': 'var(--accent-purple)'
+        };
+
+        card.innerHTML = `
+            <input type="checkbox" class="card-checkbox" onchange="toggleScenario('${scenario.id}')">
+            <div class="card-header">
+                <h3 class="card-title">${scenario.title}</h3>
+                <div class="card-badge" style="background: ${difficultyColors[scenario.difficulty]}">${scenario.difficulty}</div>
+            </div>
+            <div class="card-description">${scenario.description}</div>
+            <div class="card-meta">
+                <span>Scenario ID: ${scenario.id}</span>
+            </div>
+        `;
+
+        card.addEventListener('click', (e) => {
+            if (e.target.type !== 'checkbox') {
+                const checkbox = card.querySelector('.card-checkbox');
+                checkbox.checked = !checkbox.checked;
+                toggleScenario(scenario.id);
+            }
+        });
+
+        return card;
+    }
+
+    window.toggleModel = function(modelId) {
+        const card = document.querySelector(`[data-model-id="${modelId}"]`);
+        const checkbox = card.querySelector('.card-checkbox');
+
+        if (checkbox.checked) {
+            selectedModels.add(modelId);
+            card.classList.add('selected');
+        } else {
+            selectedModels.delete(modelId);
+            card.classList.remove('selected');
+        }
+
+        updateCounts();
+    };
+
+    window.toggleScenario = function(scenarioId) {
+        const card = document.querySelector(`[data-scenario-id="${scenarioId}"]`);
+        const checkbox = card.querySelector('.card-checkbox');
+
+        if (checkbox.checked) {
+            selectedScenarios.add(scenarioId);
+            card.classList.add('selected');
+        } else {
+            selectedScenarios.delete(scenarioId);
+            card.classList.remove('selected');
+        }
+
+        updateCounts();
+    };
+
+    window.selectAllModels = function() {
+        document.querySelectorAll('[data-model-id]').forEach(card => {
+            const checkbox = card.querySelector('.card-checkbox');
+            checkbox.checked = true;
+            card.classList.add('selected');
+            selectedModels.add(card.dataset.modelId);
+        });
+        updateCounts();
+    };
+
+    window.deselectAllModels = function() {
+        document.querySelectorAll('[data-model-id]').forEach(card => {
+            const checkbox = card.querySelector('.card-checkbox');
+            checkbox.checked = false;
+            card.classList.remove('selected');
+            selectedModels.delete(card.dataset.modelId);
+        });
+        updateCounts();
+    };
+
+    window.selectAllScenarios = function() {
+        document.querySelectorAll('[data-scenario-id]').forEach(card => {
+            const checkbox = card.querySelector('.card-checkbox');
+            checkbox.checked = true;
+            card.classList.add('selected');
+            selectedScenarios.add(card.dataset.scenarioId);
+        });
+        updateCounts();
+    };
+
+    window.deselectAllScenarios = function() {
+        document.querySelectorAll('[data-scenario-id]').forEach(card => {
+            const checkbox = card.querySelector('.card-checkbox');
+            checkbox.checked = false;
+            card.classList.remove('selected');
+            selectedScenarios.delete(card.dataset.scenarioId);
+        });
+        updateCounts();
+    };
+
+    function updateCounts() {
+        document.getElementById('selected-models-count').textContent = selectedModels.size;
+        document.getElementById('selected-scenarios-count').textContent = selectedScenarios.size;
+        document.getElementById('total-evaluations-count').textContent = selectedModels.size * selectedScenarios.size;
+
+        const startBtn = document.getElementById('start-evaluation-btn');
+        startBtn.disabled = selectedModels.size === 0 || selectedScenarios.size === 0;
+    }
+
+    window.startEvaluation = function() {
+        if (selectedModels.size === 0 || selectedScenarios.size === 0) {
+            alert('Please select at least one model and one scenario.');
+            return;
+        }
+
+        alert(`Starting evaluation with ${selectedModels.size} models and ${selectedScenarios.size} scenarios (${selectedModels.size * selectedScenarios.size} total evaluations)`);
+    };
+});
+</script>
+{% endblock %}

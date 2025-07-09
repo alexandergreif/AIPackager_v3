@@ -1,0 +1,959 @@
+{% extends "base.html" %}
+
+{% block title %}New Evaluation - AIPackager v3{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    /* Page layout */
+    .page-container {
+        position: relative;
+        min-height: calc(100vh - 2rem);
+        padding-bottom: 100px; /* Space for bottom button */
+    }
+
+    /* Section styling */
+    .section {
+        background: var(--secondary-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 32px;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--accent-blue);
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 12px;
+    }
+
+    .section-description {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    /* Flexbox layout for 3 cards per row */
+    .cards-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        justify-content: flex-start;
+    }
+
+    /* Responsive: 3 cards per row on desktop, 1 on mobile */
+    @media (min-width: 768px) {
+        .selection-card {
+            flex: 0 0 calc(33.333% - 1rem); /* 3 cards per row */
+            width: calc(33.333% - 1rem);
+            max-width: calc(33.333% - 1rem);
+        }
+    }
+
+    @media (max-width: 767px) {
+        .selection-card {
+            flex: 0 0 100%; /* 1 card per row on mobile */
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .cards-grid {
+            gap: 1rem;
+        }
+    }
+
+    .selection-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        /* Exactly 3 cards per row */
+        flex: 0 0 calc(33.333% - 1rem);
+        width: calc(33.333% - 1rem);
+        max-width: calc(33.333% - 1rem);
+    }
+
+    .selection-card:hover {
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .selection-card.selected {
+        border-color: var(--accent-green);
+        background: rgba(16, 245, 76, 0.05);
+        box-shadow: 0 0 15px rgba(16, 245, 76, 0.3);
+    }
+
+    .selection-card.selected::after {
+        content: '✓';
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 2rem;
+        height: 2rem;
+        background: var(--accent-green);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1rem;
+        z-index: 10;
+    }
+
+    .card-title {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+        line-height: 1.2;
+    }
+
+    .card-description {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        flex-grow: 1;
+        margin-bottom: 1rem;
+    }
+
+    .card-badge {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        z-index: 5;
+    }
+
+    .card-meta {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-family: var(--font-mono);
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .card-checkbox {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* Ensure proper flexbox behavior */
+    .cards-grid {
+        align-items: stretch;
+    }
+
+    /* Section controls */
+    .section-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .select-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .select-action {
+        background: var(--secondary-bg);
+        border: 1px solid var(--border-color);
+        color: var(--accent-blue);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .select-action:hover {
+        background: var(--accent-blue);
+        color: white;
+        border-color: var(--accent-blue);
+    }
+
+    .selection-summary {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .summary-count {
+        background: var(--accent-blue);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 600;
+        min-width: 2rem;
+        text-align: center;
+    }
+
+    /* Start button styling */
+    .start-button-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 1000;
+    }
+
+    .btn-start-evaluation {
+        background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 16px 32px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    }
+
+    .btn-start-evaluation:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+    }
+
+    .btn-start-evaluation:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 2px 8px rgba(0, 212, 255, 0.2);
+    }
+
+    /* Loading skeleton */
+    .skeleton {
+        background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 12px;
+        height: 200px;
+        box-sizing: border-box;
+        /* Match card sizing - 3 per row */
+        flex: 0 0 calc(33.333% - 1rem);
+        width: calc(33.333% - 1rem);
+        max-width: calc(33.333% - 1rem);
+    }
+
+    @keyframes skeleton-loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* Enhanced responsive design */
+    @media (max-width: 768px) {
+        .cards-grid {
+            gap: 1rem;
+        }
+
+        .selection-summary {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .section-controls {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .select-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .selection-card {
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+        }
+
+        .start-button-container {
+            position: static;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .cards-grid {
+            gap: 0.75rem;
+        }
+    }
+
+    /* Progress and status styling */
+    .progress-section {
+        background: var(--secondary-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 24px;
+        margin-top: 24px;
+    }
+
+    .progress-bar-container {
+        width: 100%;
+        background: var(--primary-bg);
+        border-radius: 6px;
+        height: 12px;
+        overflow: hidden;
+        margin: 16px 0;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+        border-radius: 6px;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+
+    .progress-text {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin-top: 8px;
+    }
+
+    /* Error styling */
+    .error-container {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid #ef4444;
+        border-radius: 8px;
+        padding: 16px;
+        margin-top: 16px;
+    }
+
+    .error-title {
+        color: #ef4444;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .error-message {
+        color: #fca5a5;
+        font-size: 0.875rem;
+    }
+
+    /* Results section */
+    .results-container {
+        margin-top: 32px;
+    }
+
+    .result-item {
+        background: var(--secondary-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+
+    .result-success {
+        border-color: var(--accent-green);
+        background: rgba(16, 185, 129, 0.1);
+    }
+
+    .result-error {
+        border-color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Breadcrumb styling */
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+    }
+
+    .breadcrumb a {
+        color: var(--accent-blue);
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .breadcrumb-separator {
+        color: var(--text-secondary);
+    }
+
+    /* Back button styling */
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--secondary-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.2s, border-color 0.2s;
+        margin-bottom: 24px;
+    }
+
+    .back-button:hover {
+        background: var(--primary-bg);
+        border-color: var(--accent-blue);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container w-full">
+    <!-- Breadcrumb Navigation -->
+    <nav class="breadcrumb mb-6">
+        <a href="{{ url_for('evaluations') }}">Evaluations</a>
+        <span class="breadcrumb-separator">›</span>
+        <span style="color: var(--text-primary);">New Evaluation</span>
+    </nav>
+
+    <!-- Back Button -->
+    <a href="{{ url_for('evaluations') }}" class="back-button mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+        </svg>
+        Back to Evaluations
+    </a>
+
+    <!-- Header Section -->
+    <div class="glass-card p-8 mb-8">
+        <h1 class="text-4xl font-bold text-accent-blue mb-4">New Model Evaluation</h1>
+        <p class="text-text-secondary text-lg leading-relaxed">
+            Configure and run evaluations to test AI models against predefined scenarios.
+            Select the models and scenarios you want to evaluate, then start the batch evaluation process.
+        </p>
+    </div>
+
+    <!-- Evaluation Form -->
+    <form id="evaluation-form">
+        <!-- GPT Models Section -->
+        <div class="section">
+            <h2 class="section-title">Select GPT Models</h2>
+            <p class="section-description">
+                Choose which AI models you want to evaluate. Each selected model will be tested against all selected scenarios.
+            </p>
+
+            <div class="section-controls">
+                <div class="summary-item">
+                    <span class="text-text-secondary">Selected:</span>
+                    <span class="summary-count" id="selected-models-count">0</span>
+                </div>
+                <div class="select-actions">
+                    <button type="button" class="select-action" onclick="selectAllModels()">Select All</button>
+                    <button type="button" class="select-action" onclick="deselectAllModels()">Clear All</button>
+                </div>
+            </div>
+
+            <div class="cards-grid" id="models-container">
+                <!-- Models will be loaded here dynamically -->
+            </div>
+
+            <!-- Loading skeleton -->
+            <div id="models-loading" class="cards-grid">
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+            </div>
+        </div>
+
+        <!-- Installer Scenarios Section -->
+        <div class="section">
+            <h2 class="section-title">Select Installer Scenarios</h2>
+            <p class="section-description">
+                Choose the evaluation scenarios. Each scenario represents a specific test case or use case to evaluate model performance.
+            </p>
+
+            <div class="section-controls">
+                <div class="summary-item">
+                    <span class="text-text-secondary">Selected:</span>
+                    <span class="summary-count" id="selected-scenarios-count">0</span>
+                </div>
+                <div class="select-actions">
+                    <button type="button" class="select-action" onclick="selectAllScenarios()">Select All</button>
+                    <button type="button" class="select-action" onclick="deselectAllScenarios()">Clear All</button>
+                </div>
+            </div>
+
+            <div class="cards-grid" id="scenarios-container">
+                <!-- Scenarios will be loaded here dynamically -->
+            </div>
+
+            <!-- Loading skeleton -->
+            <div id="scenarios-loading" class="cards-grid">
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+                <div class="skeleton"></div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Selection Summary -->
+    <div class="selection-summary">
+        <div class="summary-item">
+            <span class="text-text-secondary">Selected Models:</span>
+            <span class="summary-count" id="total-selected-models">0</span>
+        </div>
+        <div class="summary-item">
+            <span class="text-text-secondary">Selected Scenarios:</span>
+            <span class="summary-count" id="total-selected-scenarios">0</span>
+        </div>
+        <div class="summary-item">
+            <span class="text-text-secondary">Total Evaluations:</span>
+            <span class="summary-count" id="total-evaluations">0</span>
+        </div>
+    </div>
+
+    <!-- Fixed Start Button -->
+    <div class="start-button-container">
+        <button type="submit" id="start-evaluation-btn" class="btn-start-evaluation" disabled form="evaluation-form">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+            </svg>
+            Start Evaluation
+        </button>
+    </div>
+
+    <!-- Progress Section -->
+    <div id="progress-section" class="progress-section hidden">
+        <h3 class="text-xl font-semibold text-accent-green mb-4">Evaluation in Progress</h3>
+
+        <div class="flex items-center justify-center mb-4">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue mr-3"></div>
+            <span class="text-text-primary">Running evaluations, please wait...</span>
+        </div>
+
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+
+        <div class="progress-text">
+            <div id="progress-status">Preparing evaluation...</div>
+            <div class="text-xs mt-1">
+                <span id="completed-evaluations">0</span> / <span id="total-evaluations">0</span> evaluations completed
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Section -->
+    <div id="error-section" class="error-container hidden">
+        <div class="error-title">Evaluation Error</div>
+        <div id="error-message" class="error-message"></div>
+        <button type="button" id="retry-evaluation" class="btn-secondary mt-3">
+            Try Again
+        </button>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-section" class="results-container hidden">
+        <h3 class="text-xl font-semibold text-accent-green mb-4">Evaluation Results</h3>
+        <div id="results-list">
+            <!-- Results will be populated here -->
+        </div>
+
+        <div class="text-center mt-6">
+            <a href="{{ url_for('evaluations') }}" class="btn-primary">
+                View All Evaluations
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let selectedModels = new Set();
+    let selectedScenarios = new Set();
+    let socket = null;
+
+    // Initialize Socket.IO
+    if (typeof io !== 'undefined') {
+        socket = io();
+
+        socket.on('evaluation_progress', function(data) {
+            updateProgress(data);
+        });
+
+        socket.on('evaluation_complete', function(data) {
+            completeEvaluation(data);
+        });
+    }
+
+    // Load models and scenarios
+    loadModels();
+    loadScenarios();
+
+    // Event listeners
+    document.getElementById('evaluation-form').addEventListener('submit', startEvaluation);
+    document.getElementById('retry-evaluation').addEventListener('click', retryEvaluation);
+
+    async function loadModels() {
+        try {
+            const response = await fetch('/api/evaluations/models');
+            const models = await response.json();
+
+            document.getElementById('models-loading').style.display = 'none';
+
+            const container = document.getElementById('models-container');
+            container.innerHTML = '';
+
+            models.forEach(model => {
+                const modelItem = createModelItem(model);
+                container.appendChild(modelItem);
+            });
+        } catch (error) {
+            console.error('Failed to load models:', error);
+            showError('Failed to load models: ' + error.message);
+        }
+    }
+
+    async function loadScenarios() {
+        try {
+            const response = await fetch('/api/evaluations/scenarios');
+            const scenarios = await response.json();
+
+            document.getElementById('scenarios-loading').style.display = 'none';
+
+            const container = document.getElementById('scenarios-container');
+            container.innerHTML = '';
+
+            scenarios.forEach(scenario => {
+                const scenarioItem = createScenarioItem(scenario);
+                container.appendChild(scenarioItem);
+            });
+        } catch (error) {
+            console.error('Failed to load scenarios:', error);
+            showError('Failed to load scenarios: ' + error.message);
+        }
+    }
+
+    function createModelItem(model) {
+        const item = document.createElement('div');
+        item.className = 'selection-card glass-card';
+        item.dataset.modelId = model.id;
+
+        // Get model provider info
+        const modelInfo = getModelInfo(model.id);
+
+        item.innerHTML = `
+            <input type="checkbox" id="model-${model.id}" value="${model.id}" class="card-checkbox">
+            <div class="card-badge">${modelInfo.provider}</div>
+            <div class="card-title">${model.name}</div>
+            <div class="card-description">${model.description || 'Advanced AI model for comprehensive evaluation tasks and performance testing.'}</div>
+            <div class="card-meta">Model ID: ${model.id}</div>
+        `;
+
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        checkbox.addEventListener('change', () => toggleModel(model.id, item, checkbox.checked));
+
+        item.addEventListener('click', (e) => {
+            checkbox.checked = !checkbox.checked;
+            toggleModel(model.id, item, checkbox.checked);
+        });
+
+        return item;
+    }
+
+    function createScenarioItem(scenario) {
+        const item = document.createElement('div');
+        item.className = 'selection-card glass-card';
+        item.dataset.scenarioId = scenario.id;
+
+        // Get scenario complexity info
+        const scenarioInfo = getScenarioInfo(scenario);
+
+        item.innerHTML = `
+            <input type="checkbox" id="scenario-${scenario.id}" value="${scenario.id}" class="card-checkbox">
+            <div class="card-badge" style="background: ${scenarioInfo.color}">${scenarioInfo.complexity}</div>
+            <div class="card-title">${scenario.title}</div>
+            <div class="card-description">${scenario.description || scenario.category || 'Comprehensive evaluation scenario designed to test model performance and reliability in real-world deployment situations.'}</div>
+            <div class="card-meta">Scenario ID: ${scenario.id}</div>
+        `;
+
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        checkbox.addEventListener('change', () => toggleScenario(scenario.id, item, checkbox.checked));
+
+        item.addEventListener('click', (e) => {
+            checkbox.checked = !checkbox.checked;
+            toggleScenario(scenario.id, item, checkbox.checked);
+        });
+
+        return item;
+    }
+
+    function toggleModel(modelId, itemElement, isSelected) {
+        if (isSelected) {
+            selectedModels.add(modelId);
+            itemElement.classList.add('selected');
+        } else {
+            selectedModels.delete(modelId);
+            itemElement.classList.remove('selected');
+        }
+        updateStartButton();
+    }
+
+    function toggleScenario(scenarioId, itemElement, isSelected) {
+        if (isSelected) {
+            selectedScenarios.add(scenarioId);
+            itemElement.classList.add('selected');
+        } else {
+            selectedScenarios.delete(scenarioId);
+            itemElement.classList.remove('selected');
+        }
+        updateStartButton();
+    }
+
+    function updateStartButton() {
+        const startBtn = document.getElementById('start-evaluation-btn');
+        startBtn.disabled = selectedModels.size === 0 || selectedScenarios.size === 0;
+
+        // Update counters
+        document.getElementById('selected-models-count').textContent = selectedModels.size;
+        document.getElementById('selected-scenarios-count').textContent = selectedScenarios.size;
+        document.getElementById('total-selected-models').textContent = selectedModels.size;
+        document.getElementById('total-selected-scenarios').textContent = selectedScenarios.size;
+        document.getElementById('total-evaluations').textContent = selectedModels.size * selectedScenarios.size;
+    }
+
+    async function startEvaluation(event) {
+        event.preventDefault();
+
+        if (selectedModels.size === 0 || selectedScenarios.size === 0) {
+            showError('Please select at least one model and one scenario.');
+            return;
+        }
+
+        const totalEvaluations = selectedModels.size * selectedScenarios.size;
+
+        // Show progress section
+        document.getElementById('progress-section').classList.remove('hidden');
+        document.getElementById('error-section').classList.add('hidden');
+        document.getElementById('results-section').classList.add('hidden');
+
+        // Update UI
+        document.getElementById('total-evaluations').textContent = totalEvaluations;
+        document.getElementById('completed-evaluations').textContent = '0';
+        document.getElementById('start-evaluation-btn').disabled = true;
+
+        try {
+            const response = await fetch('/api/evaluations/run', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model_ids: Array.from(selectedModels),
+                    scenario_ids: Array.from(selectedScenarios)
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to start evaluation');
+            }
+
+            const result = await response.json();
+            document.getElementById('progress-status').textContent = result.message;
+
+        } catch (error) {
+            console.error('Failed to start evaluation:', error);
+            showError('Failed to start evaluation: ' + error.message);
+            document.getElementById('start-evaluation-btn').disabled = false;
+        }
+    }
+
+    function updateProgress(data) {
+        if (data.progress !== undefined) {
+            document.getElementById('progress-bar').style.width = data.progress + '%';
+        }
+
+        if (data.status) {
+            document.getElementById('progress-status').textContent = data.status;
+        }
+
+        if (data.result) {
+            addResult(data.result);
+        }
+
+        if (data.error) {
+            showError(data.error);
+        }
+
+        // Update completed count
+        const completedMatch = data.status?.match(/(\d+)\/(\d+)/);
+        if (completedMatch) {
+            document.getElementById('completed-evaluations').textContent = completedMatch[1];
+        }
+    }
+
+    function completeEvaluation(data) {
+        document.getElementById('progress-section').classList.add('hidden');
+        document.getElementById('results-section').classList.remove('hidden');
+        document.getElementById('start-evaluation-btn').disabled = false;
+    }
+
+    function addResult(result) {
+        if (!document.getElementById('results-section').classList.contains('hidden')) {
+            return;
+        }
+
+        const resultsList = document.getElementById('results-list');
+        const resultItem = document.createElement('div');
+        resultItem.className = 'result-item result-success';
+
+        const trustScore = result.metrics?.trust_score || 0;
+        const trustScorePercent = (trustScore * 100).toFixed(1);
+
+        resultItem.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div>
+                    <h4 class="font-semibold text-text-primary">${result.model.name} on ${result.scenario.title}</h4>
+                    <p class="text-text-secondary text-sm mt-1">
+                        Trust Score: ${trustScorePercent}% |
+                        Issues Found: ${result.metrics?.hallucinations_found || 0} |
+                        Issues Fixed: ${result.metrics?.hallucinations_corrected || 0}
+                    </p>
+                </div>
+                <a href="/evaluations/${result.id}" class="btn-secondary text-sm">View Details</a>
+            </div>
+        `;
+
+        resultsList.appendChild(resultItem);
+        document.getElementById('results-section').classList.remove('hidden');
+    }
+
+    function showError(message) {
+        document.getElementById('error-message').textContent = message;
+        document.getElementById('error-section').classList.remove('hidden');
+        document.getElementById('progress-section').classList.add('hidden');
+    }
+
+    function retryEvaluation() {
+        document.getElementById('error-section').classList.add('hidden');
+        document.getElementById('start-evaluation-btn').disabled = false;
+    }
+
+    // Helper functions for card styling
+    function getModelInfo(modelId) {
+        const modelMap = {
+            'gpt-4': { icon: '🤖', provider: 'OpenAI' },
+            'gpt-4-mini': { icon: '🤖', provider: 'OpenAI' },
+            'gpt-4.1': { icon: '🤖', provider: 'OpenAI' },
+            'gpt-4.1-mini': { icon: '🤖', provider: 'OpenAI' },
+            'gpt-4.1-nano': { icon: '🤖', provider: 'OpenAI' },
+            'claude-3-opus': { icon: '🧠', provider: 'Anthropic' },
+            'claude-3-sonnet': { icon: '🧠', provider: 'Anthropic' },
+            'claude-3-haiku': { icon: '🧠', provider: 'Anthropic' },
+            'gemini-pro': { icon: '💎', provider: 'Google' },
+            'llama-2-70b': { icon: '🦙', provider: 'Meta' }
+        };
+
+        return modelMap[modelId] || { icon: '🤖', provider: 'AI' };
+    }
+
+    function getScenarioInfo(scenario) {
+        const scenarioMap = {
+            'vlc-media-player': { icon: '🎬', complexity: 'Media', color: 'linear-gradient(135deg, #f39c12, #e74c3c)' },
+            '7-zip-archiver': { icon: '📦', complexity: 'Utilities', color: 'linear-gradient(135deg, #3498db, #2980b9)' },
+            'notepad-plus-plus': { icon: '📝', complexity: 'Dev Tools', color: 'linear-gradient(135deg, #9b59b6, #8e44ad)' },
+            'adobe-acrobat-reader': { icon: '📄', complexity: 'Productivity', color: 'linear-gradient(135deg, #e67e22, #d35400)' },
+            'google-chrome': { icon: '🌐', complexity: 'Browser', color: 'linear-gradient(135deg, #1abc9c, #16a085)' }
+        };
+
+        const key = scenario.id || scenario.title?.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        return scenarioMap[key] || { icon: '⚙️', complexity: 'Standard', color: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))' };
+    }
+
+    // Global functions for select all/deselect all
+    window.selectAllModels = function() {
+        document.querySelectorAll('[data-model-id]').forEach(card => {
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            if (!checkbox.checked) {
+                checkbox.checked = true;
+                toggleModel(card.dataset.modelId, card, true);
+            }
+        });
+    };
+
+    window.deselectAllModels = function() {
+        document.querySelectorAll('[data-model-id]').forEach(card => {
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            if (checkbox.checked) {
+                checkbox.checked = false;
+                toggleModel(card.dataset.modelId, card, false);
+            }
+        });
+    };
+
+    window.selectAllScenarios = function() {
+        document.querySelectorAll('[data-scenario-id]').forEach(card => {
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            if (!checkbox.checked) {
+                checkbox.checked = true;
+                toggleScenario(card.dataset.scenarioId, card, true);
+            }
+        });
+    };
+
+    window.deselectAllScenarios = function() {
+        document.querySelectorAll('[data-scenario-id]').forEach(card => {
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            if (checkbox.checked) {
+                checkbox.checked = false;
+                toggleScenario(card.dataset.scenarioId, card, false);
+            }
+        });
+    };
+});
+</script>
+{% endblock %}

@@ -5,17 +5,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Any, Optional
 
-from src.app.schemas import (
+from ..schemas import (
     EvaluationResult,
     ModelInfo,
     Scenario,
     EvaluationMetrics,
     PSADTScript,
 )
-from src.app.package_logger import get_package_logger
-from src.app.services.script_generator import PSADTGenerator
-from src.app.models import Package, Metadata  # Import the Package and Metadata model
-from src.app.script_renderer import ScriptRenderer
+from ..package_logger import get_package_logger
+from .script_generator import PSADTGenerator
+from ..models import Package, Metadata
+from ..script_renderer import ScriptRenderer
 
 
 class EvaluationService:

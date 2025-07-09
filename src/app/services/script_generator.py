@@ -47,7 +47,9 @@ PIPELINE_STAGE_SECONDS = Summary(
 class PSADTGenerator:
     def __init__(self) -> None:
         self.instruction_processor = InstructionProcessor()
-        self.rag_service = RAGService()
+        self.rag_service: Optional[RAGService] = (
+            None  # Will be initialized with package_id in generate_script
+        )
         self.hallucination_detector = HallucinationDetector()
         self.advisor_service = AdvisorService()
 
@@ -68,6 +70,13 @@ class PSADTGenerator:
         if package_logger is None:
             package_logger = get_package_logger(package_id)
 
+        # Initialize RAG service with package_id if not already done
+        if self.rag_service is None:
+            self.rag_service = RAGService(package_id)
+
+        # Type assertion to help mypy understand the type
+        assert self.rag_service is not None
+
         # Stage 1: Instruction Processing
         if not package or not package.instruction_result:
             package_logger.log_5_stage_pipeline(
@@ -75,7 +84,7 @@ class PSADTGenerator:
             )
             with PIPELINE_STAGE_SECONDS.labels("instruction_processing").time():
                 instruction_result = self.instruction_processor.process_instructions(  # type: ignore
-                    text=str(text), package_logger=package_logger
+                    text=str(text), package_id=package_id
                 )
             if package and session:
                 package.instruction_result = instruction_result.model_dump()
@@ -148,7 +157,7 @@ class PSADTGenerator:
             )
             with PIPELINE_STAGE_SECONDS.labels("rag_enrichment").time():
                 rag_documentation = self.rag_service.query(  # type: ignore
-                    instruction_result.predicted_cmdlets, package_logger
+                    instruction_result.predicted_cmdlets
                 )
             if package and session:
                 # Convert dict to JSON string for database storage

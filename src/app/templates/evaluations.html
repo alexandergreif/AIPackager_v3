@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}Model Evaluations - AIPackager v3{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .model-card, .scenario-card {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .model-card:hover, .scenario-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .model-card.selected, .scenario-card.selected {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4);
+    }
+
+    /* Skeleton loading animations */
+    .skeleton {
+        background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+    }
+
+    @keyframes skeleton-loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .skeleton-card {
+        height: 120px;
+        border-radius: 8px;
+    }
+
+    .skeleton-text {
+        height: 20px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+    }
+
+    .skeleton-text.short {
+        width: 60%;
+    }
+
+    .skeleton-text.long {
+        width: 90%;
+    }
+
+    /* Trust score color coding */
+    .trust-score-excellent { color: #10b981; }
+    .trust-score-good { color: #f59e0b; }
+    .trust-score-poor { color: #ef4444; }
+
+    /* Enhanced progress bar */
+    .progress-bar-enhanced {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .progress-bar-enhanced::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background-image: linear-gradient(
+            -45deg,
+            rgba(255, 255, 255, .2) 25%,
+            transparent 25%,
+            transparent 50%,
+            rgba(255, 255, 255, .2) 50%,
+            rgba(255, 255, 255, .2) 75%,
+            transparent 75%,
+            transparent
+        );
+        background-size: 50px 50px;
+        animation: move 2s linear infinite;
+    }
+
+    @keyframes move {
+        0% { background-position: 0 0; }
+        100% { background-position: 50px 50px; }
+    }
+
+    /* Error state styling */
+    .error-container {
+        border-left: 4px solid #ef4444;
+        background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Tooltip styling */
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
+
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 200px;
+        background-color: #1f2937;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 8px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.875rem;
+    }
+
+    .tooltip .tooltiptext::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #1f2937 transparent transparent transparent;
+    }
+
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    /* Additional evaluation-specific styles */
+    .text-accent-blue { color: var(--accent-blue); }
+    .text-accent-green { color: var(--accent-green); }
+    .text-accent-purple { color: var(--accent-purple); }
+    .text-text-primary { color: var(--text-primary); }
+    .text-text-secondary { color: var(--text-secondary); }
+
+    /* Modal overlay styling - backdrop for page blur */
+    .modal-overlay {
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+    }
+
+    /* Proper modal dialog styling */
+    .modal-dialog {
+        background-color: rgba(24, 26, 32, 0.95); /* Nearly opaque dark panel */
+        border: 1px solid var(--border-color);
+        border-radius: 8px; /* 8px rounded corners */
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); /* Drop shadow */
+        padding: 24px; /* 24px padding */
+        max-width: 800px; /* Constrained max-width */
+        margin: 0 auto; /* Centered horizontally */
+        position: relative;
+        /* Remove any backdrop blur from the modal itself */
+        backdrop-filter: none;
+    }
+
+    /* Modal header styling */
+    .modal-header {
+        font-size: 1.25rem; /* 20px */
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--accent-green);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 16px;
+    }
+
+    /* Close button styling */
+    .modal-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        transition: color 0.2s, background-color 0.2s;
+        z-index: 10;
+    }
+
+    .modal-close:hover {
+        color: var(--text-primary);
+        background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Form step sections */
+    .eval-form-step {
+        margin-bottom: 24px; /* Clear separation */
+    }
+
+    /* Step headers */
+    .step-header {
+        font-size: 1.125rem; /* 18px */
+        font-weight: 500;
+        color: var(--accent-blue);
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="evaluation-page-content" class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-accent-blue mb-6">Model Evaluation Center</h1>
+
+    <!-- New Evaluation Section -->
+    <section id="new-evaluation" class="mb-8">
+        <a href="{{ url_for('new_evaluation') }}" class="w-full btn-primary py-3 text-lg block text-center">
+            Start New Batch Evaluation
+        </a>
+    </section>
+
+    <!-- Results Section -->
+    <section id="results-section" class="mb-8">
+        <div id="evaluation-results-container">
+            <!-- Detailed result will be shown here -->
+        </div>
+    </section>
+
+    <!-- Past Evaluations Section -->
+    <section id="past-evaluations">
+        <div class="glass-card p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-accent-green">Past Evaluations</h2>
+                <div class="flex gap-2">
+                    <button id="export-csv-btn" class="btn-secondary text-sm" title="Export results as CSV">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Export CSV
+                    </button>
+                    <button id="refresh-evaluations-btn" class="btn-secondary text-sm" title="Refresh evaluations">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter and Sort Controls -->
+            <div class="filter-controls">
+                <input type="text" id="filter-input" class="filter-input" placeholder="Filter by model or scenario...">
+                <select id="sort-select" class="sort-select">
+                    <option value="timestamp-desc">Newest First</option>
+                    <option value="timestamp-asc">Oldest First</option>
+                    <option value="trust-score-desc">Highest Trust Score</option>
+                    <option value="trust-score-asc">Lowest Trust Score</option>
+                    <option value="model-asc">Model A-Z</option>
+                    <option value="scenario-asc">Scenario A-Z</option>
+                </select>
+                <div class="text-sm text-text-secondary self-center">
+                    <span id="results-count">0</span> evaluations
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Model</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Scenario</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">
+                                <div class="tooltip">
+                                    Trust Score
+                                    <span class="tooltiptext">Percentage of hallucinations successfully corrected (0.0 - 1.0)</span>
+                                </div>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Issues Found</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Issues Fixed</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Timestamp</th>
+                            <th class="relative px-6 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="past-evaluations-table">
+                        <!-- Table rows will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Loading state for table -->
+            <div id="evaluations-loading" class="hidden text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue"></div>
+                <p class="mt-2 text-text-secondary">Loading evaluations...</p>
+            </div>
+
+            <!-- Empty state -->
+            <div id="evaluations-empty" class="hidden text-center py-8">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 mx-auto text-text-secondary mb-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h4.125M8.25 8.25V6.108" />
+                </svg>
+                <h3 class="text-lg font-medium text-text-primary mb-2">No evaluations yet</h3>
+                <p class="text-text-secondary mb-4">Run your first evaluation to see results here.</p>
+                <button class="btn-primary" onclick="document.getElementById('open-evaluation-modal-btn').click()">
+                    Start New Evaluation
+                </button>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- New Evaluation Modal -->
+<div id="new-evaluation-modal" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto modal-overlay">
+    <div class="modal-dialog w-11/12 my-8 max-h-[90vh] flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <button id="new-evaluation-modal-close-btn" class="modal-close" aria-label="Close modal">&times;</button>
+
+        <div class="modal-header">
+            <h3 id="modal-title">Run a New Evaluation</h3>
+        </div>
+
+        <div class="overflow-y-auto">
+            <form id="evaluation-form">
+                <div class="eval-form-step">
+                    <div class="step-header">
+                        <h3>1. Select Models</h3>
+                        <div>
+                            <button type="button" id="select-all-models" class="text-sm text-accent-purple hover:underline">Select All</button> |
+                            <button type="button" id="deselect-all-models" class="text-sm text-accent-purple hover:underline">Deselect All</button>
+                        </div>
+                    </div>
+                    <div id="model-selector" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Model cards will be injected here -->
+                    </div>
+                    <!-- Model loading skeleton -->
+                    <div id="models-loading" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                    </div>
+                </div>
+                <div class="eval-form-step">
+                    <div class="step-header">
+                        <h3>2. Select Scenarios</h3>
+                        <div>
+                            <button type="button" id="select-all-scenarios" class="text-sm text-accent-purple hover:underline">Select All</button> |
+                            <button type="button" id="deselect-all-scenarios" class="text-sm text-accent-purple hover:underline">Deselect All</button>
+                        </div>
+                    </div>
+                    <div id="scenario-selector" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Scenario cards will be injected here -->
+                    </div>
+                    <!-- Scenario loading skeleton -->
+                    <div id="scenarios-loading" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                        <div class="skeleton skeleton-card"></div>
+                    </div>
+                </div>
+            </form>
+            <div id="evaluation-spinner" class="hidden text-center mt-4">
+                <div class="flex items-center justify-center mb-4">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue"></div>
+                    <p class="ml-3 text-text-primary">Running evaluation, please wait...</p>
+                </div>
+                <div class="w-full bg-secondary-bg rounded-full h-3 mt-2 progress-bar-enhanced">
+                    <div id="progress-bar" class="bg-accent-blue h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="text-sm text-text-secondary mt-2"></p>
+                <div id="progress-details" class="text-xs text-text-secondary mt-1">
+                    <span id="completed-runs">0</span> / <span id="total-runs">0</span> evaluations completed
+                </div>
+            </div>
+            <div id="evaluation-error" class="hidden mt-4 p-4 error-container rounded-lg">
+                <div class="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-red-500 mr-3 mt-0.5 flex-shrink-0">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                    <div class="flex-1">
+                        <h4 class="font-medium text-red-500 mb-1">Evaluation Error</h4>
+                        <p id="error-message" class="text-sm text-red-400"></p>
+                        <button id="retry-evaluation" class="mt-2 text-sm text-accent-blue hover:underline">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 border-t border-border-color flex justify-end space-x-2">
+            <button type="submit" form="evaluation-form" id="start-evaluation-btn" class="btn-primary" disabled>
+                Start Evaluation
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluation Details Modal removed - now using full-page view -->
+
+<script src="{{ url_for('static', filename='js/evaluations.js') }}"></script>
+{% endblock %}
