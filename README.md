@@ -1,227 +1,180 @@
-# AIPackager v3: Enterprise AI-Powered Script Generation Platform
+# AIPackager v3: PSADT Script Generator
 
-> **A sophisticated 5-stage self-correcting AI pipeline that generates PowerShell App Deployment Toolkit (PSADT) scripts from Windows installer files, featuring advanced hallucination detection and automated correction mechanisms.**
+A Flask web application that generates PowerShell App Deployment Toolkit (PSADT) scripts from Windows installer files using AI-assisted analysis and rule-based validation.
 
-## 🎯 Executive Summary
+## Overview
 
-AIPackager v3 represents a breakthrough in AI-powered enterprise automation, solving the critical challenge of Windows software deployment at scale. The application transforms raw installer files (MSI/EXE) into production-ready PowerShell scripts using a novel **5-stage self-correcting AI pipeline** that combines multiple AI models, knowledge graphs, and vector databases to ensure accuracy and reliability.
+AIPackager v3 automates the creation of PSADT deployment scripts by:
+- Extracting metadata from MSI/EXE installer files
+- Processing user instructions with AI to predict required deployment tasks
+- Generating PowerShell scripts using PSADT v4 cmdlets and templates
+- Validating generated scripts against PSADT documentation to catch errors
 
-**Key Innovation**: Unlike traditional AI code generation tools, AIPackager v3 features built-in hallucination detection and automated correction, making it suitable for enterprise production environments where script reliability is paramount.
+## Architecture
 
-## 🧠 The 5-Stage Self-Correcting AI Pipeline
+### 5-Stage Processing Pipeline
 
-The core innovation of AIPackager v3 is its sophisticated pipeline architecture that mimics human expert review processes:
+The application processes uploads through a structured pipeline:
 
-### Stage 1: Instruction Processing
-- **Purpose**: Converts natural language requirements into structured technical specifications
-- **AI Model**: OpenAI GPT-4 with specialized prompt engineering
-- **Output**: Structured instructions with predicted PSADT cmdlets and confidence scoring
-- **Innovation**: Context-aware cmdlet prediction based on installer metadata analysis
+1. **Instruction Processing**: Converts user requirements into structured commands using OpenAI's API
+2. **Documentation Retrieval**: Queries knowledge base for relevant PSADT documentation 
+3. **Script Generation**: Creates PowerShell script sections using AI and Jinja2 templates
+4. **Script Validation**: Checks generated cmdlets and parameters against PSADT v4 documentation
+5. **Error Correction**: Applies fixes for validation issues using targeted documentation queries
 
-### Stage 2: Targeted RAG (Retrieval-Augmented Generation)
-- **Purpose**: Retrieves relevant technical documentation for predicted operations
-- **Knowledge Sources**:
-  - PSADT v4 official documentation (via vector database)
-  - Internal code patterns and best practices
-  - Enterprise deployment guidelines
-- **Integration**: Custom MCP (Model Context Protocol) server with Supabase vector store
-- **Innovation**: Source-based filtering for precise documentation retrieval
+### Core Components
 
-### Stage 3: Script Generation
-- **Purpose**: Generates initial PowerShell script using enterprise templates
-- **Framework**: PowerShell App Deployment Toolkit (PSADT) v4 compliance
-- **Templates**: Jinja2-based templating system with enterprise patterns
-- **Output**: Structured script sections (installation, uninstallation, repair)
+- **Web Interface**: Flask routes for file upload, progress tracking, and script review
+- **Metadata Extraction**: Automatic parsing of MSI/EXE properties and version info
+- **AI Integration**: OpenAI API calls for instruction processing and script generation
+- **Validation Engine**: Rule-based checking against comprehensive PSADT cmdlet database
+- **Progress Tracking**: Real-time pipeline status updates via Server-Sent Events
 
-### Stage 4: Hallucination Detection ⚡
-- **Purpose**: Validates generated scripts against comprehensive knowledge graph
-- **Validation Engine**: Neo4j knowledge graph with 500+ PSADT v4 cmdlets
-- **Detection Capabilities**:
-  - Invalid cmdlet identification
-  - Parameter validation against official schemas
-  - Best practice compliance checking
-  - Suspicious pattern detection
-- **Innovation**: First-of-its-kind AI script validation using graph database technology
+### Knowledge Base Integration
 
-### Stage 5: Advisor Correction 🔄
-- **Purpose**: Automatically corrects identified issues using targeted documentation
-- **Process**: Re-queries knowledge base for correction guidance
-- **AI Model**: GPT-4 with comprehensive PSADT v4 reference context
-- **Output**: Corrected, production-ready script with detailed change tracking
-- **Innovation**: Self-healing AI pipeline with audit trail
+The application integrates with a `crawl4ai-rag` MCP server that provides:
+- PSADT v4 cmdlet documentation and examples
+- Vector database for documentation similarity search
+- Knowledge graph for code structure validation
 
-## 🏗️ Technical Architecture
+## Technical Stack
 
-### AI & Knowledge Infrastructure
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   OpenAI GPT-4  │    │  Neo4j Knowledge │    │ Supabase Vector │
-│   (Stages 1,3,5)│◄──►│     Graph        │◄──►│    Database     │
-└─────────────────┘    │ (Hallucination   │    │ (RAG Queries)   │
-                       │  Detection)      │    └─────────────────┘
-                       └──────────────────┘
-                                ▲
-                                │
-                       ┌──────────────────┐
-                       │ crawl4ai-rag MCP │
-                       │     Server       │
-                       └──────────────────┘
-```
-
-### Application Stack
 - **Backend**: Python 3.12+ with Flask 2.3+
-- **Database**: SQLAlchemy 2.0+ with Alembic migrations
-- **AI Integration**: OpenAI API with custom prompt engineering
-- **Knowledge Base**: MCP-integrated RAG with vector similarity search
-- **Frontend**: Responsive web interface with real-time progress tracking
-- **Quality Assurance**: Comprehensive test suite with 95%+ coverage
+- **Database**: SQLAlchemy with SQLite (configurable to PostgreSQL)
+- **AI**: OpenAI API integration for text processing
+- **Templates**: Jinja2 for script generation and web UI
+- **Validation**: Custom parser for PSADT v4 MDX documentation
+- **Frontend**: HTML/CSS/JavaScript with real-time updates
 
-### Enterprise Features
-- **Asynchronous Processing**: Background job processing with resume capability
-- **Real-time Monitoring**: WebSocket-based progress streaming
-- **Comprehensive Logging**: CMTrace-format logging for enterprise monitoring
-- **Health Monitoring**: Multi-component health checks and infrastructure monitoring
-- **Error Recovery**: Automatic job resumption after system restarts
-- **Audit Trail**: Complete pipeline execution tracking and change documentation
+## Features
 
-## 🔬 AI/ML Innovation Highlights
+### Script Generation
+- Automatic detection of installation/uninstallation requirements
+- Template-based PowerShell script structure
+- Support for MSI and EXE installer types
+- Process closure prediction for application updates
 
-### Advanced Prompt Engineering
-- **Context-Aware Prompts**: Dynamic prompt generation based on installer metadata
-- **Multi-Stage Reasoning**: Chained reasoning across pipeline stages
-- **Confidence Scoring**: Probabilistic assessment of AI-generated outputs
-- **Template Integration**: Jinja2-based prompt templating for consistency
+### Validation & Quality Control
+- Comprehensive PSADT v4 cmdlet validation (100+ cmdlets supported)
+- Parameter type and value checking
+- Detection of suspicious PowerShell patterns
+- Suggestions for similar/correct cmdlets when errors are found
 
-### Knowledge Graph Integration
-- **Graph-Based Validation**: Novel approach to AI output validation using Neo4j
-- **Semantic Relationships**: Cmdlet and parameter relationship modeling
-- **Pattern Recognition**: Best practice pattern extraction and enforcement
-- **Hallucination Prevention**: Proactive detection of AI-generated inconsistencies
+### User Interface
+- Drag-and-drop file upload
+- Real-time progress tracking during script generation
+- Package history and management
+- Detailed script preview with syntax highlighting
+- Health monitoring for external services
 
-### Vector Database Implementation
-- **Semantic Search**: Advanced RAG implementation with Supabase
-- **Source Filtering**: Targeted documentation retrieval by content domain
-- **Embedding Optimization**: Custom embeddings for technical documentation
-- **Query Optimization**: Intelligent query expansion and refinement
+## Installation & Setup
 
-### Self-Correction Mechanisms
-- **Feedback Loops**: Automated correction pipeline with validation
-- **Learning Integration**: Pattern recognition from correction history
-- **Quality Assurance**: Multi-layer validation before final output
-- **Performance Metrics**: Comprehensive evaluation and improvement tracking
+### Prerequisites
+- Python 3.12 or higher
+- OpenAI API key for AI processing
+- Optional: MCP server for enhanced knowledge base features
 
-## 📊 Enterprise Production Features
+### Quick Start
 
-### Database Architecture
-```sql
--- Advanced pipeline state tracking
-Package {
-  id: UUID (Primary Key)
-  status: Enum (uploading, processing, completed, failed)
-  current_step: String (pipeline stage tracking)
-  progress_pct: Integer (real-time progress)
-
-  -- 5-Stage Pipeline Results
-  instruction_result: JSON (Stage 1 output)
-  rag_documentation: Text (Stage 2 output)
-  initial_script: JSON (Stage 3 output)
-  generated_script: JSON (Final output)
-  hallucination_report: JSON (Stage 4 validation)
-  corrections_applied: JSON[] (Stage 5 changes)
-  pipeline_metadata: JSON (execution metrics)
-}
-```
-
-### Quality Assurance
-- **Test-Driven Development**: 95%+ test coverage with pytest
-- **Static Analysis**: Ruff, Black, MyPy with strict type checking
-- **Pre-commit Hooks**: Automated quality gates
-- **Continuous Integration**: Comprehensive CI/CD pipeline
-- **Performance Monitoring**: Prometheus metrics integration
-
-### Development Standards
-- **Type Safety**: Full type annotations with MyPy strict mode
-- **Documentation**: Comprehensive docstrings and API documentation
-- **Error Handling**: Graceful error recovery with detailed logging
-- **Security**: Input validation and secure file handling
-- **Scalability**: Async processing with queue management
-
-## 🚀 Business Impact & Use Cases
-
-### Enterprise Software Deployment
-- **Problem Solved**: Manual PowerShell script creation for software deployment
-- **Time Savings**: 80% reduction in deployment script development time
-- **Quality Improvement**: Automated best practice enforcement
-- **Risk Reduction**: Hallucination detection prevents deployment failures
-
-### IT Operations Automation
-- **Scale**: Supports enterprise-level software deployment workflows
-- **Compliance**: Automated adherence to enterprise deployment standards
-- **Monitoring**: Complete audit trail for compliance and troubleshooting
-- **Integration**: API-based integration with existing IT workflows
-
-## 🔧 Technical Implementation
-
-### Installation & Setup
 ```bash
-# Environment setup
+# Clone and setup environment
 git clone <repository-url>
 cd AIPackager_v3
 make venv && source .venv/bin/activate
 make install
 
-# Configuration
+# Configure environment
 cp .env.example .env
-# Add OpenAI API key and MCP server configuration
+# Add your OpenAI API key to .env
 
-# Database setup
+# Initialize database
 alembic upgrade head
 
-# Launch application
-python run.py
+# Run application
+make run
+# Access at http://localhost:5001
 ```
 
-### Configuration Requirements
-- **OpenAI API**: GPT-4 access for pipeline stages
-- **Neo4j Database**: Knowledge graph for validation
-- **Supabase**: Vector database for RAG queries
-- **MCP Server**: crawl4ai-rag for knowledge base integration
+### Configuration
 
-## 📈 Performance & Metrics
+Set environment variables in `.env`:
+- `OPENAI_API_KEY`: Required for AI processing
+- `DATABASE_URL`: Database connection (default: SQLite)
+- `UPLOAD_FOLDER`: File storage location
+- `MCP_SERVER_URL`: Optional MCP server endpoint
 
-### Pipeline Performance
-- **Average Processing Time**: 2-5 minutes per installer
-- **Accuracy Rate**: 95%+ script correctness after correction pipeline
-- **Hallucination Detection**: 98% accuracy in identifying invalid cmdlets
-- **Correction Success**: 92% automatic correction rate
+## Development
 
-### System Reliability
-- **Uptime**: 99.9% availability with health monitoring
-- **Error Recovery**: Automatic resume of interrupted jobs
-- **Scalability**: Concurrent processing support
-- **Monitoring**: Real-time performance metrics
+### Testing
+```bash
+# Run test suite
+make test
 
-## 🎓 Research & Innovation
+# Run with coverage
+python -m pytest --cov=src tests/
+```
 
-This project demonstrates advanced AI engineering concepts including:
+### Code Quality
+```bash
+# Linting and formatting
+make lint
 
-- **Multi-Stage AI Pipelines**: Novel architecture for complex AI workflows
-- **AI Output Validation**: Graph-based approach to hallucination detection
-- **Self-Correcting Systems**: Automated error detection and correction
-- **Knowledge Graph Integration**: Semantic validation of AI-generated content
-- **Enterprise AI Safety**: Production-ready AI with comprehensive error handling
+# Type checking
+python -m mypy .
+```
 
-## 🏆 Why This Matters for AI Development
+### Database Migrations
+```bash
+# Create new migration
+alembic revision --autogenerate -m "Description"
 
-AIPackager v3 represents a significant advancement in production AI systems by solving the critical challenge of AI reliability in enterprise environments. The 5-stage self-correcting pipeline demonstrates how multiple AI components can work together to create robust, trustworthy automation tools.
+# Apply migrations
+alembic upgrade head
+```
 
-**Key Contributions to AI Field:**
-1. **Novel Pipeline Architecture**: Demonstrates multi-stage AI reasoning with validation
-2. **Hallucination Detection**: Practical implementation of AI output validation
-3. **Knowledge Graph Integration**: Shows how structured knowledge can improve AI reliability
-4. **Production AI Safety**: Comprehensive approach to AI system reliability
-5. **Enterprise AI Adoption**: Bridge between AI research and practical business applications
+## API Reference
+
+### Package Management
+- `POST /api/packages` - Create new package from uploaded file
+- `GET /api/packages` - List all packages
+- `POST /api/packages/<uuid>/generate` - Start script generation
+- `GET /api/packages/<uuid>` - Get package details
+
+### Health Monitoring
+- `GET /api/health/mcp` - Check MCP server connectivity
+- `GET /api/health` - Overall application health
+
+### Progress Tracking
+- `GET /stream-progress/<uuid>` - Server-sent events for real-time updates
+
+## Validation Details
+
+The script validation system checks for:
+- **Unknown Cmdlets**: Flags cmdlets not found in PSADT v4 documentation
+- **Invalid Parameters**: Verifies parameter names against cmdlet specifications
+- **Parameter Values**: Validates enum values and type constraints
+- **Suspicious Patterns**: Detects potentially dangerous PowerShell constructs
+- **Best Practices**: Ensures adherence to PSADT coding standards
+
+## Limitations
+
+- Requires internet connectivity for AI processing (OpenAI API)
+- Script validation is based on PSADT v4 documentation accuracy
+- Complex installer scenarios may require manual script review
+- MCP server integration is optional but recommended for full features
+
+## Contributing
+
+1. Follow test-driven development practices
+2. Ensure all tests pass: `make test`
+3. Run code quality checks: `make lint`
+4. Update documentation for new features
+5. Create Alembic migrations for database schema changes
+
+## License
+
+See LICENSE file for details.
 
 ---
 
-*This project showcases sophisticated AI engineering principles applied to real-world enterprise challenges, demonstrating both technical innovation and practical business value.*
+*A practical tool for automating PSADT script creation with AI assistance and comprehensive validation.*
