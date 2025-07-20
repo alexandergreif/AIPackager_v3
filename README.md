@@ -1,127 +1,114 @@
-# AIPackager v3
+# AIPackager v3: PSADT Script Generator
 
-A web application that generates PowerShell App Deployment Toolkit (PSADT) scripts from Windows installer files using AI.
+A Flask web application that generates PowerShell App Deployment Toolkit (PSADT) scripts from Windows installer files using AI-assisted analysis and rule-based validation.
 
-## 🚀 Quick Start
+## Overview
+
+AIPackager v3 automates the creation of PSADT deployment scripts by:
+- Extracting metadata from MSI/EXE installer files
+- Processing user instructions with AI to predict required deployment tasks
+- Generating PowerShell scripts using PSADT v4 cmdlets and templates
+- Validating generated scripts against PSADT documentation to catch errors
+
+## Architecture
+
+### 5-Stage Processing Pipeline
+
+The application processes uploads through a structured pipeline:
+
+1. **Instruction Processing**: Converts user requirements into structured commands using OpenAI's API
+2. **Documentation Retrieval**: Queries knowledge base for relevant PSADT documentation
+3. **Script Generation**: Creates PowerShell script sections using AI and Jinja2 templates
+4. **Script Validation**: Checks generated cmdlets and parameters against PSADT v4 documentation
+5. **Error Correction**: Applies fixes for validation issues using targeted documentation queries
+
+### Core Components
+
+- **Web Interface**: Flask routes for file upload, progress tracking, and script review
+- **Metadata Extraction**: Automatic parsing of MSI/EXE properties and version info
+- **AI Integration**: OpenAI API calls for instruction processing and script generation
+- **Validation Engine**: Rule-based checking against comprehensive PSADT cmdlet database
+- **Progress Tracking**: Real-time pipeline status updates via Server-Sent Events
+
+### Knowledge Base Integration
+
+The application integrates with a `crawl4ai-rag` MCP server that provides:
+- PSADT v4 cmdlet documentation and examples
+- Vector database for documentation similarity search
+- Knowledge graph for code structure validation
+
+## Technical Stack
+
+- **Backend**: Python 3.12+ with Flask 2.3+
+- **Database**: SQLAlchemy with SQLite (configurable to PostgreSQL)
+- **AI**: OpenAI API integration for text processing
+- **Templates**: Jinja2 for script generation and web UI
+- **Validation**: Custom parser for PSADT v4 MDX documentation
+- **Frontend**: HTML/CSS/JavaScript with real-time updates
+
+## Features
+
+### Script Generation
+- Automatic detection of installation/uninstallation requirements
+- Template-based PowerShell script structure
+- Support for MSI and EXE installer types
+- Process closure prediction for application updates
+
+### Validation & Quality Control
+- Comprehensive PSADT v4 cmdlet validation (100+ cmdlets supported)
+- Parameter type and value checking
+- Detection of suspicious PowerShell patterns
+- Suggestions for similar/correct cmdlets when errors are found
+
+### User Interface
+- Drag-and-drop file upload
+- Real-time progress tracking during script generation
+- Package history and management
+- Detailed script preview with syntax highlighting
+- Health monitoring for external services
+
+## Installation & Setup
 
 ### Prerequisites
+- Python 3.12 or higher
+- OpenAI API key for AI processing
+- Optional: MCP server for enhanced knowledge base features
 
-- Python 3.12+
-- Git
-- Optional: `msitools` for enhanced MSI metadata extraction
+### Quick Start
 
-### Environment Setup
+```bash
+# Clone and setup environment
+git clone <repository-url>
+cd AIPackager_v3
+make venv && source .venv/bin/activate
+make install
 
-1. **Clone and setup:**
-   ```bash
-   git clone <repository-url>
-   cd AIPackager_v3
-   make venv
-   source .venv/bin/activate  # Linux/Mac
-   # .venv\Scripts\activate   # Windows
-   make install
-   ```
+# Configure environment
+cp .env.example .env
+# Add your OpenAI API key to .env
 
-2. **Configure Environment:**
-   ```bash
-   cp .env.example .env
-   ```
-   - Edit the `.env` file and add your OpenAI API key.
-   - **For full AI capabilities (5-stage pipeline, knowledge base), you will also need to set up Neo4j, Supabase, and the `crawl4ai-rag` MCP server.** Refer to the [Deployment Guide](docs/deployment.md) for detailed instructions.
+# Initialize database
+alembic upgrade head
 
-3. **Run the application:**
-   ```bash
-   python run.py
-   ```
-
-4. **Access the web interface:**
-   Open http://localhost:5001 in your browser
-
-## 📋 Features
-
-### ✅ Completed Features
-
-- **5-Stage Self-Correcting Pipeline**: Automated script generation with instruction processing, targeted RAG, script generation, hallucination detection, and advisor correction.
-- **Web Interface**: Clean, responsive UI with Tailwind CSS and real-time progress updates.
-- **File Upload**: Support for MSI and EXE installer files.
-- **Metadata Extraction**: Advanced MSI metadata extraction using msitools.
-- **Workflow Tracking**: Step-by-step progress tracking with CMTrace logging.
-- **History Management**: View and manage previous package processing jobs.
-
-### 🔄 Workflow Steps
-
-1. **Upload** - Select MSI/EXE installer file.
-2. **Metadata Extraction** - Parse installer metadata.
-3. **Stage 1: Instruction Processing** - Convert user input to structured instructions.
-4. **Stage 2: Targeted RAG** - Query documentation for relevant context.
-5. **Stage 3: Script Generation** - Generate the initial PowerShell script.
-6. **Stage 4: Hallucination Detection** - Validate the script against a knowledge graph.
-7. **Stage 5: Advisor Correction** - Self-correct any identified hallucinations.
-8. **Completed** - Download or copy the generated script.
-
-## 🏗️ Architecture
-
-```
-AIPackager_v3/
-├── src/
-│   ├── app/                    # Flask application
-│   │   ├── templates/          # Jinja2 HTML templates
-│   │   ├── models.py          # SQLAlchemy database models
-│   │   ├── routes.py          # Flask route handlers
-│   │   ├── database.py        # Database service layer
-│   │   ├── metadata_extractor.py  # MSI/EXE metadata extraction
-│   │   ├── logging_cmtrace.py # CMTrace format logging
-│   │   └── file_persistence.py    # File upload handling
-│   └── aipackager/
-│       └── workflow.py        # Business logic & workflow management
-├── tests/                     # Comprehensive test suite
-├── alembic/                   # Database migrations
-├── docs/                      # Documentation
-└── instance/                  # Runtime data (uploads, database)
+# Run application
+make run
+# Access at http://localhost:5001
 ```
 
-## 🗃️ Database Schema
+### Configuration
 
-### Package Model
-- **id**: UUID primary key
-- **filename**: Original installer filename
-- **file_path**: Stored file location
-- **upload_time**: Timestamp of upload
-- **status**: Current processing status (`uploading`, `processing`, `completed`, `failed`)
-- **current_step**: Current workflow step (e.g., `instruction_processing`, `targeted_rag`)
-- **progress_pct**: Completion percentage
-- **custom_instructions**: User-provided notes
-- **instruction_result**: JSON object with structured instructions and predicted cmdlets (Stage 1 output).
-- **rag_documentation**: String with documentation retrieved from RAG (Stage 2 output).
-- **initial_script**: JSON object with the initial generated script sections (Stage 3 output).
-- **generated_script**: JSON object with the final generated script sections (after Stage 5 correction if applicable).
-- **hallucination_report**: JSON object with the hallucination detection results (Stage 4 output).
-- **pipeline_metadata**: JSON object with metadata about the pipeline execution (e.g., model used, version).
-- **corrections_applied**: List of strings detailing corrections applied by the advisor (Stage 5 output).
+Set environment variables in `.env`:
+- `OPENAI_API_KEY`: Required for AI processing
+- `DATABASE_URL`: Database connection (default: SQLite)
+- `UPLOAD_FOLDER`: File storage location
+- `MCP_SERVER_URL`: Optional MCP server endpoint
 
-### Metadata Model
-- **package_id**: Foreign key to Package
-- **product_name**: Extracted product name
-- **version**: Product version
-- **publisher**: Software publisher/manufacturer
-- **install_date**: Installation date string
-- **uninstall_string**: Command string for uninstallation
-- **estimated_size**: Estimated size of the application in bytes
-- **product_code**: MSI Product Code GUID
-- **upgrade_code**: MSI Upgrade Code GUID
-- **language**: Installation language
-- **architecture**: Target architecture (x86/x64/arm64)
-- **executable_names**: List of executable names found within the installer.
-
-## 🧪 Development
+## Development
 
 ### Testing
 ```bash
-# Run all tests
+# Run test suite
 make test
-
-# Run specific test file
-python -m pytest tests/test_metadata_extractor.py -v
 
 # Run with coverage
 python -m pytest --cov=src tests/
@@ -132,86 +119,62 @@ python -m pytest --cov=src tests/
 # Linting and formatting
 make lint
 
-# Pre-commit hooks (runs automatically)
-ruff check --fix
-black .
-mypy src/
+# Type checking
+python -m mypy .
 ```
 
-### Database Management
+### Database Migrations
 ```bash
-# Create migration
+# Create new migration
 alembic revision --autogenerate -m "Description"
 
 # Apply migrations
 alembic upgrade head
-
-# Downgrade
-alembic downgrade -1
 ```
 
-## 📊 Sprint Progress
+## API Reference
 
-- ✅ **Sprint 0**: Repository & Tooling Setup
-- ✅ **Sprint 1**: UI Skeleton & Basic Routes
-- ✅ **Sprint 2**: Backend Core & Database Models
-- ✅ **Sprint 2-5**: Workflow Refinement & Detailed Views
-- ✅ **Sprint 3**: Template & Prompt Engineering
-- ✅ **Sprint 4**: AI Integration with 5-Stage Pipeline
-- ✅ **Sprint 5**: Hallucination Detection & Advisor Correction
+### Package Management
+- `POST /api/packages` - Create new package from uploaded file
+- `GET /api/packages` - List all packages
+- `POST /api/packages/<uuid>/generate` - Start script generation
+- `GET /api/packages/<uuid>` - Get package details
 
-### Sprint 2-5 Achievements (Current)
+### Health Monitoring
+- `GET /api/health/mcp` - Check MCP server connectivity
+- `GET /api/health` - Overall application health
 
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Landing Page | ✅ | Project overview with navigation |
-| File Upload | ✅ | MSI/EXE file upload with validation |
-| Metadata Extraction | ✅ | Advanced MSI parsing with msitools |
-| Workflow Tracking | ✅ | Step-by-step progress with enum states |
-| Resume Functionality | ✅ | Auto-resume interrupted workflows |
-| History Management | ✅ | View past processing jobs |
-| Detail Views | ✅ | Comprehensive package information |
-| CMTrace Logging | ✅ | Structured logging for monitoring |
+### Progress Tracking
+- `GET /stream-progress/<uuid>` - Server-sent events for real-time updates
 
-## 🔧 Configuration
+## Validation Details
 
-### Environment Variables
-- `DATABASE_URL`: Custom database connection string
-- `UPLOAD_FOLDER`: Custom upload directory
-- `MAX_CONTENT_LENGTH`: File upload size limit
+The script validation system checks for:
+- **Unknown Cmdlets**: Flags cmdlets not found in PSADT v4 documentation
+- **Invalid Parameters**: Verifies parameter names against cmdlet specifications
+- **Parameter Values**: Validates enum values and type constraints
+- **Suspicious Patterns**: Detects potentially dangerous PowerShell constructs
+- **Best Practices**: Ensures adherence to PSADT coding standards
 
-### Development Rules (.clinerules)
-- **TDD**: Test-first development approach
-- **KISS**: Keep It Simple, Stupid principle
-- **Branching**: Feature branches with PR reviews
-- **Quality Gates**: Ruff, mypy, pytest must pass
+## Limitations
 
-## 📚 Documentation
+- Requires internet connectivity for AI processing (OpenAI API)
+- Script validation is based on PSADT v4 documentation accuracy
+- Complex installer scenarios may require manual script review
+- MCP server integration is optional but recommended for full features
 
-See the [docs/](docs/) directory for detailed documentation:
-- [Architecture Overview](docs/architecture-overview.md)
-- [Implementation Summary](docs/implementation-summary.md)
-- [Application Functions Reference](docs/application-functions.mdx)
-- [API Reference](docs/api-reference.md)
-- [Deployment Guide](docs/deployment.md)
-- [Contributing Guidelines](docs/contributing.md)
-- **Note**: The [Workflow Diagram](docs/workflow-diagram.md) content is now integrated into the [Architecture Overview](docs/architecture-overview.md).
+## Contributing
 
-## 🤝 Contributing
+1. Follow test-driven development practices
+2. Ensure all tests pass: `make test`
+3. Run code quality checks: `make lint`
+4. Update documentation for new features
+5. Create Alembic migrations for database schema changes
 
-1. Follow the TDD workflow defined in `.clinerules`
-2. Create feature branches for new work
-3. Ensure all tests pass and coverage remains high
-4. Use conventional commit messages
-5. Submit PRs for review
+## License
 
-## 📄 License
+See LICENSE file for details.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+---
 
-## 🔗 Related Projects
-
-- [PowerShell App Deployment Toolkit (PSADT)](https://psappdeploytoolkit.com/)
-- [MSI Tools](https://github.com/libyal/libmsi) - Cross-platform MSI analysis
-- [Flask](https://flask.palletsprojects.com/) - Web framework
-- [SQLAlchemy](https://www.sqlalchemy.org/) - Database ORM
+*A practical tool for automating PSADT script creation with AI assistance and comprehensive validation.*

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Evaluation Design</title>
+    <style>
+        body {
+            background-color: #111827;
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+        }
+
+        .model-card, .scenario-card {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(31, 41, 55, 0.8);
+            border: 2px solid rgba(55, 65, 81, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            margin-bottom: 16px;
+        }
+
+        .model-card:hover, .scenario-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .model-card.selected, .scenario-card.selected {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 8px;
+        }
+
+        .card-description {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            line-height: 1.4;
+        }
+
+        .card-category {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .card-checkbox {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 20px;
+            height: 20px;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .step-header {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="step-header">Select GPT Models</h1>
+
+    <div class="grid">
+        <div class="model-card">
+            <input type="checkbox" class="card-checkbox">
+            <div>
+                <h4 class="card-title">GPT-4o</h4>
+                <p class="card-description">The latest and most advanced model from OpenAI, with improved speed and intelligence.</p>
+            </div>
+        </div>
+
+        <div class="model-card">
+            <input type="checkbox" class="card-checkbox">
+            <div>
+                <h4 class="card-title">GPT-4o Mini</h4>
+                <p class="card-description">A smaller, faster, and more cost-effective version of GPT-4o.</p>
+            </div>
+        </div>
+    </div>
+
+    <h1 class="step-header">Select Scenarios</h1>
+
+    <div class="grid">
+        <div class="scenario-card">
+            <input type="checkbox" class="card-checkbox">
+            <div>
+                <h4 class="card-title">Notepad++</h4>
+                <p class="card-category">Category: Developer Tools</p>
+                <p class="card-description">Text editor application testing scenario.</p>
+            </div>
+        </div>
+
+        <div class="scenario-card">
+            <input type="checkbox" class="card-checkbox">
+            <div>
+                <h4 class="card-title">7-Zip Archiver</h4>
+                <p class="card-category">Category: Utilities</p>
+                <p class="card-description">File compression utility testing scenario.</p>
+            </div>
+        </div>
+
+        <div class="scenario-card">
+            <input type="checkbox" class="card-checkbox">
+            <div>
+                <h4 class="card-title">VLC Media Player</h4>
+                <p class="card-category">Category: Media</p>
+                <p class="card-description">Media player application testing scenario.</p>
+            </div>
+        </div>
+
+        <div class="scenario-card">
+            <input type="checkbox" class="card-checkbox">
+            <div>
+                <h4 class="card-title">Google Chrome</h4>
+                <p class="card-category">Category: Browser</p>
+                <p class="card-description">Web browser application testing scenario.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.model-card, .scenario-card');
+
+            cards.forEach(card => {
+                const checkbox = card.querySelector('.card-checkbox');
+
+                card.addEventListener('click', (e) => {
+                    if (e.target !== checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    card.classList.toggle('selected', checkbox.checked);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

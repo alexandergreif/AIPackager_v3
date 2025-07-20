@@ -7,20 +7,28 @@
 <style>
     .model-card, .scenario-card {
         cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: all 0.2s ease;
+        background: rgba(31, 41, 55, 0.9);
+        border: 2px solid rgba(55, 65, 81, 0.7);
+        border-radius: 12px;
+        padding: 20px;
+        position: relative;
+        backdrop-filter: blur(10px);
     }
     .model-card:hover, .scenario-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        border-color: rgba(59, 130, 246, 0.5);
     }
     .model-card.selected, .scenario-card.selected {
-        border-color: #4f46e5;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4);
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
     }
 
     /* Skeleton loading animations */
     .skeleton {
-        background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 75%);
+        background: linear-gradient(90deg, rgba(55, 65, 81, 0.8) 25%, rgba(75, 85, 99, 0.8) 50%, rgba(55, 65, 81, 0.8) 75%);
         background-size: 200% 100%;
         animation: skeleton-loading 1.5s infinite;
     }
@@ -31,8 +39,9 @@
     }
 
     .skeleton-card {
-        height: 120px;
-        border-radius: 8px;
+        height: 140px;
+        border-radius: 12px;
+        border: 2px solid rgba(55, 65, 81, 0.5);
     }
 
     .skeleton-text {
@@ -139,37 +148,114 @@
     .text-text-primary { color: var(--text-primary); }
     .text-text-secondary { color: var(--text-secondary); }
 
-    /* Modal overlay styling - backdrop for page blur */
+    /* ROBUST Modal overlay styling - multiple layers for bulletproof coverage */
     .modal-overlay {
-        background-color: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
+        background-color: rgba(0, 0, 0, 0.98) !important;
+        backdrop-filter: blur(12px) !important;
+        z-index: 9999 !important;
     }
 
-    /* Proper modal dialog styling */
+    /* Add secondary overlay for extra coverage */
+    .modal-overlay::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgb(17, 24, 39) !important;
+        opacity: 0.85;
+        z-index: -1;
+    }
+
+    /* BULLETPROOF modal dialog styling */
     .modal-dialog {
-        background-color: rgba(24, 26, 32, 0.95); /* Nearly opaque dark panel */
-        border: 1px solid var(--border-color);
-        border-radius: 8px; /* 8px rounded corners */
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); /* Drop shadow */
-        padding: 24px; /* 24px padding */
-        max-width: 800px; /* Constrained max-width */
-        margin: 0 auto; /* Centered horizontally */
-        position: relative;
-        /* Remove any backdrop blur from the modal itself */
-        backdrop-filter: none;
+        background-color: rgb(17, 24, 39) !important; /* Fully opaque dark panel */
+        background: rgb(17, 24, 39) !important; /* Double declaration for safety */
+        border: 2px solid rgb(55, 65, 81) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9) !important;
+        padding: 32px !important;
+        max-width: 900px !important;
+        margin: 0 auto !important;
+        position: relative !important;
+        backdrop-filter: none !important;
+        z-index: 10000 !important;
+    }
+
+    /* FORCE opaque backgrounds for all modal elements */
+    .modal-dialog *,
+    #new-evaluation-modal .modal-dialog *,
+    #new-evaluation-modal .modal-dialog {
+        backdrop-filter: none !important;
+    }
+
+    /* Override card styling inside modal with MAXIMUM specificity */
+    #new-evaluation-modal .modal-dialog .model-card,
+    #new-evaluation-modal .modal-dialog .scenario-card,
+    .modal-dialog .model-card,
+    .modal-dialog .scenario-card {
+        background: rgb(31, 41, 55) !important;
+        background-color: rgb(31, 41, 55) !important;
+        backdrop-filter: none !important;
+        border: 2px solid rgb(55, 65, 81) !important;
+        opacity: 1 !important;
+    }
+
+    /* Force solid backgrounds on ALL modal content areas */
+    #new-evaluation-modal .modal-dialog .overflow-y-auto,
+    #new-evaluation-modal .modal-dialog,
+    .modal-dialog .overflow-y-auto,
+    .modal-dialog {
+        background: rgb(17, 24, 39) !important;
+        background-color: rgb(17, 24, 39) !important;
+        border-radius: 8px;
+        opacity: 1 !important;
+    }
+
+    /* BULLETPROOF form sections */
+    #new-evaluation-modal .modal-dialog .eval-form-step,
+    .modal-dialog .eval-form-step {
+        background: rgb(17, 24, 39) !important;
+        background-color: rgb(17, 24, 39) !important;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 24px;
+        opacity: 1 !important;
+    }
+
+    /* Disable glass effects when modal is open */
+    body.modal-open .glass-card {
+        backdrop-filter: none !important;
+        opacity: 0.3 !important;
+    }
+
+    /* Ensure modal header is solid */
+    #new-evaluation-modal .modal-header,
+    .modal-dialog .modal-header {
+        background: rgb(17, 24, 39) !important;
+        background-color: rgb(17, 24, 39) !important;
+        opacity: 1 !important;
+    }
+
+    /* Force all text to be visible */
+    #new-evaluation-modal *,
+    .modal-dialog * {
+        color: inherit !important;
+        opacity: 1 !important;
     }
 
     /* Modal header styling */
     .modal-header {
-        font-size: 1.25rem; /* 20px */
+        font-size: 1.5rem; /* 24px */
         font-weight: 600;
-        margin-bottom: 16px;
-        color: var(--accent-green);
+        margin-bottom: 24px;
+        color: #f8fafc;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid var(--border-color);
-        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(55, 65, 81, 0.6);
+        padding-bottom: 20px;
     }
 
     /* Close button styling */
@@ -200,13 +286,54 @@
 
     /* Step headers */
     .step-header {
-        font-size: 1.125rem; /* 18px */
-        font-weight: 500;
-        color: var(--accent-blue);
-        margin-bottom: 12px;
+        font-size: 1.5rem; /* 24px */
+        font-weight: 600;
+        color: #f8fafc;
+        margin-bottom: 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+    }
+
+    /* Card content styling */
+    .card-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #f8fafc;
+        margin-bottom: 8px;
+    }
+
+    .card-description {
+        font-size: 0.875rem;
+        color: #9ca3af;
+        line-height: 1.4;
+    }
+
+    .card-category {
+        font-size: 0.75rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+
+    /* Checkbox styling */
+    .card-checkbox {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 20px;
+        height: 20px;
+        accent-color: #3b82f6;
+        cursor: pointer;
+    }
+
+    /* Section headers */
+    .section-header {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #f8fafc;
+        margin-bottom: 16px;
     }
 </style>
 {% endblock %}
@@ -217,9 +344,9 @@
 
     <!-- New Evaluation Section -->
     <section id="new-evaluation" class="mb-8">
-        <a href="{{ url_for('new_evaluation') }}" class="w-full btn-primary py-3 text-lg block text-center">
+        <button id="open-evaluation-modal-btn" class="w-full btn-primary py-3 text-lg block text-center">
             Start New Batch Evaluation
-        </a>
+        </button>
     </section>
 
     <!-- Results Section -->
@@ -323,17 +450,18 @@
             <form id="evaluation-form">
                 <div class="eval-form-step">
                     <div class="step-header">
-                        <h3>1. Select Models</h3>
+                        <h3>Select GPT Models</h3>
                         <div>
-                            <button type="button" id="select-all-models" class="text-sm text-accent-purple hover:underline">Select All</button> |
-                            <button type="button" id="deselect-all-models" class="text-sm text-accent-purple hover:underline">Deselect All</button>
+                            <button type="button" id="select-all-models" class="text-sm text-blue-400 hover:text-blue-300 hover:underline">Select All</button> |
+                            <button type="button" id="deselect-all-models" class="text-sm text-blue-400 hover:text-blue-300 hover:underline">Deselect All</button>
                         </div>
                     </div>
-                    <div id="model-selector" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div id="model-selector" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         <!-- Model cards will be injected here -->
                     </div>
                     <!-- Model loading skeleton -->
-                    <div id="models-loading" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div id="models-loading" class="hidden grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <div class="skeleton skeleton-card"></div>
                         <div class="skeleton skeleton-card"></div>
                         <div class="skeleton skeleton-card"></div>
                         <div class="skeleton skeleton-card"></div>
@@ -343,17 +471,18 @@
                 </div>
                 <div class="eval-form-step">
                     <div class="step-header">
-                        <h3>2. Select Scenarios</h3>
+                        <h3>Select Scenarios</h3>
                         <div>
-                            <button type="button" id="select-all-scenarios" class="text-sm text-accent-purple hover:underline">Select All</button> |
-                            <button type="button" id="deselect-all-scenarios" class="text-sm text-accent-purple hover:underline">Deselect All</button>
+                            <button type="button" id="select-all-scenarios" class="text-sm text-blue-400 hover:text-blue-300 hover:underline">Select All</button> |
+                            <button type="button" id="deselect-all-scenarios" class="text-sm text-blue-400 hover:text-blue-300 hover:underline">Deselect All</button>
                         </div>
                     </div>
-                    <div id="scenario-selector" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div id="scenario-selector" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         <!-- Scenario cards will be injected here -->
                     </div>
                     <!-- Scenario loading skeleton -->
-                    <div id="scenarios-loading" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div id="scenarios-loading" class="hidden grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <div class="skeleton skeleton-card"></div>
                         <div class="skeleton skeleton-card"></div>
                         <div class="skeleton skeleton-card"></div>
                         <div class="skeleton skeleton-card"></div>

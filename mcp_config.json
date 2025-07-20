@@ -18,6 +18,14 @@
         "USE_AGENTIC_RAG": "true",
         "USE_RERANKING": "true"
       }
+    },
+    "RepoPrompt": {
+      "type": "stdio",
+      "command": "/Users/alexandergreif/RepoPrompt/repoprompt_cli",
+      "args": [],
+      "enabled": true,
+      "timeout": 30,
+      "env": {}
     }
   }
 }

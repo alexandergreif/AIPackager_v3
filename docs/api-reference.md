@@ -194,6 +194,112 @@ This document provides detailed information about the AIPackager v3 API endpoint
 - **Description**: Retrieves a list of all available sources from the `crawl4ai-rag` knowledge base.
 - **Response**: JSON array of source objects.
 
+### Evaluation Management
+
+#### `GET /evaluations`
+**Evaluation Dashboard**
+- **Description**: Renders the main evaluation dashboard page showing available models, scenarios, and past evaluation results.
+- **Template**: `evaluations.html`
+- **Response**: HTML page with evaluation interface and real-time progress updates via SocketIO.
+
+#### `GET /evaluations/<evaluation_id>`
+**Evaluation Detail Page**
+- **Description**: Displays detailed results for a specific evaluation, including metrics, logs, and script outputs.
+- **Parameters**:
+  - `evaluation_id`: UUID of the evaluation
+- **Template**: `evaluation_detail.html`
+- **Response**: HTML page with evaluation details, metrics, and log content.
+
+### Evaluation API Endpoints
+
+#### `GET /api/evaluations/models`
+**Get Available Models**
+- **Description**: Retrieves all available AI models for evaluation testing.
+- **Response**: JSON array of model objects.
+```json
+[
+  {
+    "id": "gpt-4o-mini",
+    "name": "GPT-4o Mini",
+    "description": "OpenAI's efficient model for general tasks"
+  }
+]
+```
+
+#### `GET /api/evaluations/scenarios`
+**Get Test Scenarios**
+- **Description**: Retrieves all available test scenarios for model evaluation.
+- **Response**: JSON array of scenario objects.
+```json
+[
+  {
+    "id": "vlc_player",
+    "title": "VLC Media Player",
+    "prompt": "Install VLC Media Player silently with desktop shortcuts",
+    "difficulty": "Medium",
+    "category": "Media Software",
+    "psadt_variables": {
+      "app_name": "VLC media player",
+      "app_version": "3.0.20",
+      "app_vendor": "VideoLAN"
+    }
+  }
+]
+```
+
+#### `GET /api/evaluations`
+**Get Evaluation Results**
+- **Description**: Retrieves all past evaluation results with metrics and metadata.
+- **Response**: JSON array of evaluation result objects.
+```json
+[
+  {
+    "id": "uuid",
+    "model": {
+      "id": "gpt-4o-mini",
+      "name": "GPT-4o Mini",
+      "description": "OpenAI's efficient model"
+    },
+    "scenario": {
+      "id": "vlc_player",
+      "title": "VLC Media Player",
+      "prompt": "Install VLC Media Player silently"
+    },
+    "timestamp": "2025-01-23T10:30:00Z",
+    "metrics": {
+      "hallucinations_found": 2,
+      "hallucinations_corrected": 2,
+      "trust_score": 1.0
+    }
+  }
+]
+```
+
+#### `POST /api/evaluations/run`
+**Run Evaluation**
+- **Description**: Executes the 5-stage AI pipeline on selected models and scenarios. Provides real-time progress updates via SocketIO.
+- **Request Body**:
+```json
+{
+  "model_ids": ["gpt-4o-mini", "gpt-4o"],
+  "scenario_ids": ["vlc_player", "7zip_archiver"]
+}
+```
+- **Response**: JSON object confirming evaluation start.
+```json
+{
+  "message": "Evaluation started"
+}
+```
+- **Real-time Updates**: Emits `evaluation_progress` and `evaluation_complete` events via SocketIO.
+
+#### `GET /api/evaluations/logs`
+**Get Evaluation Log Content**
+- **Description**: Retrieves the content of a specific evaluation log file.
+- **Query Parameters**:
+  - `path`: Full path to the log file
+- **Response**: Plain text log content or 404 if not found.
+
 ### Health & Monitoring
 
 #### `GET /api/health/mcp`
@@ -292,6 +398,104 @@ class WorkflowStep(enum.Enum):
     FAILED = "failed"
 ```
 
+### Evaluation Data Models
+
+#### Scenario Model
+
+```python
+class Scenario(BaseModel):
+    """Pydantic model for a test scenario."""
+
+    id: str
+    title: str
+    prompt: str
+    difficulty: str
+    category: str
+    psadt_variables: Dict[str, str]
+```
+
+**Description**: Represents a test scenario for model evaluation, containing the application details and installation instructions.
+
+#### ModelInfo Model
+
+```python
+class ModelInfo(BaseModel):
+    """Pydantic model for a language model."""
+
+    id: str
+    name: str
+    description: str
+```
+
+**Description**: Represents an AI model available for evaluation testing.
+
+#### EvaluationMetrics Model
+
+```python
+class EvaluationMetrics(BaseModel):
+    """Pydantic model for evaluation metrics."""
+
+    hallucinations_found: int
+    hallucinations_corrected: int
+    trust_score: float
+```
+
+**Description**: Contains performance metrics calculated from the 5-stage pipeline results, including hallucination detection and correction statistics.
+
+#### EvaluationResult Model
+
+```python
+class EvaluationResult(BaseModel):
+    """Pydantic model for a full evaluation result."""
+
+    id: str
+    model: ModelInfo
+    scenario: Scenario
+    timestamp: str
+    raw_model_output: str
+    advisor_corrected_output: str
+    evaluation_log: str  # Path to the log file
+    metrics: EvaluationMetrics
+    detailed_hallucination_report: Optional[List[Dict[str, Any]]] = None
+    detailed_corrections_log: Optional[List[Dict[str, Any]]] = None
+```
+
+**Description**: Complete evaluation result containing the model, scenario, generated scripts (before and after correction), metrics, and detailed logs.
+
+#### InstructionResult Model
+
+```python
+class InstructionResult(BaseModel):
+    """Stage 1 output: structured instructions + predicted cmdlets."""
+
+    structured_instructions: Dict[str, Any]
+    predicted_cmdlets: List[str]
+    confidence_score: float
+    predicted_processes_to_close: Optional[List[str]] = None
+```
+
+**Description**: Output from Stage 1 (Instruction Processor) of the 5-stage pipeline.
+
+#### PSADTScript Model
+
+```python
+class PSADTScript(BaseModel):
+    """Stage 3+5 output: validated PowerShell script sections."""
+
+    pre_installation_tasks: List[str]
+    installation_tasks: List[str]
+    post_installation_tasks: List[str]
+    uninstallation_tasks: List[str]
+    post_uninstallation_tasks: List[str]
+    pre_repair_tasks: List[str]
+    repair_tasks: List[str]
+    post_repair_tasks: List[str]
+    hallucination_report: Optional[Dict[str, Any]] = None
+    corrections_applied: Optional[List[Dict[str, Any]]] = None
+```
+
+**Description**: Final output from the 5-stage pipeline containing all PSADT script sections and validation results.
+
 ## 🔧 Business Logic Classes
 
 ### PSADTGenerator
@@ -325,6 +529,22 @@ class WorkflowStep(enum.Enum):
   - `parse_github_repository()`: Parses a GitHub repository into the knowledge graph.
   - `query_knowledge_graph()`: Executes a custom query against the knowledge graph.
   - `check_infrastructure_health()`: Checks the health of MCP-related infrastructure.
+
+### EvaluationService
+- **Description**: Handles model evaluation operations by running the 5-stage AI pipeline on test scenarios and calculating performance metrics.
+- **Key Methods**:
+  - `get_scenarios()`: Retrieves all available test scenarios from `scenarios.json`.
+  - `get_models()`: Retrieves all available AI models from `models.json`.
+  - `get_advisor_model()`: Retrieves the advisor model configuration.
+  - `run_evaluation(model_id, scenario_id)`: Executes the full 5-stage pipeline on a specific model-scenario combination.
+  - `get_all_evaluations()`: Retrieves all past evaluation results from the evaluations directory.
+  - `get_evaluation(evaluation_id)`: Retrieves a specific evaluation result by ID.
+  - `get_evaluation_log_content(log_path)`: Reads and returns the content of an evaluation log file.
+- **Features**:
+  - **Live Pipeline Integration**: Uses the same 5-stage pipeline as regular script generation.
+  - **Metrics Calculation**: Automatically calculates trust scores based on hallucination detection and correction.
+  - **Comprehensive Logging**: Creates detailed logs for each evaluation using `PackageLogger`.
+  - **Result Persistence**: Stores evaluation results as JSON files in the instance directory.
 
 ## 🗄️ Database Service
 

@@ -1,617 +1,544 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const modelSelector = document.getElementById('model-selector');
-    const scenarioSelector = document.getElementById('scenario-selector');
-    const evaluationForm = document.getElementById('evaluation-form');
-    const startEvaluationBtn = document.getElementById('start-evaluation-btn');
-    const evaluationSpinner = document.getElementById('evaluation-spinner');
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
-    const evaluationError = document.getElementById('evaluation-error');
-    const resultsContainer = document.getElementById('evaluation-results-container');
-    const pastEvaluationsTable = document.getElementById('past-evaluations-table');
+document.addEventListener('DOMContentLoaded', function() {
+    let socket = null;
+    let evaluationResults = [];
+    let filteredResults = [];
+    let selectedModels = new Set();
+    let selectedScenarios = new Set();
 
-    const newEvaluationModal = document.getElementById('new-evaluation-modal');
-    const openEvaluationModalBtn = document.getElementById('open-evaluation-modal-btn');
-    const newEvaluationModalCloseBtn = document.getElementById('new-evaluation-modal-close-btn');
+    // Initialize Socket.IO if available
+    if (typeof io !== 'undefined') {
+        socket = io();
+        setupSocketListeners();
+    }
 
-    const selectAllModelsBtn = document.getElementById('select-all-models');
-    const deselectAllModelsBtn = document.getElementById('deselect-all-models');
-    const selectAllScenariosBtn = document.getElementById('select-all-scenarios');
-    const deselectAllScenariosBtn = document.getElementById('deselect-all-scenarios');
+    // Initialize the page
+    loadPastEvaluations();
+    setupEventListeners();
+    setupModalFunctionality();
 
-    // Details modal elements removed - now using full-page view
+    function setupEventListeners() {
+        // Filter and sort controls
+        document.getElementById('filter-input').addEventListener('input', filterResults);
+        document.getElementById('sort-select').addEventListener('change', sortResults);
+        document.getElementById('refresh-evaluations-btn').addEventListener('click', loadPastEvaluations);
+        document.getElementById('export-csv-btn').addEventListener('click', exportToCSV);
+    }
 
-    // New elements for enhanced functionality
-    const filterInput = document.getElementById('filter-input');
-    const sortSelect = document.getElementById('sort-select');
-    const resultsCount = document.getElementById('results-count');
-    const exportCsvBtn = document.getElementById('export-csv-btn');
-    const refreshBtn = document.getElementById('refresh-evaluations-btn');
-    const modelsLoading = document.getElementById('models-loading');
-    const scenariosLoading = document.getElementById('scenarios-loading');
-    const evaluationsLoading = document.getElementById('evaluations-loading');
-    const evaluationsEmpty = document.getElementById('evaluations-empty');
-    const retryBtn = document.getElementById('retry-evaluation');
-    const errorMessage = document.getElementById('error-message');
-    const completedRuns = document.getElementById('completed-runs');
-    const totalRuns = document.getElementById('total-runs');
+    function setupModalFunctionality() {
+        const modal = document.getElementById('new-evaluation-modal');
+        const openBtn = document.getElementById('open-evaluation-modal-btn');
+        const closeBtn = document.getElementById('new-evaluation-modal-close-btn');
+        const evaluationForm = document.getElementById('evaluation-form');
 
-    // State management
-    let allEvaluations = [];
-    let filteredEvaluations = [];
-    let currentFilter = '';
-    let currentSort = 'timestamp-desc';
+        // Open modal
+        if (openBtn) {
+            openBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                openModal();
+            });
+        }
 
-    const api = {
-        getModels: () => fetch('/api/evaluations/models').then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            return res.json();
-        }),
-        getScenarios: () => fetch('/api/evaluations/scenarios').then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            return res.json();
-        }),
-        getEvaluations: () => fetch('/api/evaluations').then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            return res.json();
-        }),
-        getEvaluationLog: (logPath) => fetch(`/api/evaluations/logs?path=${encodeURIComponent(logPath)}`).then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            return res.text();
-        }),
-        runEvaluation: (model_ids, scenario_ids) => fetch('/api/evaluations/run', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model_ids, scenario_ids }),
-        }).then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            return res.json();
-        }),
-    };
-    const socket = io();
+        // Close modal
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                closeModal();
+            });
+        }
 
-    function createCard(item, type) {
+        // Close modal when clicking outside
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        }
+
+        // Handle escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        // Handle form submission
+        if (evaluationForm) {
+            evaluationForm.addEventListener('submit', handleEvaluationSubmit);
+        }
+
+        // Setup select all/deselect all buttons
+        document.getElementById('select-all-models').addEventListener('click', selectAllModels);
+        document.getElementById('deselect-all-models').addEventListener('click', deselectAllModels);
+        document.getElementById('select-all-scenarios').addEventListener('click', selectAllScenarios);
+        document.getElementById('deselect-all-scenarios').addEventListener('click', deselectAllScenarios);
+    }
+
+    function openModal() {
+        const modal = document.getElementById('new-evaluation-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            // Load models and scenarios when modal opens
+            loadModelsAndScenarios();
+        }
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('new-evaluation-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+        // Reset form state
+        resetModalState();
+    }
+
+    function resetModalState() {
+        // Hide loading states
+        document.getElementById('models-loading').classList.add('hidden');
+        document.getElementById('scenarios-loading').classList.add('hidden');
+        document.getElementById('evaluation-spinner').classList.add('hidden');
+        document.getElementById('evaluation-error').classList.add('hidden');
+
+        // Reset selections
+        selectedModels.clear();
+        selectedScenarios.clear();
+
+        // Clear visual selections
+        document.querySelectorAll('.model-card.selected').forEach(card => {
+            card.classList.remove('selected');
+        });
+        document.querySelectorAll('.scenario-card.selected').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Reset checkboxes
+        document.querySelectorAll('.model-card .card-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        document.querySelectorAll('.scenario-card .card-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Reset button state
+        const startBtn = document.getElementById('start-evaluation-btn');
+        if (startBtn) {
+            startBtn.disabled = true;
+        }
+    }
+
+    async function loadModelsAndScenarios() {
+        await Promise.all([
+            loadModels(),
+            loadScenarios()
+        ]);
+    }
+
+    async function loadModels() {
+        const container = document.getElementById('model-selector');
+        const loadingDiv = document.getElementById('models-loading');
+
+        if (!container || !loadingDiv) return;
+
+        loadingDiv.classList.remove('hidden');
+        container.innerHTML = '';
+
+        try {
+            const response = await fetch('/api/evaluations/models');
+            if (!response.ok) throw new Error('Failed to load models');
+
+            const models = await response.json();
+            loadingDiv.classList.add('hidden');
+
+            models.forEach(model => {
+                const modelCard = createModelCard(model);
+                container.appendChild(modelCard);
+            });
+        } catch (error) {
+            console.error('Error loading models:', error);
+            loadingDiv.classList.add('hidden');
+            showError('Failed to load models: ' + error.message);
+        }
+    }
+
+    async function loadScenarios() {
+        const container = document.getElementById('scenario-selector');
+        const loadingDiv = document.getElementById('scenarios-loading');
+
+        if (!container || !loadingDiv) return;
+
+        loadingDiv.classList.remove('hidden');
+        container.innerHTML = '';
+
+        try {
+            const response = await fetch('/api/evaluations/scenarios');
+            if (!response.ok) throw new Error('Failed to load scenarios');
+
+            const scenarios = await response.json();
+            loadingDiv.classList.add('hidden');
+
+            scenarios.forEach(scenario => {
+                const scenarioCard = createScenarioCard(scenario);
+                container.appendChild(scenarioCard);
+            });
+        } catch (error) {
+            console.error('Error loading scenarios:', error);
+            loadingDiv.classList.add('hidden');
+            showError('Failed to load scenarios: ' + error.message);
+        }
+    }
+
+    function createModelCard(model) {
         const card = document.createElement('div');
-        card.className = `glass-card p-4 ${type}-card cursor-pointer flex items-start`;
+        card.className = 'model-card';
+        card.dataset.modelId = model.id;
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'mr-4 mt-1 h-4 w-4 text-accent-purple bg-secondary-bg border-border-color rounded focus:ring-accent-purple';
-        checkbox.dataset.id = item.id;
-        checkbox.dataset.type = type;
-
-        const content = document.createElement('div');
-        content.innerHTML = `
-            <h4 class="font-bold text-text-primary">${item.name || item.title}</h4>
-            <p class="text-sm text-text-secondary">${item.description || `Category: ${item.category}`}</p>
+        card.innerHTML = `
+            <input type="checkbox" class="card-checkbox" value="${model.id}">
+            <div class="card-category">AI Model</div>
+            <div class="card-title">${model.name}</div>
+            <div class="card-description">${model.description || 'Advanced AI model for comprehensive evaluation tasks.'}</div>
         `;
 
-        card.appendChild(checkbox);
-        card.appendChild(content);
+        const checkbox = card.querySelector('.card-checkbox');
+        checkbox.addEventListener('change', () => toggleModelSelection(model.id, card, checkbox.checked));
 
         card.addEventListener('click', (e) => {
             if (e.target !== checkbox) {
                 checkbox.checked = !checkbox.checked;
+                toggleModelSelection(model.id, card, checkbox.checked);
             }
-            card.classList.toggle('selected', checkbox.checked);
-            updateButtonState();
         });
 
         return card;
     }
 
-    function getSelectedIds(type) {
-        const selector = type === 'model' ? modelSelector : scenarioSelector;
-        return Array.from(selector.querySelectorAll(`input[type="checkbox"]:checked`)).map(cb => cb.dataset.id);
+    function createScenarioCard(scenario) {
+        const card = document.createElement('div');
+        card.className = 'scenario-card';
+        card.dataset.scenarioId = scenario.id;
+
+        card.innerHTML = `
+            <input type="checkbox" class="card-checkbox" value="${scenario.id}">
+            <div class="card-category">Test Scenario</div>
+            <div class="card-title">${scenario.title}</div>
+            <div class="card-description">${scenario.description || scenario.category || 'Comprehensive evaluation scenario.'}</div>
+        `;
+
+        const checkbox = card.querySelector('.card-checkbox');
+        checkbox.addEventListener('change', () => toggleScenarioSelection(scenario.id, card, checkbox.checked));
+
+        card.addEventListener('click', (e) => {
+            if (e.target !== checkbox) {
+                checkbox.checked = !checkbox.checked;
+                toggleScenarioSelection(scenario.id, card, checkbox.checked);
+            }
+        });
+
+        return card;
     }
 
-    function updateButtonState() {
-        const selectedModels = getSelectedIds('model');
-        const selectedScenarios = getSelectedIds('scenario');
-        startEvaluationBtn.disabled = !(selectedModels.length > 0 && selectedScenarios.length > 0);
-
-        // Save selections to localStorage
-        localStorage.setItem('selectedModels', JSON.stringify(selectedModels));
-        localStorage.setItem('selectedScenarios', JSON.stringify(selectedScenarios));
+    function toggleModelSelection(modelId, cardElement, isSelected) {
+        if (isSelected) {
+            selectedModels.add(modelId);
+            cardElement.classList.add('selected');
+        } else {
+            selectedModels.delete(modelId);
+            cardElement.classList.remove('selected');
+        }
+        updateStartButton();
     }
 
-    function loadSavedSelections() {
+    function toggleScenarioSelection(scenarioId, cardElement, isSelected) {
+        if (isSelected) {
+            selectedScenarios.add(scenarioId);
+            cardElement.classList.add('selected');
+        } else {
+            selectedScenarios.delete(scenarioId);
+            cardElement.classList.remove('selected');
+        }
+        updateStartButton();
+    }
+
+    function updateStartButton() {
+        const startBtn = document.getElementById('start-evaluation-btn');
+        if (startBtn) {
+            startBtn.disabled = selectedModels.size === 0 || selectedScenarios.size === 0;
+        }
+    }
+
+    function selectAllModels() {
+        document.querySelectorAll('.model-card').forEach(card => {
+            const checkbox = card.querySelector('.card-checkbox');
+            if (!checkbox.checked) {
+                checkbox.checked = true;
+                toggleModelSelection(card.dataset.modelId, card, true);
+            }
+        });
+    }
+
+    function deselectAllModels() {
+        document.querySelectorAll('.model-card').forEach(card => {
+            const checkbox = card.querySelector('.card-checkbox');
+            if (checkbox.checked) {
+                checkbox.checked = false;
+                toggleModelSelection(card.dataset.modelId, card, false);
+            }
+        });
+    }
+
+    function selectAllScenarios() {
+        document.querySelectorAll('.scenario-card').forEach(card => {
+            const checkbox = card.querySelector('.card-checkbox');
+            if (!checkbox.checked) {
+                checkbox.checked = true;
+                toggleScenarioSelection(card.dataset.scenarioId, card, true);
+            }
+        });
+    }
+
+    function deselectAllScenarios() {
+        document.querySelectorAll('.scenario-card').forEach(card => {
+            const checkbox = card.querySelector('.card-checkbox');
+            if (checkbox.checked) {
+                checkbox.checked = false;
+                toggleScenarioSelection(card.dataset.scenarioId, card, false);
+            }
+        });
+    }
+
+    async function handleEvaluationSubmit(event) {
+        event.preventDefault();
+
+        if (selectedModels.size === 0 || selectedScenarios.size === 0) {
+            showError('Please select at least one model and one scenario.');
+            return;
+        }
+
+        // Show progress
+        document.getElementById('evaluation-spinner').classList.remove('hidden');
+        document.getElementById('evaluation-error').classList.add('hidden');
+        document.getElementById('start-evaluation-btn').disabled = true;
+
         try {
-            const savedModels = JSON.parse(localStorage.getItem('selectedModels') || '[]');
-            const savedScenarios = JSON.parse(localStorage.getItem('selectedScenarios') || '[]');
-
-            // Apply saved model selections
-            savedModels.forEach(id => {
-                const checkbox = modelSelector.querySelector(`input[data-id="${id}"]`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                    checkbox.closest('.model-card')?.classList.add('selected');
-                }
+            const response = await fetch('/api/evaluations/run', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model_ids: Array.from(selectedModels),
+                    scenario_ids: Array.from(selectedScenarios)
+                })
             });
 
-            // Apply saved scenario selections
-            savedScenarios.forEach(id => {
-                const checkbox = scenarioSelector.querySelector(`input[data-id="${id}"]`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                    checkbox.closest('.scenario-card')?.classList.add('selected');
-                }
-            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to start evaluation');
+            }
 
-            updateButtonState();
-        } catch (e) {
-            console.warn('Failed to load saved selections:', e);
-        }
-    }
+            const result = await response.json();
+            document.getElementById('progress-text').textContent = result.message;
 
-    function getTrustScoreClass(score) {
-        if (score >= 0.8) return 'trust-score-excellent';
-        if (score >= 0.6) return 'trust-score-good';
-        return 'trust-score-poor';
-    }
-
-    function showLoadingState(type) {
-        if (type === 'models') {
-            modelSelector.classList.add('hidden');
-            modelsLoading.classList.remove('hidden');
-        } else if (type === 'scenarios') {
-            scenarioSelector.classList.add('hidden');
-            scenariosLoading.classList.remove('hidden');
-        } else if (type === 'evaluations') {
-            pastEvaluationsTable.parentElement.classList.add('hidden');
-            evaluationsEmpty.classList.add('hidden');
-            evaluationsLoading.classList.remove('hidden');
-        }
-    }
-
-    function hideLoadingState(type) {
-        if (type === 'models') {
-            modelSelector.classList.remove('hidden');
-            modelsLoading.classList.add('hidden');
-        } else if (type === 'scenarios') {
-            scenarioSelector.classList.remove('hidden');
-            scenariosLoading.classList.add('hidden');
-        } else if (type === 'evaluations') {
-            pastEvaluationsTable.parentElement.classList.remove('hidden');
-            evaluationsLoading.classList.add('hidden');
-        }
-    }
-
-    async function loadInitialData() {
-        try {
-            // Show loading states
-            showLoadingState('models');
-            showLoadingState('scenarios');
-            showLoadingState('evaluations');
-
-            const [models, scenarios, evaluations] = await Promise.all([
-                api.getModels(),
-                api.getScenarios(),
-                api.getEvaluations(),
-            ]);
-
-            // Load models
-            modelSelector.innerHTML = '';
-            models.forEach(model => modelSelector.appendChild(createCard(model, 'model')));
-            hideLoadingState('models');
-
-            // Load scenarios
-            scenarioSelector.innerHTML = '';
-            scenarios.forEach(scenario => scenarioSelector.appendChild(createCard(scenario, 'scenario')));
-            hideLoadingState('scenarios');
-
-            // Load evaluations
-            allEvaluations = evaluations;
-            applyFiltersAndSort();
-            hideLoadingState('evaluations');
-
-            // Load saved selections
-            loadSavedSelections();
-            updateButtonState();
         } catch (error) {
-            console.error('Failed to load initial data:', error);
-            hideLoadingState('models');
-            hideLoadingState('scenarios');
-            hideLoadingState('evaluations');
-            showError('Failed to load data: ' + error.message);
+            console.error('Failed to start evaluation:', error);
+            showError('Failed to start evaluation: ' + error.message);
+            document.getElementById('start-evaluation-btn').disabled = false;
+            document.getElementById('evaluation-spinner').classList.add('hidden');
         }
+    }
+
+    function setupSocketListeners() {
+        if (!socket) return;
+
+        socket.on('evaluation_progress', function(data) {
+            updateProgress(data);
+        });
+
+        socket.on('evaluation_complete', function(data) {
+            completeEvaluation(data);
+        });
+    }
+
+    function updateProgress(data) {
+        if (data.progress !== undefined) {
+            document.getElementById('progress-bar').style.width = data.progress + '%';
+        }
+
+        if (data.status) {
+            document.getElementById('progress-text').textContent = data.status;
+        }
+
+        // Update completed count
+        const completedMatch = data.status?.match(/(\d+)\/(\d+)/);
+        if (completedMatch) {
+            document.getElementById('completed-runs').textContent = completedMatch[1];
+            document.getElementById('total-runs').textContent = completedMatch[2];
+        }
+
+        if (data.error) {
+            showError(data.error);
+        }
+    }
+
+    function completeEvaluation(data) {
+        document.getElementById('evaluation-spinner').classList.add('hidden');
+        document.getElementById('start-evaluation-btn').disabled = false;
+
+        // Refresh the evaluations list
+        loadPastEvaluations();
+
+        // Close modal after completion
+        setTimeout(() => {
+            closeModal();
+        }, 1000);
     }
 
     function showError(message) {
-        errorMessage.textContent = message;
-        evaluationError.classList.remove('hidden');
+        document.getElementById('error-message').textContent = message;
+        document.getElementById('evaluation-error').classList.remove('hidden');
+        document.getElementById('evaluation-spinner').classList.add('hidden');
     }
 
-    function hideError() {
-        evaluationError.classList.add('hidden');
-    }
+    async function loadPastEvaluations() {
+        const tableBody = document.getElementById('past-evaluations-table');
+        const loading = document.getElementById('evaluations-loading');
+        const empty = document.getElementById('evaluations-empty');
 
-    function filterEvaluations(evaluations, filterText) {
-        if (!filterText) return evaluations;
+        if (!tableBody) return;
 
-        const filter = filterText.toLowerCase();
-        return evaluations.filter(e =>
-            e.model.name.toLowerCase().includes(filter) ||
-            e.scenario.title.toLowerCase().includes(filter) ||
-            e.scenario.category?.toLowerCase().includes(filter)
-        );
-    }
-
-    function sortEvaluations(evaluations, sortBy) {
-        const sorted = [...evaluations];
-
-        switch (sortBy) {
-            case 'timestamp-desc':
-                return sorted.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            case 'timestamp-asc':
-                return sorted.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            case 'trust-score-desc':
-                return sorted.sort((a, b) => b.metrics.trust_score - a.metrics.trust_score);
-            case 'trust-score-asc':
-                return sorted.sort((a, b) => a.metrics.trust_score - b.metrics.trust_score);
-            case 'model-asc':
-                return sorted.sort((a, b) => a.model.name.localeCompare(b.model.name));
-            case 'scenario-asc':
-                return sorted.sort((a, b) => a.scenario.title.localeCompare(b.scenario.title));
-            default:
-                return sorted;
-        }
-    }
-
-    function applyFiltersAndSort() {
-        // Filter evaluations
-        filteredEvaluations = filterEvaluations(allEvaluations, currentFilter);
-
-        // Sort evaluations
-        filteredEvaluations = sortEvaluations(filteredEvaluations, currentSort);
-
-        // Render results
-        renderPastEvaluations(filteredEvaluations);
-
-        // Update results count
-        if (resultsCount) {
-            resultsCount.textContent = filteredEvaluations.length;
-        }
-    }
-
-    function renderPastEvaluations(evaluations) {
-        pastEvaluationsTable.innerHTML = '';
-
-        if (evaluations.length === 0) {
-            if (allEvaluations.length === 0) {
-                // No evaluations at all - show empty state
-                pastEvaluationsTable.parentElement.classList.add('hidden');
-                evaluationsEmpty.classList.remove('hidden');
-            } else {
-                // Evaluations exist but filtered out
-                pastEvaluationsTable.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-text-secondary">No evaluations match your filter criteria.</td></tr>';
-                pastEvaluationsTable.parentElement.classList.remove('hidden');
-                evaluationsEmpty.classList.add('hidden');
-            }
-            return;
-        }
-
-        // Hide empty state and show table
-        pastEvaluationsTable.parentElement.classList.remove('hidden');
-        evaluationsEmpty.classList.add('hidden');
-
-        evaluations.forEach(e => {
-            const row = document.createElement('tr');
-            row.className = 'border-b border-border-color hover:bg-secondary-bg transition-colors';
-
-            const trustScoreClass = getTrustScoreClass(e.metrics.trust_score);
-            const trustScoreDisplay = (e.metrics.trust_score * 100).toFixed(1) + '%';
-
-            row.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap text-text-primary font-medium">${e.model.name}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-text-primary">${e.scenario.title}</td>
-                <td class="px-6 py-4 whitespace-nowrap font-bold ${trustScoreClass}">${trustScoreDisplay}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-text-primary">${e.metrics.hallucinations_found || 0}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-text-primary">${e.metrics.hallucinations_corrected || 0}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-text-secondary">${new Date(e.timestamp).toLocaleString()}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <a href="/evaluations/${e.id}" class="text-accent-blue hover:underline focus:outline-none focus:underline">View Details</a>
-                </td>
-            `;
-            pastEvaluationsTable.appendChild(row);
-        });
-    }
-
-    function renderEvaluationResult(result, logContent = null) {
-        const formatReport = (title, report, isCorrection = false) => {
-            if (!report || report.length === 0) {
-                return `<div><h4 class="font-semibold text-accent-green mb-2">${title}</h4><p class="text-sm text-text-secondary">None</p></div>`;
-            }
-            return `
-                <div>
-                    <h4 class="font-semibold text-accent-green mb-2">${title}</h4>
-                    <ul class="space-y-3">
-                        ${report.map(item => `
-                            <li class="text-sm text-text-secondary border-l-2 border-border-color pl-3">
-                                <strong class="text-text-primary">${isCorrection ? 'Correction' : item.type}:</strong> ${isCorrection ? item.original : (item.text || 'N/A')}
-                                <pre class="bg-secondary-bg p-2 rounded mt-1 text-xs font-mono whitespace-pre-wrap">${isCorrection ? `Reason: ${item.reason}` : (item.description || 'No description')}</pre>
-                            </li>
-                        `).join('')}
-                    </ul>
-                </div>
-            `;
-        };
-
-        const logHtml = logContent ? `<pre class="bg-secondary-bg p-3 rounded text-sm whitespace-pre-wrap font-mono text-text-secondary h-64 overflow-y-auto">${logContent}</pre>` : `<p class="text-sm text-text-secondary">Log not available.</p>`;
-
-        return `
-            <div class="glass-card p-6 mb-4">
-                <h3 class="text-xl font-semibold text-accent-green mb-4">Result for ${result.model.name} on "${result.scenario.title}"</h3>
-
-                <!-- Metrics -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div class="glass-card p-4 text-center">
-                        <p class="text-sm text-text-secondary">Hallucinations Found</p>
-                        <p class="text-2xl font-bold text-text-primary">${result.metrics.hallucinations_found}</p>
-                    </div>
-                    <div class="glass-card p-4 text-center">
-                        <p class="text-sm text-text-secondary">Hallucinations Corrected</p>
-                        <p class="text-2xl font-bold text-text-primary">${result.metrics.hallucinations_corrected}</p>
-                    </div>
-                    <div class="glass-card p-4 text-center">
-                        <p class="text-sm text-text-secondary">Trust Score</p>
-                        <p class="text-2xl font-bold text-text-primary">${result.metrics.trust_score.toFixed(2)}</p>
-                    </div>
-                </div>
-
-                <!-- Two-column layout for details -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Left Column: Outputs -->
-                    <div class="space-y-4">
-                        <div>
-                            <h4 class="font-semibold text-accent-green mb-2">Raw Model Output</h4>
-                            <pre class="bg-secondary-bg p-3 rounded text-sm whitespace-pre-wrap text-text-secondary font-mono h-48 overflow-y-auto">${result.raw_model_output}</pre>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-accent-green mb-2">Advisor Corrected Output</h4>
-                            <pre class="bg-green-900 bg-opacity-20 p-3 rounded text-sm whitespace-pre-wrap text-green-300 font-mono h-48 overflow-y-auto">${result.advisor_corrected_output}</pre>
-                        </div>
-                    </div>
-
-                    <!-- Right Column: Reports -->
-                    <div class="space-y-4">
-                        ${formatReport('Detected Hallucinations', result.detailed_hallucination_report)}
-                        ${formatReport('Applied Corrections', result.detailed_corrections_log, true)}
-                    </div>
-                </div>
-
-                <!-- Full Log Section -->
-                <div class="mt-6 full-log-container">
-                    <h4 class="font-semibold text-accent-green mb-2">Full Evaluation Log</h4>
-                    ${logHtml}
-                </div>
-            </div>
-        `;
-    }
-
-    evaluationForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        evaluationSpinner.classList.remove('hidden');
-        evaluationError.classList.add('hidden');
-        startEvaluationBtn.disabled = true;
-        progressBar.style.width = '0%';
-        progressText.textContent = '';
-
-        const selectedModelIds = getSelectedIds('model');
-        const selectedScenarioIds = getSelectedIds('scenario');
-        const totalRunsCount = selectedModelIds.length * selectedScenarioIds.length;
-        let completedRunsCount = 0;
-
-        // Update total runs display
-        if (totalRuns) totalRuns.textContent = totalRunsCount;
-        if (completedRuns) completedRuns.textContent = completedRunsCount;
-
-        resultsContainer.innerHTML = '';
-        let allResults = [];
-
-        socket.on('evaluation_progress', (data) => {
-            progressBar.style.width = `${data.progress}%`;
-            progressText.textContent = data.status;
-
-            if (data.result) {
-                allResults.push(data.result);
-                resultsContainer.innerHTML += renderEvaluationResult(data.result);
-                completedRunsCount++;
-                if (completedRuns) completedRuns.textContent = completedRunsCount;
-            }
-            if (data.error) {
-                showError(data.error);
-            }
-        });
-
-        socket.on('evaluation_complete', async (data) => {
-            progressText.textContent = data.message;
-            evaluationSpinner.classList.add('hidden');
-            startEvaluationBtn.disabled = false;
-            hideNewEvaluationModal();
-
-            // Fetch full logs for all results now that the process is complete
-            for (let i = 0; i < allResults.length; i++) {
-                try {
-                    const logContent = await api.getEvaluationLog(allResults[i].evaluation_log);
-                    const resultElement = resultsContainer.children[i];
-                    const logContainer = resultElement.querySelector('.full-log-container');
-                    if (logContainer) {
-                        logContainer.innerHTML = `
-                            <h4 class="font-semibold text-accent-green mb-2">Full Evaluation Log</h4>
-                            <pre class="bg-secondary-bg p-3 rounded text-sm whitespace-pre-wrap font-mono text-text-secondary h-64 overflow-y-auto">${logContent}</pre>
-                        `;
-                    }
-                } catch (error) {
-                    console.warn('Failed to load log for result', i, error);
-                }
-            }
-
-            // Refresh evaluations data
-            try {
-                allEvaluations = await api.getEvaluations();
-                applyFiltersAndSort();
-            } catch (error) {
-                console.error('Failed to refresh evaluations:', error);
-            }
-
-            // Clean up listeners
-            socket.off('evaluation_progress');
-            socket.off('evaluation_complete');
-        });
+        loading.classList.remove('hidden');
+        empty.classList.add('hidden');
+        tableBody.innerHTML = '';
 
         try {
-            const response = await api.runEvaluation(selectedModelIds, selectedScenarioIds);
-            if (response.error) {
-                throw new Error(response.error);
+            const response = await fetch('/api/evaluations');
+            if (!response.ok) throw new Error('Failed to load evaluations');
+
+            evaluationResults = await response.json();
+            filteredResults = [...evaluationResults];
+
+            loading.classList.add('hidden');
+
+            if (evaluationResults.length === 0) {
+                empty.classList.remove('hidden');
+                return;
             }
-        } catch (err) {
-            showError(`Failed to start evaluation: ${err.message}`);
-            evaluationSpinner.classList.add('hidden');
-            startEvaluationBtn.disabled = false;
-            socket.off('evaluation_progress');
-            socket.off('evaluation_complete');
+
+            renderEvaluations();
+        } catch (error) {
+            console.error('Error loading evaluations:', error);
+            loading.classList.add('hidden');
+            empty.classList.remove('hidden');
         }
-    });
-
-    // Modal functions removed - now using full-page view
-
-    function showNewEvaluationModal() {
-        newEvaluationModal.classList.remove('hidden');
-        newEvaluationModal.classList.add('flex');
     }
 
-    function hideNewEvaluationModal() {
-        newEvaluationModal.classList.add('hidden');
-        newEvaluationModal.classList.remove('flex');
+    function renderEvaluations() {
+        const tableBody = document.getElementById('past-evaluations-table');
+        const resultsCount = document.getElementById('results-count');
+
+        if (!tableBody) return;
+
+        tableBody.innerHTML = '';
+        resultsCount.textContent = filteredResults.length;
+
+        filteredResults.forEach(evaluation => {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-border-color hover:bg-secondary-bg';
+
+            const trustScore = evaluation.metrics?.trust_score || 0;
+            const trustScoreClass = trustScore >= 0.8 ? 'trust-score-excellent' :
+                                   trustScore >= 0.6 ? 'trust-score-good' : 'trust-score-poor';
+
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">${evaluation.model?.name || 'Unknown'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">${evaluation.scenario?.title || 'Unknown'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm ${trustScoreClass}">${(trustScore * 100).toFixed(1)}%</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">${evaluation.metrics?.hallucinations_found || 0}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-text-primary">${evaluation.metrics?.hallucinations_corrected || 0}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">${formatDate(evaluation.timestamp)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <a href="/evaluations/${evaluation.id}" class="text-accent-blue hover:text-accent-blue-light">View</a>
+                </td>
+            `;
+
+            tableBody.appendChild(row);
+        });
+    }
+
+    function filterResults() {
+        const filterValue = document.getElementById('filter-input').value.toLowerCase();
+
+        if (!filterValue) {
+            filteredResults = [...evaluationResults];
+        } else {
+            filteredResults = evaluationResults.filter(evaluation => {
+                const modelName = evaluation.model?.name?.toLowerCase() || '';
+                const scenarioTitle = evaluation.scenario?.title?.toLowerCase() || '';
+                return modelName.includes(filterValue) || scenarioTitle.includes(filterValue);
+            });
+        }
+
+        renderEvaluations();
+    }
+
+    function sortResults() {
+        const sortValue = document.getElementById('sort-select').value;
+
+        filteredResults.sort((a, b) => {
+            switch (sortValue) {
+                case 'timestamp-desc':
+                    return new Date(b.timestamp) - new Date(a.timestamp);
+                case 'timestamp-asc':
+                    return new Date(a.timestamp) - new Date(b.timestamp);
+                case 'trust-score-desc':
+                    return (b.metrics?.trust_score || 0) - (a.metrics?.trust_score || 0);
+                case 'trust-score-asc':
+                    return (a.metrics?.trust_score || 0) - (b.metrics?.trust_score || 0);
+                case 'model-asc':
+                    return (a.model?.name || '').localeCompare(b.model?.name || '');
+                case 'scenario-asc':
+                    return (a.scenario?.title || '').localeCompare(b.scenario?.title || '');
+                default:
+                    return 0;
+            }
+        });
+
+        renderEvaluations();
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
     }
 
     function exportToCSV() {
-        if (filteredEvaluations.length === 0) {
-            alert('No evaluations to export');
+        if (filteredResults.length === 0) {
+            showError('No evaluations to export');
             return;
         }
 
-        const headers = ['Model', 'Scenario', 'Trust Score (%)', 'Issues Found', 'Issues Fixed', 'Timestamp'];
         const csvContent = [
-            headers.join(','),
-            ...filteredEvaluations.map(e => [
-                `"${e.model.name}"`,
-                `"${e.scenario.title}"`,
-                (e.metrics.trust_score * 100).toFixed(1),
-                e.metrics.hallucinations_found || 0,
-                e.metrics.hallucinations_corrected || 0,
-                `"${new Date(e.timestamp).toLocaleString()}"`
-            ].join(','))
-        ].join('\n');
+            ['Model', 'Scenario', 'Trust Score', 'Issues Found', 'Issues Fixed', 'Timestamp'],
+            ...filteredResults.map(evaluation => [
+                evaluation.model?.name || 'Unknown',
+                evaluation.scenario?.title || 'Unknown',
+                ((evaluation.metrics?.trust_score || 0) * 100).toFixed(1) + '%',
+                evaluation.metrics?.hallucinations_found || 0,
+                evaluation.metrics?.hallucinations_corrected || 0,
+                formatDate(evaluation.timestamp)
+            ])
+        ].map(row => row.join(',')).join('\n');
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `evaluations_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `evaluations_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
     }
-
-    async function refreshEvaluations() {
-        try {
-            showLoadingState('evaluations');
-            allEvaluations = await api.getEvaluations();
-            applyFiltersAndSort();
-            hideLoadingState('evaluations');
-        } catch (error) {
-            hideLoadingState('evaluations');
-            showError('Failed to refresh evaluations: ' + error.message);
-        }
-    }
-
-    // View details click handler removed - now using direct links to detail pages
-
-    // Filter and sort event handlers
-    if (filterInput) {
-        filterInput.addEventListener('input', (e) => {
-            currentFilter = e.target.value;
-            applyFiltersAndSort();
-        });
-    }
-
-    if (sortSelect) {
-        sortSelect.addEventListener('change', (e) => {
-            currentSort = e.target.value;
-            applyFiltersAndSort();
-        });
-    }
-
-    // Export and refresh handlers
-    if (exportCsvBtn) {
-        exportCsvBtn.addEventListener('click', exportToCSV);
-    }
-
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', refreshEvaluations);
-    }
-
-    // Retry evaluation handler
-    if (retryBtn) {
-        retryBtn.addEventListener('click', () => {
-            hideError();
-            evaluationForm.dispatchEvent(new Event('submit'));
-        });
-    }
-
-    if (openEvaluationModalBtn) {
-        openEvaluationModalBtn.addEventListener('click', showNewEvaluationModal);
-    } else {
-        console.error('open-evaluation-modal-btn element not found!');
-    }
-
-    if (newEvaluationModalCloseBtn) {
-        newEvaluationModalCloseBtn.addEventListener('click', hideNewEvaluationModal);
-    }
-
-    // Modal close handler removed - now using full-page view
-
-    selectAllModelsBtn.addEventListener('click', () => {
-        modelSelector.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.checked = true;
-            cb.closest('.model-card')?.classList.add('selected');
-        });
-        updateButtonState();
-    });
-
-    deselectAllModelsBtn.addEventListener('click', () => {
-        modelSelector.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.checked = false;
-            cb.closest('.model-card')?.classList.remove('selected');
-        });
-        updateButtonState();
-    });
-
-    selectAllScenariosBtn.addEventListener('click', () => {
-        scenarioSelector.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.checked = true;
-            cb.closest('.scenario-card')?.classList.add('selected');
-        });
-        updateButtonState();
-    });
-
-    deselectAllScenariosBtn.addEventListener('click', () => {
-        scenarioSelector.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.checked = false;
-            cb.closest('.scenario-card')?.classList.remove('selected');
-        });
-        updateButtonState();
-    });
-
-    newEvaluationModal.addEventListener('click', (event) => {
-        if (event.target === newEvaluationModal) {
-            hideNewEvaluationModal();
-        }
-    });
-    // Modal click handler removed - now using full-page view
-
-    loadInitialData();
 });

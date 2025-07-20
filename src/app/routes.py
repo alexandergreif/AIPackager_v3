@@ -256,11 +256,6 @@ def register_routes(app: Flask) -> None:
         """Render the evaluation page."""
         return render_template("evaluations.html")
 
-    @app.route("/evaluations/new")
-    def new_evaluation() -> str:
-        """Render the new evaluation page."""
-        return render_template("new_evaluation.html")
-
     @app.route("/evaluations/<evaluation_id>")
     def evaluation_detail(evaluation_id: str) -> Union[str, tuple[str, int]]:
         """Render the evaluation detail page."""

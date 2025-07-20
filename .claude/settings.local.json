@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "mcp__RepoPrompt__search",
+      "mcp__RepoPrompt__read_file",
+      "mcp__RepoPrompt__get_file_tree",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "mcp__RepoPrompt__chat_tools"
     ],
     "deny": []
   }
